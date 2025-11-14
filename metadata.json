@@ -1,0 +1,7 @@
+{
+  "name": "Copy of FitMind",
+  "description": "A complete health, weight loss, and tracking app for users of GLP-1 medications. It features personalized goals, meal and workout tracking, application reminders, and progress monitoring with a clean, minimalist, and sophisticated iOS-inspired design.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

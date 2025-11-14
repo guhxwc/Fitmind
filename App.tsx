@@ -22,6 +22,23 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [appState, setAppState] = useState<'auth' | 'onboarding' | 'main_app'>('auth');
 
+  // Helper function to map Supabase snake_case data to app's camelCase UserData
+  const formatProfileToUserData = (profile: any): UserData => {
+    return {
+      id: profile.id,
+      name: profile.name,
+      gender: profile.gender,
+      age: profile.age,
+      height: profile.height,
+      weight: profile.weight,
+      targetWeight: profile.target_weight,
+      activityLevel: profile.activity_level,
+      medication: profile.medication,
+      goals: profile.goals,
+      isPro: profile.is_pro,
+    };
+  };
+
   useEffect(() => {
     const getSessionAndProfile = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -35,7 +52,7 @@ const App: React.FC = () => {
           .single();
 
         if (profile && profile.name) { // Onboarding completo se o nome existir
-          setUserData(profile as UserData);
+          setUserData(formatProfileToUserData(profile));
           setAppState('main_app');
         } else {
           setAppState('onboarding');
@@ -68,21 +85,32 @@ const App: React.FC = () => {
       return;
     }
 
-    // Upsert garante que o perfil seja criado se não existir, ou atualizado se já existir (ex: trigger criou um básico).
+    // Map camelCase from app state to snake_case for Supabase DB
+    const profilePayload = {
+      id: session.user.id,
+      name: data.name,
+      gender: data.gender,
+      age: data.age,
+      height: data.height,
+      weight: data.weight,
+      target_weight: data.targetWeight,
+      activity_level: data.activityLevel,
+      medication: data.medication,
+      goals: data.goals,
+      is_pro: data.isPro,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data: profileData, error } = await supabase
       .from('profiles')
-      .upsert({
-        id: session.user.id,
-        ...data,
-        updated_at: new Date().toISOString(),
-      })
+      .upsert(profilePayload)
       .select()
       .single();
 
     if (error) {
       console.error("Error upserting profile after onboarding:", error);
     } else if (profileData) {
-      setUserData(profileData as UserData);
+      setUserData(formatProfileToUserData(profileData));
       setAppState('main_app');
     }
   };

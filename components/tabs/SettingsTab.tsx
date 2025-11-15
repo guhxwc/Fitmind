@@ -120,14 +120,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ onShowSubscription }) 
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
-
-    const handleSubscriptionClick = () => {
-        if (userData?.isPro) {
-            navigate('/pro');
-        } else {
-            onShowSubscription();
-        }
-    };
     
     if (!userData) return null;
 
@@ -140,7 +132,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ onShowSubscription }) 
 
             <section className="space-y-3">
                  <SettingsItem icon={<UserCircleIcon className="w-6 h-6"/>} label="Conta" onClick={() => navigate('/settings/account')} />
-                 <SettingsItem icon={<StarIcon className="w-6 h-6 text-blue-500"/>} label={userData.isPro ? "Minha Assinatura" : "Assinatura PRO"} onClick={handleSubscriptionClick} />
+                 <SettingsItem icon={<StarIcon className="w-6 h-6 text-blue-500"/>} label="Assinatura PRO" onClick={onShowSubscription} />
                  <NotificationSettings />
                  <ThemeSettings />
                  <SettingsItem icon={<HelpCircleIcon className="w-6 h-6"/>} label="Ajuda & Suporte" onClick={() => navigate('/settings/help')} />

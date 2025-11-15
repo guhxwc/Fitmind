@@ -17,7 +17,6 @@ import { PaymentPage } from './PaymentPage';
 import { WEEKDAYS } from '../constants';
 import { HelpTab } from './tabs/HelpTab';
 import { PrivacySettings } from './tabs/PrivacySettings';
-import { ProPlanTab } from './tabs/ProPlanTab';
 
 const AppContent: React.FC = () => {
   const { userData, session, setUserData, loading } = useAppContext();
@@ -130,7 +129,6 @@ const AppContent: React.FC = () => {
           <Route path="/settings/account" element={<AccountSettings />} />
           <Route path="/settings/help" element={<HelpTab />} />
           <Route path="/settings/privacy" element={<PrivacySettings />} />
-          <Route path="/pro" element={<ProPlanTab />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

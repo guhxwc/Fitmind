@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry } from '../types';
@@ -55,16 +55,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [meals, setMeals] = useState<Meal[]>([]);
   const [quickAddProtein, setQuickAddProtein] = useState(0);
   const [currentWater, setCurrentWater] = useState(0);
+
+  const debounceTimeoutRef = useRef<number | null>(null);
+  const isInitialLoad = useRef(true);
   
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+      return storedTheme;
+    }
+    return 'light'; // Default to light theme
+  });
 
    useEffect(() => {
     const root = window.document.documentElement;
-    const isDark = theme === 'dark';
-    
-    root.classList.remove(isDark ? 'light' : 'dark');
-    root.classList.add(isDark ? 'dark' : 'light');
-
+    if (theme === 'dark') {
+        root.classList.add('dark');
+    } else {
+        root.classList.remove('dark');
+    }
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -86,49 +95,105 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       isPro: profile.is_pro || false,
       stripeCustomerId: profile.stripe_customer_id || null,
-      streak: 0,
-      lastActivityDate: null,
+      streak: profile.streak || 0,
+      lastActivityDate: profile.last_activity_date || null,
   });
 
   const fetchData = useCallback(async () => {
+    isInitialLoad.current = true;
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) {
       setLoading(false);
+      isInitialLoad.current = false;
       return;
     }
     setSession(currentSession);
     
     setLoading(true);
 
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).single();
-    if (profile) {
-      setUserData(formatProfileToUserData(profile));
+    const userId = currentSession.user.id;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const [
+      profileRes,
+      weightRes,
+      photoRes,
+      planRes,
+      workoutHistoryRes,
+      applicationHistoryRes,
+      dailyRecordRes
+    ] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
+        supabase.from('progress_photos').select('*').eq('user_id', userId).order('date', { ascending: false }),
+        supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single(),
+        supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
+        supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
+        supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).single()
+    ]);
+
+    if (profileRes.data) {
+      setUserData(formatProfileToUserData(profileRes.data));
     }
     
-    const { data: weightData } = await supabase.from('weight_history').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    const { data: photoData } = await supabase.from('progress_photos').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    // const { data: planData } = await supabase.from('workout_plans').select('*').eq('user_id', currentSession.user.id).order('created_at', { ascending: false }).limit(1).single();
-    const { data: workoutHistoryData } = await supabase.from('workout_history').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    const { data: applicationHistoryData } = await supabase.from('applications').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    // const { data: notesData } = await supabase.from('daily_notes').select('*').eq('user_id', currentSession.user.id);
-    // const { data: sideEffectsData } = await supabase.from('side_effects').select('*').eq('user_id', currentSession.user.id);
+    setWeightHistory(weightRes.data || []);
+    setProgressPhotos(photoRes.data || []);
+    setWorkoutPlan(planRes.data ? planRes.data.plan : null);
+    setWorkoutHistory(workoutHistoryRes.data || []);
+    setApplicationHistory(applicationHistoryRes.data || []);
+    
+    if (dailyRecordRes.data) {
+        setMeals(dailyRecordRes.data.meals || []);
+        setQuickAddProtein(dailyRecordRes.data.quick_add_protein_grams || 0);
+        setCurrentWater(dailyRecordRes.data.water_liters || 0);
+    } else {
+        setMeals([]);
+        setQuickAddProtein(0);
+        setCurrentWater(0);
+    }
 
-    setWeightHistory(weightData || []);
-    setProgressPhotos(photoData || []);
-    setWorkoutPlan(null); // Table might be missing or query failing, causing errors.
-    setWorkoutHistory(workoutHistoryData || []);
-    setApplicationHistory(applicationHistoryData || []);
-    setDailyNotes([]); // Table 'daily_notes' does not exist, causing 404.
-    setSideEffects([]); // Table 'side_effects' does not exist, causing 404.
+    setDailyNotes([]);
+    setSideEffects([]);
     
     setLoading(false);
+    setTimeout(() => {
+        isInitialLoad.current = false;
+    }, 500);
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const updateStreak = useCallback(() => {
+  useEffect(() => {
+    if (isInitialLoad.current || loading || !userData) {
+      return;
+    }
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = window.setTimeout(async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const payload = {
+        user_id: userData.id,
+        date: todayStr,
+        meals: meals,
+        quick_add_protein_grams: quickAddProtein,
+        water_liters: currentWater,
+      };
+      await supabase.from('daily_records').upsert(payload, { onConflict: 'user_id, date' });
+    }, 1500);
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [meals, quickAddProtein, currentWater, userData, loading]);
+
+  const updateStreak = useCallback(async () => {
     if (!userData) return;
 
     const today = new Date();
@@ -152,9 +217,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         newStreak = 1;
     }
     
-    // Only update local state, do not call DB to prevent errors
-    setUserData(prev => prev ? { ...prev, streak: newStreak, lastActivityDate: todayStr } : null);
+    const updatedUserData = { ...userData, streak: newStreak, lastActivityDate: todayStr };
+    setUserData(updatedUserData);
 
+    const { error } = await supabase
+        .from('profiles')
+        .update({ streak: newStreak, last_activity_date: todayStr })
+        .eq('id', userData.id);
+        
+    if (error) {
+        console.error("Failed to update streak in DB:", error);
+        setUserData(userData); // Revert on failure
+    }
   }, [userData, setUserData]);
 
   const value = {

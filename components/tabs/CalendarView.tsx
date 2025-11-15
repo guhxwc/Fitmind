@@ -29,15 +29,15 @@ const InfoCard: React.FC<{
     details?: string;
     placeholder?: string;
 }> = ({ icon, label, value, details, placeholder }) => (
-    <div className="bg-white border border-gray-200/80 shadow-soft rounded-2xl p-4 flex-1 min-w-[45%]">
-        <div className="flex items-center text-sm text-gray-500 font-medium mb-1">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-soft rounded-2xl p-4 flex-1 min-w-[45%]">
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">
             {icon}
             <span className="ml-2">{label}</span>
         </div>
         {value ? (
             <>
-                <p className="text-2xl font-bold text-gray-800">{value}</p>
-                {details && <p className="text-sm text-gray-500">{details}</p>}
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">{value}</p>
+                {details && <p className="text-sm text-gray-500 dark:text-gray-400">{details}</p>}
             </>
         ) : (
              <p className="text-lg text-gray-400 font-medium">{placeholder || '—'}</p>
@@ -204,19 +204,19 @@ export const CalendarView: React.FC = () => {
     const today = new Date();
 
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in text-gray-900 dark:text-gray-100">
             <div className="flex items-center justify-between mb-4">
-                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-gray-100">
+                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <h2 className="text-xl font-bold capitalize">{monthNames[month]} {year}</h2>
-                <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-gray-100">
+                <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
             
             <div className="grid grid-cols-7 gap-y-2 text-center">
-                {dayNames.map(day => <div key={day} className="text-sm font-semibold text-gray-400">{day}</div>)}
+                {dayNames.map(day => <div key={day} className="text-sm font-semibold text-gray-400 dark:text-gray-500">{day}</div>)}
                 {calendarGrid.map((day, index) => (
                     <div key={index} className="flex justify-center items-center py-1">
                         {day ? (
@@ -226,8 +226,8 @@ export const CalendarView: React.FC = () => {
                                     isSameDay(selectedDate, new Date(year, month, day))
                                     ? 'bg-teal-500 text-white'
                                     : isSameDay(today, new Date(year, month, day))
-                                    ? 'bg-gray-200 text-gray-800'
-                                    : 'hover:bg-gray-100'
+                                    ? 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                    : 'text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                                 }`}
                             >
                                 {day}
@@ -242,14 +242,14 @@ export const CalendarView: React.FC = () => {
                 ))}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
                  <h3 className="text-lg font-bold mb-4">{selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
                  <div className="space-y-3">
                      {selectedDayData.injection && (
-                         <div className="bg-white border border-gray-200/80 shadow-soft rounded-2xl p-4 flex items-start">
+                         <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-soft rounded-2xl p-4 flex items-start">
                              <div className="text-blue-500 mt-1"><SyringeIcon className="w-5 h-5"/></div>
                              <div className="ml-3">
-                                <p className="font-semibold text-gray-800">Injeção 1</p>
+                                <p className="font-semibold text-gray-800 dark:text-gray-200">Injeção 1</p>
                                 <div className="flex items-baseline gap-2">
                                      <p className="text-xl font-bold">{selectedDayData.injection.medication}®</p>
                                      <span className="text-sm font-semibold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-md">{selectedDayData.injection.dose}</span>
@@ -266,32 +266,32 @@ export const CalendarView: React.FC = () => {
                         <InfoCard icon={<BarChartIcon className="w-5 h-5"/>} label="Proteína" value={selectedDayData.totalProtein > 0 ? `${selectedDayData.totalProtein}g` : null} />
                      </div>
                      <div 
-                        className="bg-white border border-gray-200/80 shadow-soft rounded-2xl p-4 w-full flex items-start cursor-pointer hover:bg-gray-50/80 transition-colors"
+                        className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-soft rounded-2xl p-4 w-full flex items-start cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
                         onClick={() => setIsSideEffectModalOpen(true)}
                      >
-                         <div className="text-gray-400 mt-1"><WavesIcon className="w-5 h-5"/></div>
+                         <div className="text-gray-400 dark:text-gray-500 mt-1"><WavesIcon className="w-5 h-5"/></div>
                          <div className="ml-3 overflow-hidden">
-                             <p className="font-semibold text-gray-800">Efeitos colaterais</p>
+                             <p className="font-semibold text-gray-800 dark:text-gray-200">Efeitos colaterais</p>
                              {selectedDayData.sideEffect && selectedDayData.sideEffect.effects.length > 0 ? (
-                                <p className="text-gray-500 text-sm truncate">
+                                <p className="text-gray-500 dark:text-gray-400 text-sm truncate">
                                     {selectedDayData.sideEffect.effects.map(e => `${e.name} (${e.intensity})`).join(', ')}
                                 </p>
                              ) : (
-                                <p className="text-gray-400 text-sm">Toque para adicionar efeitos colaterais</p>
+                                <p className="text-gray-400 dark:text-gray-500 text-sm">Toque para adicionar efeitos colaterais</p>
                              )}
                          </div>
                     </div>
                      <div 
-                        className="bg-white border border-gray-200/80 shadow-soft rounded-2xl p-4 w-full flex items-start cursor-pointer hover:bg-gray-50/80 transition-colors"
+                        className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-soft rounded-2xl p-4 w-full flex items-start cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
                         onClick={() => setIsNoteModalOpen(true)}
                      >
-                         <div className="text-gray-400 mt-1"><ClipboardListIcon className="w-5 h-5"/></div>
+                         <div className="text-gray-400 dark:text-gray-500 mt-1"><ClipboardListIcon className="w-5 h-5"/></div>
                          <div className="ml-3 overflow-hidden">
-                             <p className="font-semibold text-gray-800">Notas do dia</p>
+                             <p className="font-semibold text-gray-800 dark:text-gray-200">Notas do dia</p>
                              {selectedDayData.note?.content ? (
-                                <p className="text-gray-500 text-sm truncate">{selectedDayData.note.content}</p>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm truncate">{selectedDayData.note.content}</p>
                              ) : (
-                                <p className="text-gray-400 text-sm">Toque para adicionar notas</p>
+                                <p className="text-gray-400 dark:text-gray-500 text-sm">Toque para adicionar notas</p>
                              )}
                          </div>
                     </div>

@@ -9,14 +9,14 @@ import { ManualMealModal } from './ManualMealModal';
 
 
 const MealItem: React.FC<{ meal: Meal }> = ({ meal }) => (
-  <div className="bg-gray-100/60 p-4 rounded-xl flex items-center justify-between">
+  <div className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl flex items-center justify-between">
     <div>
-      <p className="font-bold text-gray-800">{meal.name}</p>
-      <p className="text-sm text-gray-500">{meal.time}</p>
+      <p className="font-bold text-gray-800 dark:text-gray-200">{meal.name}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{meal.time}</p>
     </div>
     <div className="text-right">
-      <p className="font-semibold text-gray-800">{meal.calories} kcal</p>
-      <p className="text-sm text-gray-500">{meal.protein}g proteína</p>
+      <p className="font-semibold text-gray-800 dark:text-gray-200">{meal.calories} kcal</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{meal.protein}g proteína</p>
     </div>
   </div>
 );
@@ -26,17 +26,22 @@ const ProgressIndicator: React.FC<{ label: string; value: number; goal: number; 
     return (
         <div className="flex-1">
             <div className="flex justify-between items-baseline mb-1">
-                <span className="font-medium text-gray-700">{label}</span>
-                <span className="text-sm text-gray-500">{Math.round(value)} / {goal} {unit}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{Math.round(value)} / {goal} {unit}</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div className="h-2 rounded-full" style={{ width: `${percentage}%`, backgroundColor: color }}></div>
             </div>
         </div>
     );
 };
 
-const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', title?: string) => void; }> = ({ onShowProModal }) => {
+interface DietPlanViewProps {
+  onShowProModal: (type: 'feature' | 'engagement', title?: string) => void;
+  addMealToToday: (meal: Omit<Meal, 'id' | 'time'>) => void;
+}
+
+const DietPlanView: React.FC<DietPlanViewProps> = ({ onShowProModal, addMealToToday }) => {
     const { userData } = useAppContext();
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [dietPlan, setDietPlan] = useState<GeneratedDietPlan | null>(null);
@@ -44,12 +49,14 @@ const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lastAnswers, setLastAnswers] = useState<DietQuizAnswers | null>(null);
+    const [loggedMeals, setLoggedMeals] = useState<string[]>([]);
 
     const generateDiet = async (answers: DietQuizAnswers) => {
         if (!userData) return;
         setIsLoading(true);
         setError(null);
         setDietPlan(null);
+        setLoggedMeals([]); // Reset logged meals for the new plan
         setLastAnswers(answers);
 
         try {
@@ -125,6 +132,15 @@ const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
             setIsLoading(false);
         }
     };
+    
+    const handleLogMealFromPlan = (meal: GeneratedDietPlan['meals'][0]) => {
+        addMealToToday({
+            name: meal.description,
+            calories: meal.calories,
+            protein: meal.protein,
+        });
+        setLoggedMeals(prev => [...prev, meal.description]);
+    };
 
     const handleQuizComplete = (answers: DietQuizAnswers) => {
         setIsQuizOpen(false);
@@ -155,19 +171,19 @@ const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
     const renderCurrentView = () => {
         if (isLoading) {
             return (
-                <div className="flex flex-col items-center justify-center text-center p-8 bg-gray-50 rounded-2xl">
-                    <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-                    <p className="mt-4 font-semibold text-gray-700">Gerando sua dieta personalizada...</p>
-                    <p className="text-sm text-gray-500">Aguarde, estamos montando o plano ideal para você.</p>
+                <div className="flex flex-col items-center justify-center text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                    <div className="w-12 h-12 border-4 border-gray-300 dark:border-gray-600 border-t-black dark:border-t-white rounded-full animate-spin"></div>
+                    <p className="mt-4 font-semibold text-gray-700 dark:text-gray-300">Gerando sua dieta personalizada...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Aguarde, estamos montando o plano ideal para você.</p>
                 </div>
             )
         }
 
         if (error) {
             return (
-                <div className="text-center p-8 bg-red-50 border border-red-200 rounded-2xl">
-                    <p className="font-semibold text-red-700">{error}</p>
-                    <button onClick={handleRegenerate} className="mt-4 bg-black text-white py-2 px-6 rounded-lg font-semibold">
+                <div className="text-center p-8 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-2xl">
+                    <p className="font-semibold text-red-700 dark:text-red-300">{error}</p>
+                    <button onClick={handleRegenerate} className="mt-4 bg-black dark:bg-white text-white dark:text-black py-2 px-6 rounded-lg font-semibold">
                         Tentar Novamente
                     </button>
                 </div>
@@ -177,32 +193,53 @@ const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
         if (dietPlan) {
             return (
                 <div className="space-y-4">
-                    <h2 className="text-2xl font-bold text-gray-800">Sugestão de Dieta da IA</h2>
-                    {dietPlan.meals.map((meal, index) => (
-                        <div key={index} className="bg-gray-100/60 p-4 rounded-xl">
-                            <h3 className="font-bold text-lg text-gray-900">{meal.name}</h3>
-                            <p className="text-sm text-gray-500 font-medium">Proteína: {meal.protein}g · {meal.calories} kcal</p>
-                            <p className="mt-2 text-gray-700">{meal.description} ({meal.quantity})</p>
-                        </div>
-                    ))}
-                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-                        <p className="font-semibold text-blue-800">💡 Dica da IA</p>
-                        <p className="text-sm text-blue-700 mt-1">{dietPlan.tip}</p>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Sugestão de Dieta da IA</h2>
+                    {dietPlan.meals.map((meal, index) => {
+                        const isLogged = loggedMeals.includes(meal.description);
+                        return (
+                            <div key={index} className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl">
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{meal.name}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Proteína: {meal.protein}g · {meal.calories} kcal</p>
+                                <p className="mt-2 text-gray-700 dark:text-gray-300">{meal.description} ({meal.quantity})</p>
+                                <div className="mt-3 pt-3 border-t border-gray-200/80 dark:border-gray-700/80">
+                                    <button
+                                        onClick={() => handleLogMealFromPlan(meal)}
+                                        disabled={isLogged}
+                                        className={`w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                                            isLogged
+                                                ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                                                : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-[0.98]'
+                                        }`}
+                                    >
+                                        {isLogged ? (
+                                            <>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                                Registrado
+                                            </>
+                                        ) : 'Registrar Refeição'}
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-4 rounded-xl">
+                        <p className="font-semibold text-blue-800 dark:text-blue-300">💡 Dica da IA</p>
+                        <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{dietPlan.tip}</p>
                     </div>
                     <div className="flex gap-4 pt-2">
-                        <button onClick={handleRegenerate} className="w-full bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold">Gerar Novamente</button>
-                        <button onClick={handleSaveDiet} className="w-full bg-black text-white py-3 rounded-xl font-semibold">Salvar Dieta</button>
+                        <button onClick={handleRegenerate} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-semibold">Gerar Novamente</button>
+                        <button onClick={handleSaveDiet} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-semibold">Salvar Dieta</button>
                     </div>
                 </div>
             )
         }
 
         return (
-             <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl text-center">
-                <ClipboardListIcon className="w-10 h-10 mx-auto text-blue-600 mb-3"/>
-                <h3 className="text-xl font-bold text-blue-900">Plano de Dieta Inteligente</h3>
-                <p className="text-blue-700 mt-1 mb-4">Receba um plano alimentar diário, personalizado pela nossa IA para atingir suas metas.</p>
-                <button onClick={handleGenerateClick} className="bg-black text-white py-3 px-8 rounded-xl font-semibold">
+             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-6 rounded-2xl text-center">
+                <ClipboardListIcon className="w-10 h-10 mx-auto text-blue-600 dark:text-blue-400 mb-3"/>
+                <h3 className="text-xl font-bold text-blue-900 dark:text-blue-200">Plano de Dieta Inteligente</h3>
+                <p className="text-blue-700 dark:text-blue-300 mt-1 mb-4">Receba um plano alimentar diário, personalizado pela nossa IA para atingir suas metas.</p>
+                <button onClick={handleGenerateClick} className="bg-black dark:bg-white text-white dark:text-black py-3 px-8 rounded-xl font-semibold transition-transform active:scale-[0.98]">
                     Gerar sua dieta
                 </button>
             </div>
@@ -215,23 +252,23 @@ const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
             {renderCurrentView()}
             
             {savedDiets.length > 0 && (
-                 <div className="space-y-4 pt-6 border-t border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-800">Minhas Dietas</h2>
+                 <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Minhas Dietas</h2>
                     {savedDiets.map((plan, index) => (
-                        <div key={index} className="bg-gray-100/60 p-4 rounded-xl">
+                        <div key={index} className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl">
                              <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-bold text-lg text-gray-900">Dieta Salva #{index + 1}</h3>
-                                <span className="text-xs font-semibold bg-gray-200 text-gray-600 px-2 py-1 rounded-full">{plan.meals.length} refeições</span>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Dieta Salva #{index + 1}</h3>
+                                <span className="text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full">{plan.meals.length} refeições</span>
                             </div>
                             {plan.meals.map((meal, mealIndex) => (
-                                <div key={mealIndex} className="text-sm py-2 border-b border-gray-200 last:border-b-0">
-                                    <p className="font-semibold text-gray-800">{meal.name} <span className="font-normal text-gray-500">({meal.calories} kcal)</span></p>
-                                    <p className="text-gray-600">{meal.description}</p>
+                                <div key={mealIndex} className="text-sm py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200">{meal.name} <span className="font-normal text-gray-500 dark:text-gray-400">({meal.calories} kcal)</span></p>
+                                    <p className="text-gray-600 dark:text-gray-300">{meal.description}</p>
                                 </div>
                             ))}
-                            <div className="bg-blue-50/50 border border-blue-200/50 p-3 mt-3 rounded-lg">
-                                <p className="font-semibold text-blue-800 text-sm">💡 Dica</p>
-                                <p className="text-sm text-blue-700 mt-1">{plan.tip}</p>
+                            <div className="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 p-3 mt-3 rounded-lg">
+                                <p className="font-semibold text-blue-800 dark:text-blue-300 text-sm">💡 Dica</p>
+                                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">{plan.tip}</p>
                             </div>
                         </div>
                     ))}
@@ -248,7 +285,7 @@ interface MealsTabProps {
 }
 
 export const MealsTab: React.FC<MealsTabProps> = ({ onShowProModal }) => {
-  const { userData, meals, setMeals, quickAddProtein } = useAppContext();
+  const { userData, meals, setMeals, quickAddProtein, updateStreak } = useAppContext();
   const [view, setView] = useState<'today' | 'plan'>('today');
   const [isCalorieCamOpen, setIsCalorieCamOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -275,36 +312,36 @@ export const MealsTab: React.FC<MealsTabProps> = ({ onShowProModal }) => {
     const newMeal: Meal = {
         ...newMealData,
         id: new Date().toISOString(),
-        name: newMealData.name,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     };
     setMeals(prevMeals => [...prevMeals, newMeal]);
+    updateStreak();
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white min-h-screen">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white dark:bg-black min-h-screen animate-fade-in">
       <header>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Refeições</h1>
-        <p className="text-gray-500">Seu diário alimentar</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Refeições</h1>
+        <p className="text-gray-500 dark:text-gray-400">Seu diário alimentar</p>
       </header>
 
-      <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-        <button onClick={() => setView('today')} className={`w-1/2 py-2 rounded-lg font-semibold transition-colors ${view === 'today' ? 'bg-white shadow' : 'text-gray-500'}`}>Hoje</button>
-        <button onClick={() => setView('plan')} className={`w-1/2 py-2 rounded-lg font-semibold transition-colors ${view === 'plan' ? 'bg-white shadow' : 'text-gray-500'}`}>Plano de Dieta</button>
+      <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+        <button onClick={() => setView('today')} className={`w-1/2 py-2 rounded-lg font-semibold transition-all active:scale-[0.98] ${view === 'today' ? 'bg-white dark:bg-gray-700 shadow' : 'text-gray-500 dark:text-gray-400'}`}>Hoje</button>
+        <button onClick={() => setView('plan')} className={`w-1/2 py-2 rounded-lg font-semibold transition-all active:scale-[0.98] ${view === 'plan' ? 'bg-white dark:bg-gray-700 shadow' : 'text-gray-500 dark:text-gray-400'}`}>Plano de Dieta</button>
       </div>
 
       {view === 'today' && (
         <div className="space-y-6">
-            <div className="bg-gray-100/50 p-4 rounded-2xl space-y-4">
+            <div className="bg-gray-100/50 dark:bg-gray-800/50 p-4 rounded-2xl space-y-4">
                 <ProgressIndicator label="Calorias" value={totalCalories} goal={userData.goals.calories} unit="kcal" color="#f97316"/>
                 <ProgressIndicator label="Proteína" value={totalProtein} goal={userData.goals.protein} unit="g" color="#3b82f6"/>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setIsManualModalOpen(true)} className="bg-black text-white p-4 rounded-xl font-semibold text-center">
+                <button onClick={() => setIsManualModalOpen(true)} className="bg-black dark:bg-white text-white dark:text-black p-4 rounded-xl font-semibold text-center transition-transform active:scale-[0.98]">
                     Registrar Manual
                 </button>
-                <button onClick={handleCalorieCamClick} className="bg-gray-100 text-gray-800 p-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
+                <button onClick={handleCalorieCamClick} className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]">
                     <CameraIcon className="w-5 h-5"/>
                     <span>CalorieCam</span>
                     <span className="text-xs bg-blue-500 text-white font-bold px-2 py-0.5 rounded-full">PRO</span>
@@ -312,16 +349,16 @@ export const MealsTab: React.FC<MealsTabProps> = ({ onShowProModal }) => {
             </div>
             
             <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-3">Refeições de Hoje</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Refeições de Hoje</h2>
                 <div className="space-y-3">
-                    {meals.length > 0 ? meals.map(meal => <MealItem key={meal.id} meal={meal} />) : <p className="text-gray-500 text-center py-4">Nenhuma refeição registrada hoje.</p>}
+                    {meals.length > 0 ? meals.map(meal => <MealItem key={meal.id} meal={meal} />) : <p className="text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma refeição registrada hoje.</p>}
                 </div>
             </div>
         </div>
       )}
       
       {view === 'plan' && (
-        <DietPlanView onShowProModal={onShowProModal} />
+        <DietPlanView onShowProModal={onShowProModal} addMealToToday={handleAddMeal} />
       )}
 
       {isCalorieCamOpen && (

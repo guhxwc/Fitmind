@@ -1,21 +1,20 @@
-
 import React, { useState } from 'react';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
 const InputBox: React.FC<{label: string, value: number, onChange: (value: number) => void, unit: string, placeholder: string, autoFocus?: boolean}> = ({label, value, onChange, unit, placeholder, autoFocus}) => {
   return (
     <div className="w-full">
-        <label className="text-lg font-medium text-gray-700">{label}</label>
+        <label className="text-lg font-medium text-gray-700 dark:text-gray-300">{label}</label>
         <div className="relative mt-2">
             <input
                 type="number"
                 value={value === 0 ? '' : value}
                 onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-                className="w-full p-4 pr-14 text-xl font-semibold text-gray-900 bg-gray-100/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
+                className="w-full p-4 pr-14 text-xl font-semibold text-gray-900 dark:text-white bg-gray-100/80 dark:bg-gray-800/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:shadow-md"
                 placeholder={placeholder}
                 autoFocus={autoFocus}
             />
-            <span className="absolute inset-y-0 right-4 flex items-center text-lg text-gray-400 pointer-events-none">{unit}</span>
+            <span className="absolute inset-y-0 right-4 flex items-center text-lg text-gray-400 dark:text-gray-500 pointer-events-none">{unit}</span>
         </div>
     </div>
   )

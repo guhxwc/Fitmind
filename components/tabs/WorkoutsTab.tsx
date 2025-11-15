@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -17,7 +18,7 @@ const WorkoutIntro: React.FC<{ onGenerate: () => void }> = ({ onGenerate }) => (
         <DumbbellIcon />
         <h3 className="text-xl font-bold text-gray-900 mt-3">Personal Trainer IA</h3>
         <p className="text-gray-600 mt-1 mb-4">Receba um plano de treinos semanal, personalizado pela nossa IA para seus objetivos.</p>
-        <button onClick={onGenerate} className="bg-black text-white py-3 px-8 rounded-xl font-semibold">
+        <button onClick={onGenerate} className="bg-black text-white py-3 px-8 rounded-xl font-semibold transition-transform active:scale-[0.98]">
             Gerar meu treino
         </button>
     </div>
@@ -91,7 +92,7 @@ const WorkoutPlanView: React.FC<{
     <div className="space-y-4 mt-6 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-800">Seu Plano Semanal</h2>
         {plan.map((day, index) => (
-            <div key={index} onClick={() => onStartWorkout(index)} className="bg-gray-100/60 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-200/60 transition-colors">
+            <div key={index} onClick={() => onStartWorkout(index)} className="bg-gray-100/60 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-200/60 transition-all active:scale-[0.99]">
                 <div>
                     <p className="text-sm font-semibold text-gray-500">DIA {day.day}</p>
                     <p className="font-bold text-lg text-gray-800">{day.focus}</p>
@@ -146,13 +147,13 @@ const WorkoutHistoryView: React.FC<{ history: WorkoutFeedback[], plan: WorkoutPl
 };
 
 const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; }> = ({ label, isActive, onClick }) => (
-    <button onClick={onClick} className={`w-1/3 py-2.5 rounded-lg font-semibold transition-all duration-300 ${isActive ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:bg-gray-200/50'}`}>
+    <button onClick={onClick} className={`w-1/3 py-2.5 rounded-lg font-semibold transition-all duration-300 active:scale-[0.98] ${isActive ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:bg-gray-200/50'}`}>
         {label}
     </button>
 );
 
 export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
-    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory } = useAppContext();
+    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak } = useAppContext();
     const [view, setView] = useState<'generate' | 'my_workouts' | 'history'>(workoutPlan ? 'my_workouts' : 'generate');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -287,6 +288,7 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
         if (data) {
             setWorkoutHistory(prev => [data[0], ...prev]);
             setActiveWorkoutDay(null); // Return to plan view
+            updateStreak();
             if (workoutHistory.length + 1 === 1) { // First workout completed
                 onShowProModal('engagement');
             }
@@ -351,7 +353,7 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white min-h-screen">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white min-h-screen animate-fade-in">
             <header>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Treinos</h1>
                 <p className="text-gray-500">Seu plano de exercícios</p>

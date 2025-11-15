@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
@@ -33,7 +32,7 @@ export const StepName: React.FC<StepNameProps> = ({ onNext, onBack, onSelect, va
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full py-5 px-6 text-center text-3xl sm:text-4xl font-bold text-gray-900 bg-gray-100/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
+            className="w-full py-5 px-6 text-center text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white bg-gray-100/80 dark:bg-gray-800/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:shadow-md"
             placeholder="Seu nome"
           />
         </div>

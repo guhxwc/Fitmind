@@ -1,12 +1,11 @@
-
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 
 interface OnboardingScreenProps {
   children: React.ReactNode;
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ children }) => {
-  return <div className="flex flex-col h-full p-6 bg-white">{children}</div>;
+  return <div className="flex flex-col h-full p-6 bg-white dark:bg-black">{children}</div>;
 };
 
 interface OnboardingHeaderProps {
@@ -24,16 +23,16 @@ export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({ title, subti
     <div className="mb-8">
       <div className="flex items-center mb-4">
         {onBack && (
-          <button onClick={onBack} className="mr-4 text-gray-500">
+          <button onClick={onBack} className="mr-4 text-gray-500 dark:text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
         )}
-        <div className="w-full bg-gray-200 rounded-full h-1.5">
-          <div className="bg-black h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+          <div className="bg-black dark:bg-white h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
         </div>
       </div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
-      <p className="text-gray-500 mt-2">{subtitle}</p>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
+      <p className="text-gray-500 dark:text-gray-400 mt-2">{subtitle}</p>
     </div>
   );
 };
@@ -50,7 +49,7 @@ export const OnboardingFooter: React.FC<OnboardingFooterProps> = ({ onContinue, 
       <button
         onClick={onContinue}
         disabled={disabled}
-        className="w-full bg-black text-white py-4 rounded-xl text-lg font-semibold transition-colors duration-200 disabled:bg-gray-300"
+        className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold transition-colors duration-200 disabled:bg-gray-300 dark:disabled:bg-gray-600"
       >
         {label}
       </button>
@@ -68,100 +67,41 @@ export const OptionButton: React.FC<OptionButtonProps> = ({children, onClick, is
     <button
         onClick={onClick}
         className={`w-full text-left p-4 my-2 rounded-xl border-2 transition-all duration-200 ${
-            isSelected ? 'bg-black text-white border-black' : 'bg-gray-100 text-gray-900 border-gray-100 hover:border-gray-300'
+            isSelected 
+                ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-200 border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
         }`}
     >
         <span className="text-lg font-medium">{children}</span>
     </button>
 );
 
-// FIX: Added missing Picker component used in StepDob.tsx
+// FIX: Add missing Picker component to resolve import error in StepDob.tsx.
 interface PickerProps {
   items: (string | number)[];
-  onSelect: (item: string | number) => void;
+  onSelect: (value: string | number) => void;
   initialValue: string | number;
 }
 
 export const Picker: React.FC<PickerProps> = ({ items, onSelect, initialValue }) => {
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const [selectedValue, setSelectedValue] = useState(initialValue);
-  const itemHeight = 40; // h-10 in tailwind
-
-  const onSelectRef = useRef(onSelect);
-  useEffect(() => {
-    onSelectRef.current = onSelect;
-  }, [onSelect]);
-
-  useEffect(() => {
-    setSelectedValue(initialValue);
-  }, [initialValue]);
-
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (scroller) {
-      const initialIndex = items.indexOf(initialValue);
-      if (initialIndex > -1) {
-        scroller.scrollTop = initialIndex * itemHeight;
-      }
-    }
-  }, [initialValue, items]);
-
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-
-    let scrollTimeout: ReturnType<typeof setTimeout>;
-
-    const handleScroll = () => {
-      const index = Math.round(scroller.scrollTop / itemHeight);
-      if (index >= 0 && index < items.length) {
-        setSelectedValue(items[index]);
-      }
-      
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const index = Math.round(scroller.scrollTop / itemHeight);
-        if (index >= 0 && index < items.length) {
-          const selectedItem = items[index];
-          onSelectRef.current(selectedItem);
-          if (scroller.scrollTop !== index * itemHeight) {
-             scroller.scrollTo({ top: index * itemHeight, behavior: 'smooth' });
-          }
-        }
-      }, 150);
-    };
-
-    scroller.addEventListener('scroll', handleScroll);
-    return () => {
-      scroller.removeEventListener('scroll', handleScroll);
-    };
-  }, [items, itemHeight]);
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    onSelect(value);
+  };
 
   return (
-    <div className="h-48 w-full relative overflow-hidden flex-1">
-      <div 
-        ref={scrollerRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-        style={{
-          paddingTop: `calc(50% - ${itemHeight / 2}px)`,
-          paddingBottom: `calc(50% - ${itemHeight / 2}px)`,
-        }}
+    <div className="relative">
+      <select
+        value={initialValue}
+        onChange={handleChange}
+        className="text-xl text-center font-semibold text-gray-900 dark:text-white bg-gray-100/80 dark:bg-gray-800/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:shadow-md p-4 appearance-none"
       >
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className={`h-10 flex items-center justify-center text-xl snap-center transition-all duration-200 ${
-              selectedValue === item ? 'font-bold text-gray-800 scale-110' : 'text-gray-400'
-            }`}
-          >
+        {items.map(item => (
+          <option key={item} value={item}>
             {item}
-          </div>
+          </option>
         ))}
-      </div>
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-center">
-        <div className="h-10 border-y-2 border-gray-300 rounded-lg" />
-      </div>
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white via-transparent to-white" />
+      </select>
     </div>
   );
 };

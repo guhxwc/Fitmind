@@ -1,8 +1,7 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppContextProvider, useAppContext } from './AppContext';
+import { useToast } from './ToastProvider';
 import { SummaryTab } from './tabs/SummaryTab';
 import { MealsTab } from './tabs/MealsTab';
 import { WorkoutsTab } from './tabs/WorkoutsTab';
@@ -17,9 +16,11 @@ import { ProUpsellModal } from './ProUpsellModal';
 import { PaymentPage } from './PaymentPage';
 import { WEEKDAYS } from '../constants';
 import { HelpTab } from './tabs/HelpTab';
+import { PrivacySettings } from './tabs/PrivacySettings';
 
 const AppContent: React.FC = () => {
   const { userData, session, setUserData, loading } = useAppContext();
+  const { addToast } = useToast();
 
   const [showSubscriptionPage, setShowSubscriptionPage] = useState(false);
   const [showPaymentPage, setShowPaymentPage] = useState(false);
@@ -108,15 +109,15 @@ const AppContent: React.FC = () => {
       setUserData(prev => prev ? { ...prev, isPro: true } : null);
     }
     setShowPaymentPage(false);
-    alert('Pagamento aprovado! Bem-vindo ao FitMind PRO. Sua assinatura está sendo ativada.');
+    addToast('Pagamento aprovado! Bem-vindo ao FitMind PRO.', 'success');
   };
 
   if (loading || !userData || !session) {
-    return <div className="h-full flex items-center justify-center">Carregando seus dados...</div>;
+    return <div className="h-full flex items-center justify-center text-gray-800 dark:text-gray-200">Carregando seus dados...</div>;
   }
   
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-white dark:bg-black">
       <main className="flex-grow overflow-y-auto pb-20">
         <Routes>
           <Route path="/" element={<SummaryTab />} />
@@ -127,13 +128,14 @@ const AppContent: React.FC = () => {
           <Route path="/settings" element={<SettingsTab onShowSubscription={() => setShowSubscriptionPage(true)} />} />
           <Route path="/settings/account" element={<AccountSettings />} />
           <Route path="/settings/help" element={<HelpTab />} />
+          <Route path="/settings/privacy" element={<PrivacySettings />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
       <BottomNav />
 
       {showSubscriptionPage && <SubscriptionPage onClose={() => setShowSubscriptionPage(false)} onSubscribe={handleSubscribe} />}
-      {showPaymentPage && <PaymentPage plan={selectedPlan} onClose={() => setShowPaymentPage(false)} onPaymentSuccess={handlePaymentSuccess} userData={userData} session={session} />}
+      {showPaymentPage && <PaymentPage plan={selectedPlan} onClose={() => setShowPaymentPage(false)} onPaymentSuccess={handlePaymentSuccess} />}
       {proModal?.type === 'feature' && (
         <ProFeatureModal 
             title={proModal.title || 'Recurso PRO'}

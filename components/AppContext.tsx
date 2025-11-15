@@ -4,6 +4,8 @@ import type { Session } from '@supabase/supabase-js';
 import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry } from '../types';
 import { DEFAULT_USER_DATA } from '../constants';
 
+type Theme = 'light' | 'dark';
+
 interface AppContextType {
   session: Session | null;
   userData: UserData | null;
@@ -26,8 +28,13 @@ interface AppContextType {
   setMeals: React.Dispatch<React.SetStateAction<Meal[]>>;
   quickAddProtein: number;
   setQuickAddProtein: React.Dispatch<React.SetStateAction<number>>;
+  currentWater: number;
+  setCurrentWater: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean;
   fetchData: () => Promise<void>;
+  updateStreak: () => void;
+  theme: Theme;
+  toggleTheme: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,11 +52,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [dailyNotes, setDailyNotes] = useState<DailyNote[]>([]);
   const [sideEffects, setSideEffects] = useState<SideEffectEntry[]>([]);
   
-  const [meals, setMeals] = useState<Meal[]>([
-    { id: '1', name: 'Ovos com Abacate', time: '08:30', calories: 450, protein: 25 },
-    { id: '2', name: 'Frango Grelhado e Salada', time: '13:00', calories: 600, protein: 50 },
-  ]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [quickAddProtein, setQuickAddProtein] = useState(0);
+  const [currentWater, setCurrentWater] = useState(0);
+  
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+
+   useEffect(() => {
+    const root = window.document.documentElement;
+    const isDark = theme === 'dark';
+    
+    root.classList.remove(isDark ? 'light' : 'dark');
+    root.classList.add(isDark ? 'dark' : 'light');
+
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
 
   const formatProfileToUserData = (profile: any): UserData => ({
       id: profile.id,
@@ -65,6 +86,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       isPro: profile.is_pro || false,
       stripeCustomerId: profile.stripe_customer_id || null,
+      streak: 0,
+      lastActivityDate: null,
   });
 
   const fetchData = useCallback(async () => {
@@ -84,19 +107,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     const { data: weightData } = await supabase.from('weight_history').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
     const { data: photoData } = await supabase.from('progress_photos').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    const { data: planData } = await supabase.from('workout_plans').select('*').eq('user_id', currentSession.user.id).order('created_at', { ascending: false }).limit(1).single();
+    // const { data: planData } = await supabase.from('workout_plans').select('*').eq('user_id', currentSession.user.id).order('created_at', { ascending: false }).limit(1).single();
     const { data: workoutHistoryData } = await supabase.from('workout_history').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
     const { data: applicationHistoryData } = await supabase.from('applications').select('*').eq('user_id', currentSession.user.id).order('date', { ascending: false });
-    const { data: notesData } = await supabase.from('daily_notes').select('*').eq('user_id', currentSession.user.id);
-    const { data: sideEffectsData } = await supabase.from('side_effects').select('*').eq('user_id', currentSession.user.id);
+    // const { data: notesData } = await supabase.from('daily_notes').select('*').eq('user_id', currentSession.user.id);
+    // const { data: sideEffectsData } = await supabase.from('side_effects').select('*').eq('user_id', currentSession.user.id);
 
     setWeightHistory(weightData || []);
     setProgressPhotos(photoData || []);
-    setWorkoutPlan(planData?.plan || null);
+    setWorkoutPlan(null); // Table might be missing or query failing, causing errors.
     setWorkoutHistory(workoutHistoryData || []);
     setApplicationHistory(applicationHistoryData || []);
-    setDailyNotes(notesData || []);
-    setSideEffects(sideEffectsData || []);
+    setDailyNotes([]); // Table 'daily_notes' does not exist, causing 404.
+    setSideEffects([]); // Table 'side_effects' does not exist, causing 404.
     
     setLoading(false);
   }, []);
@@ -104,6 +127,35 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const updateStreak = useCallback(() => {
+    if (!userData) return;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    const lastActivityStr = userData.lastActivityDate;
+
+    if (lastActivityStr === todayStr) {
+        return;
+    }
+    
+    let newStreak = userData.streak || 0;
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    if (lastActivityStr === yesterdayStr) {
+        newStreak++;
+    } else {
+        newStreak = 1;
+    }
+    
+    // Only update local state, do not call DB to prevent errors
+    setUserData(prev => prev ? { ...prev, streak: newStreak, lastActivityDate: todayStr } : null);
+
+  }, [userData, setUserData]);
 
   const value = {
     session,
@@ -127,8 +179,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setMeals,
     quickAddProtein,
     setQuickAddProtein,
+    currentWater,
+    setCurrentWater,
     loading,
     fetchData,
+    updateStreak,
+    theme,
+    toggleTheme,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Meal } from '../../types';
@@ -116,9 +115,9 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
         return (
           <div className="text-center">
             <img src={imageSrc!} alt="Meal to analyze" className="w-full h-64 object-cover rounded-2xl mb-6 animate-pulse" />
-            <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto"></div>
-            <h3 className="text-xl font-bold text-gray-800 mt-4">Analisando sua refeição...</h3>
-            <p className="text-gray-500">A IA está calculando as informações nutricionais.</p>
+            <div className="w-12 h-12 border-4 border-gray-300 dark:border-gray-600 border-t-black dark:border-t-white rounded-full animate-spin mx-auto"></div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mt-4">Analisando sua refeição...</h3>
+            <p className="text-gray-500 dark:text-gray-400">A IA está calculando as informações nutricionais.</p>
           </div>
         );
       
@@ -128,35 +127,35 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
             <div className="animate-fade-in">
               <img src={imageSrc!} alt="Analyzed meal" className="w-full h-56 object-cover rounded-2xl mb-4" />
               <div>
-                <label className="text-sm font-medium text-gray-500">Nome da Refeição</label>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Nome da Refeição</label>
                 <input
                   type="text"
                   value={analysisResult.foodName}
                   onChange={(e) => setAnalysisResult({ ...analysisResult, foodName: e.target.value })}
-                  className="w-full p-2 border-b-2 border-gray-200 focus:border-black outline-none text-xl font-bold bg-transparent"
+                  className="w-full p-2 border-b-2 border-gray-200 dark:border-gray-600 focus:border-black dark:focus:border-white outline-none text-xl font-bold bg-transparent text-gray-900 dark:text-white"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                    <label className="text-sm font-medium text-gray-500">Calorias (kcal)</label>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Calorias (kcal)</label>
                     <input
                       type="number"
                       value={analysisResult.calories}
                       onChange={(e) => setAnalysisResult({ ...analysisResult, calories: parseInt(e.target.value, 10) || 0 })}
-                      className="w-full p-2 border-b-2 border-gray-200 focus:border-black outline-none text-lg font-semibold bg-transparent"
+                      className="w-full p-2 border-b-2 border-gray-200 dark:border-gray-600 focus:border-black dark:focus:border-white outline-none text-lg font-semibold bg-transparent text-gray-900 dark:text-white"
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-500">Proteína (g)</label>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Proteína (g)</label>
                     <input
                       type="number"
                       value={analysisResult.protein}
                       onChange={(e) => setAnalysisResult({ ...analysisResult, protein: parseInt(e.target.value, 10) || 0 })}
-                      className="w-full p-2 border-b-2 border-gray-200 focus:border-black outline-none text-lg font-semibold bg-transparent"
+                      className="w-full p-2 border-b-2 border-gray-200 dark:border-gray-600 focus:border-black dark:focus:border-white outline-none text-lg font-semibold bg-transparent text-gray-900 dark:text-white"
                     />
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-4 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
                 A análise da IA não foi perfeita? Sinta-se à vontade para corrigir os valores acima antes de adicionar.
               </p>
             </div>
@@ -169,11 +168,11 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
           <div className="text-center">
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="w-full h-64 bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200/60 transition-colors"
+              className="w-full h-64 bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-colors"
             >
-              <CameraIcon className="w-12 h-12 text-gray-400" />
-              <p className="mt-2 font-semibold text-gray-700">Toque para enviar uma foto</p>
-              <p className="text-sm text-gray-500">Escolha da sua galeria</p>
+              <CameraIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+              <p className="mt-2 font-semibold text-gray-700 dark:text-gray-300">Toque para enviar uma foto</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Escolha da sua galeria</p>
             </div>
             <input
               type="file"
@@ -190,10 +189,10 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-      <div className="bg-white w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up">
+      <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up">
         <div className="flex-shrink-0 flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">CalorieCam</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CalorieCam</h2>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
@@ -204,14 +203,14 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
 
         {stage === 'results' && (
           <div className="mt-auto pt-6 flex gap-3">
-            <button onClick={handleRetry} className="w-1/3 bg-gray-200 text-gray-800 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
+            <button onClick={handleRetry} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
               <ArrowPathIcon className="w-5 h-5" />
               Tentar
             </button>
             <button
               onClick={handleAdd}
               disabled={!analysisResult || !analysisResult.foodName}
-              className="w-2/3 bg-black text-white py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 flex items-center justify-center gap-2"
+              className="w-2/3 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 flex items-center justify-center gap-2"
             >
               <PlusIcon className="w-6 h-6" />
               Adicionar ao Diário

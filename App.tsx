@@ -11,7 +11,7 @@ import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
 const App: React.FC = () => {
   if (!supabase) {
     return (
-      <div className="min-h-screen bg-white max-w-md mx-auto shadow-lg">
+      <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
         <SupabaseSetupMessage />
       </div>
     );
@@ -39,6 +39,8 @@ const App: React.FC = () => {
       goals: profile.goals,
       isPro: profile.is_pro,
       stripeCustomerId: profile.stripe_customer_id,
+      streak: 0, // Always start streak at 0 from DB
+      lastActivityDate: null, // Always start lastActivityDate as null from DB
     };
   };
   
@@ -95,10 +97,8 @@ const App: React.FC = () => {
       target_weight: data.targetWeight,
       activity_level: data.activityLevel,
       medication: data.medication,
-      medication_reminder: data.medicationReminder,
       goals: data.goals,
       is_pro: data.isPro,
-      updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
@@ -121,11 +121,11 @@ const App: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+    return <div className="h-screen flex items-center justify-center text-gray-800 dark:text-gray-200">Carregando...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-white max-w-md mx-auto shadow-lg">
+    <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
       <Routes>
         <Route path="/auth" element={session ? <Navigate to="/" /> : <Auth />} />
         <Route 

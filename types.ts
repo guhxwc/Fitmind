@@ -125,6 +125,8 @@ export interface UserData {
   };
   isPro: boolean;
   stripeCustomerId?: string | null;
+  streak: number;
+  lastActivityDate: string | null;
 }
 
 export interface Medication {

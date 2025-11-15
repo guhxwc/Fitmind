@@ -1,109 +1,102 @@
 import React, { useState } from 'react';
 import type { Meal } from '../../types';
-import { FlameIcon, LeafIcon, PlusIcon, UtensilsIcon } from '../core/Icons';
+import { PlusIcon } from '../core/Icons';
 
 interface ManualMealModalProps {
   onClose: () => void;
   onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void;
 }
 
-const InputRow: React.FC<{
-    icon: React.ReactNode;
-    label: string;
-    value: string | number;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    unit?: string;
-    placeholder: string;
-    type?: string;
-    inputMode?: 'text' | 'decimal' | 'numeric';
-    autoFocus?: boolean;
-}> = ({ icon, label, value, onChange, unit, placeholder, type = 'text', inputMode = 'text', autoFocus = false }) => (
-    <div className="bg-gray-100/60 p-4 rounded-xl">
-        <label className="text-sm font-medium text-gray-500 flex items-center gap-2">{icon}{label}</label>
+const InputField: React.FC<{
+  label: string;
+  type: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  unit?: string;
+  placeholder?: string;
+}> = ({ label, type, value, onChange, unit, placeholder }) => (
+    <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
         <div className="relative mt-1">
             <input
                 type={type}
-                inputMode={inputMode}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                autoFocus={autoFocus}
-                className="w-full bg-transparent text-2xl font-bold text-gray-900 focus:outline-none pr-12"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
-            {unit && <span className="absolute inset-y-0 right-0 flex items-center text-lg font-medium text-gray-400 pointer-events-none">{unit}</span>}
+            {unit && <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 dark:text-gray-400">{unit}</span>}
         </div>
     </div>
 );
 
 export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAddMeal }) => {
   const [name, setName] = useState('');
-  const [calories, setCalories] = useState<string>('');
-  const [protein, setProtein] = useState<string>('');
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
 
-  const handleAddClick = () => {
-    const numCalories = parseInt(calories, 10);
-    const numProtein = parseInt(protein, 10);
-    if (name.trim() && !isNaN(numCalories) && !isNaN(numProtein) && numCalories > 0 && numProtein >= 0) {
-        onAddMeal({
-            name: name.trim(),
-            calories: numCalories,
-            protein: numProtein
-        });
-        onClose();
+  const handleSave = () => {
+    const caloriesNum = parseInt(calories, 10);
+    const proteinNum = parseInt(protein, 10);
+    
+    if (name.trim() && !isNaN(caloriesNum) && !isNaN(proteinNum) && caloriesNum > 0 && proteinNum >= 0) {
+      onAddMeal({
+        name: name.trim(),
+        calories: caloriesNum,
+        protein: proteinNum,
+      });
+      onClose();
     }
-  }
+  };
 
-  const isFormValid = name.trim() !== '' && calories !== '' && protein !== '' && parseInt(calories, 10) > 0 && parseInt(protein, 10) >= 0;
+  const canSave = name.trim() !== '' && calories !== '' && protein !== '';
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-      <div className="bg-white w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up">
-        <div className="flex-shrink-0 flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Registrar Refeição</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <div className="bg-white dark:bg-black w-full max-w-md h-auto rounded-t-3xl p-6 flex flex-col animate-slide-up">
+        <div className="flex-shrink-0 flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Registrar Refeição</h2>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
 
         <div className="flex-grow overflow-y-auto space-y-4">
-            <InputRow
-                icon={<UtensilsIcon className="w-5 h-5 text-gray-500"/>}
+            <InputField 
                 label="Nome da Refeição"
+                type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Salada com frango"
-                autoFocus={true}
+                placeholder="Ex: Frango com batata doce"
             />
-            <InputRow
-                icon={<FlameIcon className="w-5 h-5 text-orange-500" />}
-                label="Calorias"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value.replace(/\D/g,''))}
-                unit="kcal"
-                placeholder="0"
-                type="text"
-                inputMode="numeric"
-            />
-            <InputRow
-                icon={<LeafIcon className="w-5 h-5 text-green-500" />}
-                label="Proteína"
-                value={protein}
-                onChange={(e) => setProtein(e.target.value.replace(/\D/g,''))}
-                unit="g"
-                placeholder="0"
-                type="text"
-                inputMode="numeric"
-            />
+             <div className="grid grid-cols-2 gap-4">
+                <InputField 
+                    label="Calorias"
+                    type="number"
+                    value={calories}
+                    onChange={(e) => setCalories(e.target.value)}
+                    unit="kcal"
+                    placeholder="500"
+                />
+                 <InputField 
+                    label="Proteína"
+                    type="number"
+                    value={protein}
+                    onChange={(e) => setProtein(e.target.value)}
+                    unit="g"
+                    placeholder="40"
+                />
+            </div>
         </div>
-
+        
         <div className="mt-auto pt-6">
-            <button
-              onClick={handleAddClick}
-              disabled={!isFormValid}
-              className="w-full bg-black text-white py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 flex items-center justify-center gap-2"
+            <button 
+                onClick={handleSave} 
+                disabled={!canSave}
+                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 flex items-center justify-center gap-2"
             >
-              <PlusIcon className="w-6 h-6" />
-              Adicionar Refeição
+                <PlusIcon className="w-6 h-6" />
+                Adicionar Refeição
             </button>
         </div>
       </div>

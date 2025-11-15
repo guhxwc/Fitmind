@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -148,39 +147,39 @@ export const Auth: React.FC = () => {
   const renderLoginOrSignupView = (isSignupView: boolean) => {
     const handleSubmit = isSignupView ? handleSignUp : handleLogin;
     return (
-        <div className="h-screen flex flex-col p-8 bg-white">
+        <div className="h-screen flex flex-col p-8 bg-white dark:bg-black">
           <div className="pt-4">
-            <button onClick={() => { setView('landing'); setError(null); }} className="text-gray-500 hover:text-gray-900">
+            <button onClick={() => { setView('landing'); setError(null); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
           </div>
 
           <div className="flex-grow flex flex-col justify-center">
               <div className="text-left mb-10">
-                <h1 className="text-3xl font-bold text-gray-900">{isSignupView ? 'Criar sua conta' : 'Entrar na sua conta'}</h1>
-                <p className="text-gray-500 mt-2">Use seu email e senha para continuar.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{isSignupView ? 'Criar sua conta' : 'Entrar na sua conta'}</h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">Use seu email e senha para continuar.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                    className="mt-1 block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="voce@email.com"
                     required
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Senha</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Senha</label>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                    className="mt-1 block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="••••••••"
                     required
                   />
@@ -192,7 +191,7 @@ export const Auth: React.FC = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-400"
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black dark:focus:ring-white disabled:bg-gray-400 dark:disabled:bg-gray-600"
                   >
                     {loading ? 'Aguarde...' : (isSignupView ? 'Criar Conta' : 'Entrar')}
                   </button>
@@ -210,9 +209,9 @@ export const Auth: React.FC = () => {
       return renderLoginOrSignupView(true);
     case 'enter_token':
        return (
-        <div className="h-screen flex flex-col justify-center p-8 bg-white">
-          <h1 className="text-3xl font-bold text-gray-900">Verifique seu email</h1>
-          <p className="text-gray-500 mt-2">{message}</p>
+        <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Verifique seu email</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{message}</p>
 
           <form onSubmit={handleVerifyCode} className="mt-8">
               <div className="flex justify-center gap-2" onPaste={handlePaste}>
@@ -225,7 +224,7 @@ export const Auth: React.FC = () => {
                           value={digit}
                           onChange={(e) => handleTokenChange(e, index)}
                           onKeyDown={(e) => handleKeyDown(e, index)}
-                          className="w-12 h-14 text-center text-2xl font-bold bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-12 h-14 text-center text-2xl font-bold bg-gray-100 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
                       />
                   ))}
               </div>
@@ -236,7 +235,7 @@ export const Auth: React.FC = () => {
                   <button
                       type="submit"
                       disabled={loading || token.join('').length !== 6}
-                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black hover:bg-gray-800 focus:outline-none disabled:bg-gray-400"
+                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none disabled:bg-gray-400 dark:disabled:bg-gray-600"
                   >
                       {loading ? 'Verificando...' : 'Confirmar Código'}
                   </button>
@@ -244,7 +243,7 @@ export const Auth: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center">
-              <button onClick={() => { setView('signup'); setError(null); }} className="font-medium text-gray-600 hover:text-black">
+              <button onClick={() => { setView('signup'); setError(null); }} className="font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
                   Usar outro email
               </button>
           </div>
@@ -253,20 +252,20 @@ export const Auth: React.FC = () => {
     case 'landing':
     default:
       return (
-        <div className="h-screen flex flex-col justify-center p-8 bg-white">
+        <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black">
           <div className="text-center mb-10">
-            <div className="w-20 h-20 bg-gray-900 rounded-3xl mb-4 flex items-center justify-center mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div className="w-20 h-20 bg-gray-900 dark:bg-gray-100 rounded-3xl mb-4 flex items-center justify-center mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Bem-vindo ao FitMind</h1>
-            <p className="text-gray-500 mt-2">Sua jornada de saúde começa aqui.</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Bem-vindo ao FitMind</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Sua jornada de saúde começa aqui.</p>
           </div>
 
           <div className="space-y-4">
             <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-gray-300 rounded-xl shadow-sm text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:bg-gray-200"
+                className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm text-lg font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none disabled:bg-gray-200 dark:disabled:bg-gray-700"
             >
               <GoogleIcon />
               Continuar com Google
@@ -275,16 +274,16 @@ export const Auth: React.FC = () => {
             <button
                 onClick={() => setView('login')}
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black hover:bg-gray-800 focus:outline-none disabled:bg-gray-400"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none disabled:bg-gray-400 dark:disabled:bg-gray-600"
             >
                 Entrar com Email
             </button>
           </div>
           
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
                 Não tem uma conta?{' '}
-                <button onClick={() => setView('signup')} className="font-semibold text-black hover:underline">
+                <button onClick={() => setView('signup')} className="font-semibold text-black dark:text-white hover:underline">
                     Cadastre-se
                 </button>
             </p>

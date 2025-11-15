@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 
 const CheckListItem: React.FC<{ text: string; done: boolean }> = ({ text, done }) => (
   <div className="flex items-center space-x-3 mb-4">
-    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${done ? 'bg-green-500' : 'border-2 border-gray-300'}`}>
+    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-500 ${done ? 'bg-green-500' : 'border-2 border-gray-300 dark:border-gray-600'}`}>
       {done && <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
     </div>
-    <span className={`text-lg ${done ? 'text-gray-800' : 'text-gray-400'}`}>{text}</span>
+    <span className={`text-lg font-medium transition-colors duration-500 ${done ? 'text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>{text}</span>
   </div>
 );
 
@@ -33,12 +32,12 @@ export const StepAnalyzing: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full items-center justify-center p-6 bg-white">
-      <div className="relative w-40 h-40 sm:w-48 sm:h-48 mb-12">
+    <div className="flex flex-col h-full items-center justify-center p-6 bg-white dark:bg-black">
+      <div className="relative w-48 h-48 mb-12">
         <svg className="w-full h-full" viewBox="0 0 100 100">
-          <circle className="text-gray-200" strokeWidth="8" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" />
+          <circle className="text-gray-200 dark:text-gray-700" strokeWidth="8" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" />
           <circle
-            className="text-black"
+            className="text-black dark:text-white"
             strokeWidth="8"
             strokeDasharray={2 * Math.PI * 42}
             strokeDashoffset={2 * Math.PI * 42 * (1 - progress / 100)}
@@ -48,14 +47,14 @@ export const StepAnalyzing: React.FC = () => {
             r="42"
             cx="50"
             cy="50"
-            style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+            style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 0.1s linear' }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-800">
+        <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-800 dark:text-gray-200">
           {progress}%
         </div>
       </div>
-      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8">Analisando seu perfil...</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">Analisando seu perfil...</h1>
       <div className="w-full max-w-xs">
         <CheckListItem text="Analisando perfil de saúde" done={checklist[0]} />
         <CheckListItem text="Calculando métricas" done={checklist[1]} />

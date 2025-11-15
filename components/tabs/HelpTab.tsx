@@ -9,7 +9,7 @@ interface Message {
 
 const UserMessage: React.FC<{ text: string }> = ({ text }) => (
     <div className="flex justify-end mb-4">
-        <div className="bg-black text-white rounded-2xl rounded-br-md py-2 px-4 max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
+        <div className="bg-black dark:bg-blue-600 text-white rounded-2xl rounded-br-md py-2 px-4 max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
             <p className="whitespace-pre-wrap">{text}</p>
         </div>
     </div>
@@ -36,7 +36,7 @@ const renderMarkdown = (text: string) => {
 
 const ModelMessage: React.FC<{ text: string }> = ({ text }) => (
     <div className="flex justify-start mb-4">
-        <div className="bg-gray-200 text-gray-900 rounded-2xl rounded-bl-md py-2 px-4 max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
+        <div className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-2xl rounded-bl-md py-2 px-4 max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
             <p className="whitespace-pre-wrap">{renderMarkdown(text)}</p>
         </div>
     </div>
@@ -44,11 +44,11 @@ const ModelMessage: React.FC<{ text: string }> = ({ text }) => (
 
 const TypingIndicator: React.FC = () => (
   <div className="flex justify-start mb-4">
-    <div className="bg-gray-200 rounded-2xl rounded-bl-md py-3 px-4 animate-fade-in">
+    <div className="bg-gray-200 dark:bg-gray-800 rounded-2xl rounded-bl-md py-3 px-4 animate-fade-in">
       <div className="flex items-center space-x-1">
-        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+        <div className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"></div>
+        <div className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+        <div className="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
       </div>
     </div>
   </div>
@@ -105,13 +105,13 @@ export const HelpTab: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-white">
-            <header className="flex-shrink-0 flex items-center gap-4 p-4 border-b border-gray-200">
-                <button onClick={() => navigate(-1)} className="text-gray-600 p-2 -ml-2 rounded-full hover:bg-gray-100">
+        <div className="flex flex-col h-screen bg-white dark:bg-black">
+            <header className="flex-shrink-0 flex items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-800">
+                <button onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
                 <div className="text-center flex-grow">
-                    <h1 className="text-xl font-bold text-gray-900">Assistente FitMind</h1>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Assistente FitMind</h1>
                     <p className="text-sm text-green-500 font-semibold">Online</p>
                 </div>
                 <div className="w-10"></div>
@@ -124,17 +124,17 @@ export const HelpTab: React.FC = () => {
                 {isLoading && <TypingIndicator />}
             </main>
 
-            <footer className="flex-shrink-0 p-4 bg-gray-50 border-t border-gray-200">
+            <footer className="flex-shrink-0 p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Digite sua dúvida..."
-                        className="flex-grow w-full px-4 py-3 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-black"
+                        className="flex-grow w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-gray-900 dark:text-white"
                         disabled={isLoading}
                     />
-                    <button type="submit" disabled={isLoading || !input.trim()} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 disabled:bg-gray-300">
+                    <button type="submit" disabled={isLoading || !input.trim()} className="bg-black dark:bg-white text-white dark:text-black rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 disabled:bg-gray-300 dark:disabled:bg-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                 </form>

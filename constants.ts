@@ -1,4 +1,3 @@
-
 import type { Medication, UserData } from './types';
 
 export const MEDICATIONS: Medication[] = [
@@ -34,4 +33,6 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
     calories: 2000,
   },
   isPro: false,
+  streak: 0,
+  lastActivityDate: null,
 };

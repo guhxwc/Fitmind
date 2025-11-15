@@ -1,4 +1,3 @@
-
 export type MedicationName = 'Mounjaro' | 'Ozempic' | 'Wegovy' | 'Saxenda' | 'Other';
 export type Gender = 'Masculino' | 'Feminino' | 'Outro' | 'Prefiro não dizer';
 export type ActivityLevel = 'Sedentário' | 'Levemente ativo' | 'Moderadamente ativo' | 'Ativo' | 'Muito ativo';
@@ -20,10 +19,41 @@ export interface WeightEntry {
   weight: number; // in kg
 }
 
+export interface ApplicationEntry {
+  id: number;
+  user_id: string;
+  date: string; // ISO string
+  medication: MedicationName;
+  dose: string;
+}
+
 export interface ProgressPhoto {
   id: number; // unique id from db
   date: string; // ISO string format for dates
   photo_url: string; // URL from Supabase Storage
+}
+
+export type SideEffectName = 'Náusea' | 'Dor de cabeça' | 'Fadiga' | 'Apetite reduzido' | 'Tontura' | 'Constipação';
+export type SideEffectIntensity = 'Leve' | 'Moderado' | 'Severo';
+
+export interface SideEffect {
+  name: SideEffectName;
+  intensity: SideEffectIntensity;
+}
+
+export interface SideEffectEntry {
+  id?: number;
+  user_id: string;
+  date: string; // YYYY-MM-DD
+  effects: SideEffect[];
+  notes?: string;
+}
+
+export interface DailyNote {
+  id?: number;
+  user_id: string;
+  date: string; // ISO string YYYY-MM-DD
+  content: string;
 }
 
 export interface Exercise {
@@ -84,12 +114,17 @@ export interface UserData {
     dose: string;
     nextApplication: Weekday;
   };
+  medicationReminder?: {
+    enabled: boolean;
+    time: string; // "HH:mm"
+  };
   goals: {
     water: number; // in L
     protein: number; // in g
     calories: number; // in kcal
   };
   isPro: boolean;
+  stripeCustomerId?: string | null;
 }
 
 export interface Medication {

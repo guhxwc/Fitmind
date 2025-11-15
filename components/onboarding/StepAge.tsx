@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
@@ -32,9 +33,8 @@ export const StepAge: React.FC<StepAgeProps> = ({ onNext, onBack, onSelect, valu
             type="number"
             value={age === 0 ? '' : age}
             onChange={(e) => setAge(parseInt(e.target.value, 10) || 0)}
-            className="w-full h-24 px-4 text-center text-5xl font-bold bg-gray-100/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
+            className="w-full py-8 px-4 text-center text-4xl sm:text-5xl font-bold text-gray-900 bg-gray-100/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
             placeholder="30"
-            autoFocus
           />
           <span className="absolute bottom-4 right-5 text-lg text-gray-400 pointer-events-none">anos</span>
         </div>

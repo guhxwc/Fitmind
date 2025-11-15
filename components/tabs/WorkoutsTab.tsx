@@ -2,17 +2,13 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { GoogleGenAI, Type } from "@google/genai";
-import type { UserData, WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback } from '../../types';
+import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback } from '../../types';
 import { DumbbellIcon } from '../core/Icons';
 import { WorkoutQuiz } from './WorkoutQuiz';
 import { EXERCISE_DATABASE } from '../../workoutData';
+import { useAppContext } from '../AppContext';
 
 interface WorkoutsTabProps {
-  userData: UserData;
-  plan: WorkoutPlan | null;
-  setPlan: React.Dispatch<React.SetStateAction<WorkoutPlan | null>>;
-  history: WorkoutFeedback[];
-  setHistory: React.Dispatch<React.SetStateAction<WorkoutFeedback[]>>;
   onShowProModal: (type: 'feature' | 'engagement', title?: string) => void;
 }
 
@@ -155,12 +151,15 @@ const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => voi
     </button>
 );
 
-export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPlan, history, setHistory, onShowProModal }) => {
-    const [view, setView] = useState<'generate' | 'my_workouts' | 'history'>(plan ? 'my_workouts' : 'generate');
+export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
+    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory } = useAppContext();
+    const [view, setView] = useState<'generate' | 'my_workouts' | 'history'>(workoutPlan ? 'my_workouts' : 'generate');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeWorkoutDay, setActiveWorkoutDay] = useState<number | null>(null);
+
+    if (!userData) return null;
 
     const generateWorkoutPlan = async (answers: WorkoutQuizAnswers) => {
         setIsLoading(true);
@@ -198,7 +197,7 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
             };
             
             const exerciseList = JSON.stringify(EXERCISE_DATABASE, null, 2);
-            const userHistory = JSON.stringify(history.slice(0, 5), null, 2);
+            const userHistory = JSON.stringify(workoutHistory.slice(0, 5), null, 2);
 
             const prompt = `
                 Você é um personal trainer especialista em criar treinos para usuários de medicamentos GLP-1.
@@ -258,7 +257,7 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
 
             if (dbError) throw dbError;
 
-            setPlan(newPlan);
+            setWorkoutPlan(newPlan);
             setView('my_workouts');
         } catch (e) {
             console.error(e);
@@ -276,7 +275,7 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
     const handleFeedback = async (rating: WorkoutFeedback['rating']) => {
         if (activeWorkoutDay === null) return;
         
-        const newFeedback: Omit<WorkoutFeedback, 'id'> = {
+        const newFeedback = {
             user_id: userData.id,
             date: new Date().toISOString(),
             workoutDayIndex: activeWorkoutDay,
@@ -286,9 +285,9 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
         const { data, error } = await supabase.from('workout_history').insert(newFeedback).select();
         
         if (data) {
-            setHistory(prev => [data[0], ...prev]);
+            setWorkoutHistory(prev => [data[0], ...prev]);
             setActiveWorkoutDay(null); // Return to plan view
-            if (history.length + 1 === 1) { // First workout completed
+            if (workoutHistory.length + 1 === 1) { // First workout completed
                 onShowProModal('engagement');
             }
         }
@@ -325,8 +324,8 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
             );
         }
         
-        if (activeWorkoutDay !== null && plan) {
-            const dayWorkout = plan[activeWorkoutDay];
+        if (activeWorkoutDay !== null && workoutPlan) {
+            const dayWorkout = workoutPlan[activeWorkoutDay];
             return <DailyWorkoutView dayWorkout={dayWorkout} onComplete={handleFeedback} onBack={() => setActiveWorkoutDay(null)} />;
         }
         
@@ -334,8 +333,8 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
             case 'generate':
                 return <WorkoutIntro onGenerate={handleGenerateClick} />;
             case 'my_workouts':
-                if (plan) {
-                    return <WorkoutPlanView plan={plan} onStartWorkout={setActiveWorkoutDay} />;
+                if (workoutPlan) {
+                    return <WorkoutPlanView plan={workoutPlan} onStartWorkout={setActiveWorkoutDay} />;
                 }
                 return (
                     <div className="text-center p-8 bg-gray-50 rounded-2xl mt-6">
@@ -345,16 +344,16 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ userData, plan, setPla
                     </div>
                 );
             case 'history':
-                return <WorkoutHistoryView history={history} plan={plan} />;
+                return <WorkoutHistoryView history={workoutHistory} plan={workoutPlan} />;
             default:
                 return null;
         }
     };
 
     return (
-        <div className="p-6 space-y-6 bg-white min-h-screen">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white min-h-screen">
             <header>
-                <h1 className="text-4xl font-bold text-gray-900">Treinos</h1>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Treinos</h1>
                 <p className="text-gray-500">Seu plano de exercícios</p>
             </header>
             

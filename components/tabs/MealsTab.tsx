@@ -1,9 +1,11 @@
-
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { UserData, Meal, DietQuizAnswers, GeneratedDietPlan } from '../../types';
 import { FlameIcon, CameraIcon, ClipboardListIcon } from '../core/Icons';
 import { DietQuiz } from './DietQuiz';
+import { CalorieCamModal } from './CalorieCamModal';
+import { useAppContext } from '../AppContext';
+import { ManualMealModal } from './ManualMealModal';
 
 
 const MealItem: React.FC<{ meal: Meal }> = ({ meal }) => (
@@ -34,7 +36,8 @@ const ProgressIndicator: React.FC<{ label: string; value: number; goal: number; 
     );
 };
 
-const DietPlanView: React.FC<{ userData: UserData; onShowProModal: (type: 'feature' | 'engagement', title?: string) => void; }> = ({ userData, onShowProModal }) => {
+const DietPlanView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', title?: string) => void; }> = ({ onShowProModal }) => {
+    const { userData } = useAppContext();
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [dietPlan, setDietPlan] = useState<GeneratedDietPlan | null>(null);
     const [savedDiets, setSavedDiets] = useState<GeneratedDietPlan[]>([]);
@@ -43,6 +46,7 @@ const DietPlanView: React.FC<{ userData: UserData; onShowProModal: (type: 'featu
     const [lastAnswers, setLastAnswers] = useState<DietQuizAnswers | null>(null);
 
     const generateDiet = async (answers: DietQuizAnswers) => {
+        if (!userData) return;
         setIsLoading(true);
         setError(null);
         setDietPlan(null);
@@ -128,7 +132,7 @@ const DietPlanView: React.FC<{ userData: UserData; onShowProModal: (type: 'featu
     };
 
     const handleGenerateClick = () => {
-        if (userData.isPro) {
+        if (userData?.isPro) {
             setIsQuizOpen(true);
         } else {
             onShowProModal('feature', 'Plano de Dieta com IA');
@@ -234,22 +238,23 @@ const DietPlanView: React.FC<{ userData: UserData; onShowProModal: (type: 'featu
                  </div>
             )}
 
-            {isQuizOpen && <DietQuiz userData={userData} onComplete={handleQuizComplete} onClose={() => setIsQuizOpen(false)} />}
+            {isQuizOpen && <DietQuiz onComplete={handleQuizComplete} onClose={() => setIsQuizOpen(false)} />}
         </div>
     );
 };
 
 interface MealsTabProps {
-  userData: UserData;
-  meals: Meal[];
-  setMeals: React.Dispatch<React.SetStateAction<Meal[]>>;
-  quickAddProtein: number;
   onShowProModal: (type: 'feature' | 'engagement', title?: string) => void;
 }
 
-export const MealsTab: React.FC<MealsTabProps> = ({ userData, meals, setMeals, quickAddProtein, onShowProModal }) => {
+export const MealsTab: React.FC<MealsTabProps> = ({ onShowProModal }) => {
+  const { userData, meals, setMeals, quickAddProtein } = useAppContext();
   const [view, setView] = useState<'today' | 'plan'>('today');
+  const [isCalorieCamOpen, setIsCalorieCamOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   
+  if (!userData) return null;
+
   const totalCaloriesFromMeals = meals.reduce((sum, meal) => sum + meal.calories, 0);
   const totalProteinFromMeals = meals.reduce((sum, meal) => sum + meal.protein, 0);
 
@@ -260,16 +265,26 @@ export const MealsTab: React.FC<MealsTabProps> = ({ userData, meals, setMeals, q
 
   const handleCalorieCamClick = () => {
     if (userData.isPro) {
-        alert('Funcionalidade CalorieCam ativada!'); // Placeholder for actual functionality
+        setIsCalorieCamOpen(true);
     } else {
         onShowProModal('feature', 'CalorieCam');
     }
   };
 
+  const handleAddMeal = (newMealData: Omit<Meal, 'id' | 'time'>) => {
+    const newMeal: Meal = {
+        ...newMealData,
+        id: new Date().toISOString(),
+        name: newMealData.name,
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMeals(prevMeals => [...prevMeals, newMeal]);
+  };
+
   return (
-    <div className="p-6 space-y-6 bg-white min-h-screen">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white min-h-screen">
       <header>
-        <h1 className="text-4xl font-bold text-gray-900">Refeições</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Refeições</h1>
         <p className="text-gray-500">Seu diário alimentar</p>
       </header>
 
@@ -286,7 +301,7 @@ export const MealsTab: React.FC<MealsTabProps> = ({ userData, meals, setMeals, q
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <button className="bg-black text-white p-4 rounded-xl font-semibold text-center">
+                <button onClick={() => setIsManualModalOpen(true)} className="bg-black text-white p-4 rounded-xl font-semibold text-center">
                     Registrar Manual
                 </button>
                 <button onClick={handleCalorieCamClick} className="bg-gray-100 text-gray-800 p-4 rounded-xl font-semibold flex items-center justify-center space-x-2">
@@ -306,9 +321,21 @@ export const MealsTab: React.FC<MealsTabProps> = ({ userData, meals, setMeals, q
       )}
       
       {view === 'plan' && (
-        <DietPlanView userData={userData} onShowProModal={onShowProModal} />
+        <DietPlanView onShowProModal={onShowProModal} />
       )}
 
+      {isCalorieCamOpen && (
+        <CalorieCamModal
+            onClose={() => setIsCalorieCamOpen(false)}
+            onAddMeal={handleAddMeal}
+        />
+      )}
+      {isManualModalOpen && (
+        <ManualMealModal
+            onClose={() => setIsManualModalOpen(false)}
+            onAddMeal={handleAddMeal}
+        />
+      )}
     </div>
   );
 };

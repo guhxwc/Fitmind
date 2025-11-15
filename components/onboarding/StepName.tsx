@@ -33,9 +33,8 @@ export const StepName: React.FC<StepNameProps> = ({ onNext, onBack, onSelect, va
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full h-20 px-6 text-center text-4xl font-bold bg-gray-100/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
+            className="w-full py-5 px-6 text-center text-3xl sm:text-4xl font-bold text-gray-900 bg-gray-100/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
             placeholder="Seu nome"
-            autoFocus
           />
         </div>
       </div>

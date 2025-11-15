@@ -24,6 +24,10 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
     dose: '2,5 mg',
     nextApplication: 'Quarta-feira',
   },
+  medicationReminder: {
+    enabled: false,
+    time: '09:00',
+  },
   goals: {
     water: 2.8,
     protein: 126,

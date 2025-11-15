@@ -1,39 +1,48 @@
 
 import React from 'react';
-import { HomeIcon, UtensilsIcon, DumbbellIcon, ChartLineIcon, SettingsIcon } from './Icons';
+import { NavLink } from 'react-router-dom';
+import { HomeIcon, UtensilsIcon, DumbbellIcon, ChartLineIcon, SettingsIcon, SyringeIcon } from './Icons';
 
-interface BottomNavProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+interface NavItemProps {
+  to: string;
+  label: string;
+  icon: React.ReactNode;
 }
 
-const NavItem: React.FC<{ label: string; icon: React.ReactNode; isActive: boolean; onClick: () => void }> = ({ label, icon, isActive, onClick }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, label, icon }) => {
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center w-1/5 transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-400 hover:text-gray-600'}`}>
+    <NavLink 
+        to={to} 
+        className={({ isActive }) => 
+            `flex flex-col items-center justify-center flex-1 transition-colors duration-200 ${
+                isActive ? 'text-black' : 'text-gray-400 hover:text-gray-600'
+            }`
+        }
+    >
       {icon}
       <span className="text-xs mt-1">{label}</span>
-    </button>
+    </NavLink>
   );
 };
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
+export const BottomNav: React.FC = () => {
   const tabs = [
-    { id: 'summary', label: 'Resumo', icon: <HomeIcon /> },
-    { id: 'meals', label: 'Refeições', icon: <UtensilsIcon /> },
-    { id: 'workouts', label: 'Treinos', icon: <DumbbellIcon /> },
-    { id: 'progress', label: 'Progresso', icon: <ChartLineIcon /> },
-    { id: 'settings', label: 'Ajustes', icon: <SettingsIcon /> },
+    { to: '/', label: 'Resumo', icon: <HomeIcon /> },
+    { to: '/applications', label: 'Aplicações', icon: <SyringeIcon /> },
+    { to: '/meals', label: 'Refeições', icon: <UtensilsIcon /> },
+    { to: '/workouts', label: 'Treinos', icon: <DumbbellIcon /> },
+    { to: '/progress', label: 'Progresso', icon: <ChartLineIcon /> },
+    { to: '/settings', label: 'Ajustes', icon: <SettingsIcon /> },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 backdrop-blur-sm border-t border-gray-200 flex justify-around py-2">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 backdrop-blur-sm border-t border-gray-200 flex justify-around py-3">
       {tabs.map(tab => (
         <NavItem 
-          key={tab.id}
+          key={tab.to}
+          to={tab.to}
           label={tab.label}
           icon={tab.icon}
-          isActive={activeTab === tab.id}
-          onClick={() => setActiveTab(tab.id)}
         />
       ))}
     </nav>

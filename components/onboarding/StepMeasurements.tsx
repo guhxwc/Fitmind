@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
@@ -10,7 +11,7 @@ const InputBox: React.FC<{label: string, value: number, onChange: (value: number
                 type="number"
                 value={value === 0 ? '' : value}
                 onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-                className="w-full p-4 pr-14 text-xl font-semibold bg-gray-100/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
+                className="w-full p-4 pr-14 text-xl font-semibold text-gray-900 bg-gray-100/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black focus:shadow-md"
                 placeholder={placeholder}
                 autoFocus={autoFocus}
             />
@@ -47,8 +48,8 @@ export const StepMeasurements: React.FC<StepMeasurementsProps> = ({ onNext, onBa
         step={4}
         totalSteps={totalSteps}
       />
-      <div className="flex-grow flex flex-col items-center justify-center space-y-8">
-        <InputBox label="Altura" unit="cm" value={currentHeight} onChange={setCurrentHeight} placeholder="175" autoFocus/>
+      <div className="flex-grow flex flex-col items-center justify-center space-y-6">
+        <InputBox label="Altura" unit="cm" value={currentHeight} onChange={setCurrentHeight} placeholder="175" />
         <InputBox label="Peso" unit="kg" value={currentWeight} onChange={setCurrentWeight} placeholder="70" />
       </div>
       <OnboardingFooter onContinue={handleContinue} disabled={!currentHeight || !currentWeight} />

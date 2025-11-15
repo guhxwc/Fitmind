@@ -34,7 +34,7 @@ export const StepAnalyzing: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full items-center justify-center p-6 bg-white">
-      <div className="relative w-48 h-48 mb-12">
+      <div className="relative w-40 h-40 sm:w-48 sm:h-48 mb-12">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <circle className="text-gray-200" strokeWidth="8" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" />
           <circle
@@ -55,7 +55,7 @@ export const StepAnalyzing: React.FC = () => {
           {progress}%
         </div>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Analisando seu perfil...</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8">Analisando seu perfil...</h1>
       <div className="w-full max-w-xs">
         <CheckListItem text="Analisando perfil de saúde" done={checklist[0]} />
         <CheckListItem text="Calculando métricas" done={checklist[1]} />

@@ -1,15 +1,8 @@
 
 import React from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import type { UserData, Meal } from '../../types';
+import { useAppContext } from '../AppContext';
 import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon } from '../core/Icons';
-
-interface SummaryTabProps {
-  userData: UserData;
-  meals: Meal[];
-  quickAddProtein: number;
-  setQuickAddProtein: React.Dispatch<React.SetStateAction<number>>;
-}
 
 const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string | number; unit: string; progress?: number; color: string }> = ({ icon, title, value, unit, progress, color }) => {
   const progressWidth = progress ? `${progress}%` : '0%';
@@ -71,8 +64,11 @@ const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNod
 );
 
 
-export const SummaryTab: React.FC<SummaryTabProps> = ({ userData, meals, quickAddProtein, setQuickAddProtein }) => {
+export const SummaryTab: React.FC = () => {
+  const { userData, meals, quickAddProtein, setQuickAddProtein } = useAppContext();
   const [currentWater, setCurrentWater] = React.useState(1.2);
+
+  if (!userData) return null;
   
   const totalProteinFromMeals = meals.reduce((sum, meal) => sum + meal.protein, 0);
   const totalProtein = totalProteinFromMeals + quickAddProtein;
@@ -89,9 +85,9 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ userData, meals, quickAd
 
 
   return (
-    <div className="p-6 space-y-6 bg-white">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white">
       <header>
-        <h1 className="text-4xl font-bold text-gray-900">Resumo</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Resumo</h1>
         <p className="text-gray-500">Seu progresso de hoje</p>
       </header>
 
@@ -103,7 +99,6 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ userData, meals, quickAd
                     <p className="text-sm text-gray-500">Baseado em suas metas e perfil</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                    {/* FIX: Removed duplicate viewBox attribute from SVG element. */}
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 </div>
             </div>
@@ -146,10 +141,10 @@ export const SummaryTab: React.FC<SummaryTabProps> = ({ userData, meals, quickAd
       <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">Fontes médicas usadas no app</h2>
           <div className="space-y-2">
-            <a href="#" className="block text-blue-600 hover:underline">Eficácia e Riscos do GLP-1</a>
-            <a href="#" className="block text-blue-600 hover:underline">Futuro do Tratamento da Obesidade</a>
-            <a href="#" className="block text-blue-600 hover:underline">Medição de Gordura Corporal e IMC</a>
-            <a href="#" className="block text-blue-600 hover:underline">Pesquisas sobre Medicamentos GLP-1</a>
+            <a href="https://www.cnnbrasil.com.br/saude/remedios-para-emagrecer-ozempic-wegovy-e-mounjaro-entenda-semelhancas-e-diferencas/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:underline">Eficácia e Riscos do GLP-1</a>
+            <a href="https://saude.abril.com.br/medicina/o-futuro-do-tratamento-da-obesidade/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:underline">Futuro do Tratamento da Obesidade</a>
+            <a href="https://abeso.org.br/obesidade-e-sindrome-metabolica/calculadora-imc/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:underline">Medição de Gordura Corporal e IMC</a>
+            <a href="https://saude.abril.com.br/medicina/novos-remedios-para-obesidade-o-que-vem-por-ai/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:underline">Pesquisas sobre Medicamentos GLP-1</a>
           </div>
       </section>
     </div>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { UserData, DietQuizAnswers } from '../../types';
+import { useAppContext } from '../AppContext';
 
 interface DietQuizProps {
-  userData: UserData;
   onComplete: (answers: DietQuizAnswers) => void;
   onClose: () => void;
 }
@@ -32,7 +32,8 @@ const QuizOption: React.FC<{onClick: () => void, isSelected: boolean, children: 
     </button>
 )
 
-export const DietQuiz: React.FC<DietQuizProps> = ({ userData, onComplete, onClose }) => {
+export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
+  const { userData } = useAppContext();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<DietQuizAnswers>({
     appetite: 'médio',
@@ -41,7 +42,7 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ userData, onComplete, onClos
     nightHunger: false,
     restrictions: [],
     pace: 'normal',
-    trains: userData.activityLevel !== 'Sedentário',
+    trains: userData?.activityLevel !== 'Sedentário',
   });
 
   const updateAnswer = (key: keyof DietQuizAnswers, value: any) => {

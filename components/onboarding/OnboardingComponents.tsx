@@ -32,7 +32,7 @@ export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({ title, subti
           <div className="bg-black h-1.5 rounded-full" style={{ width: `${progress}%` }}></div>
         </div>
       </div>
-      <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
       <p className="text-gray-500 mt-2">{subtitle}</p>
     </div>
   );
@@ -68,7 +68,7 @@ export const OptionButton: React.FC<OptionButtonProps> = ({children, onClick, is
     <button
         onClick={onClick}
         className={`w-full text-left p-4 my-2 rounded-xl border-2 transition-all duration-200 ${
-            isSelected ? 'bg-black text-white border-black' : 'bg-gray-100 border-gray-100 hover:border-gray-300'
+            isSelected ? 'bg-black text-white border-black' : 'bg-gray-100 text-gray-900 border-gray-100 hover:border-gray-300'
         }`}
     >
         <span className="text-lg font-medium">{children}</span>

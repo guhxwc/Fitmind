@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
@@ -20,9 +20,10 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [appState, setAppState] = useState<'auth' | 'onboarding' | 'main_app'>('auth');
+  const [profileExists, setProfileExists] = useState<boolean | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Helper function to map Supabase snake_case data to app's camelCase UserData
   const formatProfileToUserData = (profile: any): UserData => {
     return {
       id: profile.id,
@@ -34,45 +35,44 @@ const App: React.FC = () => {
       targetWeight: profile.target_weight,
       activityLevel: profile.activity_level,
       medication: profile.medication,
+      medicationReminder: profile.medication_reminder,
       goals: profile.goals,
       isPro: profile.is_pro,
+      stripeCustomerId: profile.stripe_customer_id,
     };
   };
+  
+  const checkUserProfile = async (user: Session['user']) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('height')
+      .eq('id', user.id)
+      .single();
+    
+    const exists = !!(profile && profile.height);
+    setProfileExists(exists);
+    return exists;
+  }
 
   useEffect(() => {
-    const getSessionAndProfile = async () => {
+    const getSession = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
-
       if (currentSession) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single();
-
-        if (profile && profile.name) { // Onboarding completo se o nome existir
-          setUserData(formatProfileToUserData(profile));
-          setAppState('main_app');
-        } else {
-          setAppState('onboarding');
-        }
-      } else {
-        setAppState('auth');
+        await checkUserProfile(currentSession.user);
       }
       setLoading(false);
     };
 
-    getSessionAndProfile();
+    getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-      if (!newSession) {
+       if (newSession) {
+        checkUserProfile(newSession.user);
+      } else {
+        setProfileExists(null);
         setUserData(null);
-        setAppState('auth');
-      } else if (newSession && !userData) {
-          // If a new session is created (user logs in), re-check profile
-          getSessionAndProfile();
       }
     });
 
@@ -85,7 +85,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Map camelCase from app state to snake_case for Supabase DB
     const profilePayload = {
       id: session.user.id,
       name: data.name,
@@ -96,51 +95,48 @@ const App: React.FC = () => {
       target_weight: data.targetWeight,
       activity_level: data.activityLevel,
       medication: data.medication,
+      medication_reminder: data.medicationReminder,
       goals: data.goals,
       is_pro: data.isPro,
       updated_at: new Date().toISOString(),
     };
 
-    const { data: profileData, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
-      .upsert(profilePayload)
-      .select()
-      .single();
+      .upsert(profilePayload);
 
     if (error) {
       console.error("Error upserting profile after onboarding:", error);
-    } else if (profileData) {
-      setUserData(formatProfileToUserData(profileData));
-      setAppState('main_app');
-    }
-  };
-
-
-  const renderContent = () => {
-    if (loading) {
-      return <div className="h-screen flex items-center justify-center">Carregando...</div>;
-    }
-
-    switch (appState) {
-      case 'auth':
-        return <Auth />;
-      case 'onboarding':
-        return <OnboardingFlow onComplete={handleOnboardingComplete} />;
-      case 'main_app':
-        if (session && userData) {
-          return <MainApp session={session} userData={userData} setUserData={setUserData} />;
+    } else {
+       const { data: initialProfile } = await supabase.from('profiles').select('stripe_customer_id').eq('id', session.user.id).single();
+       if (initialProfile && !initialProfile.stripe_customer_id) {
+        const { error: funcError } = await supabase.functions.invoke('create-stripe-customer');
+        if (funcError) {
+          console.error('Error creating stripe customer:', funcError);
         }
-        // Se o estado for main_app mas os dados não estiverem prontos, volta para auth para revalidar.
-        setAppState('auth'); 
-        return <Auth />;
-      default:
-        return <Auth />;
+      }
+      setProfileExists(true);
+      navigate('/');
     }
   };
+
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center">Carregando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white max-w-md mx-auto shadow-lg">
-      {renderContent()}
+      <Routes>
+        <Route path="/auth" element={session ? <Navigate to="/" /> : <Auth />} />
+        <Route 
+          path="/onboarding"
+          element={!session ? <Navigate to="/auth" /> : (profileExists ? <Navigate to="/" /> : <OnboardingFlow onComplete={handleOnboardingComplete} />)}
+        />
+        <Route 
+          path="/*"
+          element={!session ? <Navigate to="/auth" /> : (profileExists === false ? <Navigate to="/onboarding" /> : <MainApp />)} 
+        />
+      </Routes>
     </div>
   );
 };

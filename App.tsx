@@ -37,8 +37,6 @@ const App: React.FC = () => {
       medication: profile.medication,
       medicationReminder: profile.medication_reminder,
       goals: profile.goals,
-      isPro: profile.is_pro,
-      stripeCustomerId: profile.stripe_customer_id,
       streak: 0, // Always start streak at 0 from DB
       lastActivityDate: null, // Always start lastActivityDate as null from DB
     };
@@ -98,7 +96,6 @@ const App: React.FC = () => {
       activity_level: data.activityLevel,
       medication: data.medication,
       goals: data.goals,
-      is_pro: data.isPro,
     };
 
     const { error } = await supabase
@@ -108,13 +105,6 @@ const App: React.FC = () => {
     if (error) {
       console.error("Error upserting profile after onboarding:", error);
     } else {
-       const { data: initialProfile } = await supabase.from('profiles').select('stripe_customer_id').eq('id', session.user.id).single();
-       if (initialProfile && !initialProfile.stripe_customer_id) {
-        const { error: funcError } = await supabase.functions.invoke('create-stripe-customer');
-        if (funcError) {
-          console.error('Error creating stripe customer:', funcError);
-        }
-      }
       setProfileExists(true);
       navigate('/');
     }

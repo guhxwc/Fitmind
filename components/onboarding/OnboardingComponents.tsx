@@ -92,12 +92,12 @@ export const Picker: React.FC<PickerProps> = ({ items, onSelect, initialValue })
   return (
     <div className="relative">
       <select
-        value={initialValue}
+        value={String(initialValue)}
         onChange={handleChange}
         className="text-xl text-center font-semibold text-gray-900 dark:text-white bg-gray-100/80 dark:bg-gray-800/80 rounded-xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:shadow-md p-4 appearance-none"
       >
         {items.map(item => (
-          <option key={item} value={item}>
+          <option key={String(item)} value={String(item)}>
             {item}
           </option>
         ))}

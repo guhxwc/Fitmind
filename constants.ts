@@ -32,7 +32,6 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
     protein: 126,
     calories: 2000,
   },
-  isPro: false,
   streak: 0,
   lastActivityDate: null,
 };

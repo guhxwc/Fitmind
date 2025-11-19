@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Portal from '../core/Portal';
 
 interface WorkoutQuizAnswers {
   location: 'Casa' | 'Academia';
@@ -94,40 +95,42 @@ export const WorkoutQuiz: React.FC<WorkoutQuizProps> = ({ onComplete, onClose })
   const canContinue = currentQuestion.type === 'multiselect' ? answers.priorityMuscles.length > 0 : true;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-      <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col">
-        <QuizHeader onClose={onClose} step={step} totalSteps={filteredQuestions.length} />
-        <div className="flex-grow overflow-y-auto">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentQuestion.title}</h2>
-            {currentQuestion.subtitle && <p className="text-gray-500 dark:text-gray-400 mt-2">{currentQuestion.subtitle}</p>}
-            <div className="mt-8">
-                {currentQuestion.type === 'multiselect' ? (
-                     currentQuestion.options.map(opt => (
-                        <QuizOption key={opt.value} onClick={() => handleMultiSelect(opt.value)} isSelected={answers.priorityMuscles.includes(opt.value)}>
-                            {opt.label}
-                        </QuizOption>
-                    ))
-                ) : (
-                    currentQuestion.options.map(opt => (
-                        <QuizOption key={String(opt.value)} onClick={() => updateAnswer(currentQuestion.key as keyof WorkoutQuizAnswers, opt.value)} isSelected={(answers as any)[currentQuestion.key] === opt.value}>
-                            {opt.label}
-                        </QuizOption>
-                    ))
-                )}
+    <Portal>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <QuizHeader onClose={onClose} step={step} totalSteps={filteredQuestions.length} />
+            <div className="flex-grow overflow-y-auto">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentQuestion.title}</h2>
+                {currentQuestion.subtitle && <p className="text-gray-500 dark:text-gray-400 mt-2">{currentQuestion.subtitle}</p>}
+                <div className="mt-8">
+                    {currentQuestion.type === 'multiselect' ? (
+                        currentQuestion.options.map(opt => (
+                            <QuizOption key={opt.value} onClick={() => handleMultiSelect(opt.value)} isSelected={answers.priorityMuscles.includes(opt.value)}>
+                                {opt.label}
+                            </QuizOption>
+                        ))
+                    ) : (
+                        currentQuestion.options.map(opt => (
+                            <QuizOption key={String(opt.value)} onClick={() => updateAnswer(currentQuestion.key as keyof WorkoutQuizAnswers, opt.value)} isSelected={(answers as any)[currentQuestion.key] === opt.value}>
+                                {opt.label}
+                            </QuizOption>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-auto pt-6 flex gap-4">
+                {step > 0 && <button onClick={prevStep} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold">Voltar</button>}
+                <button
+                    onClick={step === filteredQuestions.length - 1 ? () => onComplete(answers) : nextStep}
+                    disabled={!canContinue}
+                    className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600"
+                >
+                    {step === filteredQuestions.length - 1 ? 'Gerar Treino' : 'Continuar'}
+                </button>
             </div>
         </div>
-
-        <div className="mt-auto pt-6 flex gap-4">
-             {step > 0 && <button onClick={prevStep} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold">Voltar</button>}
-            <button
-                onClick={step === filteredQuestions.length - 1 ? () => onComplete(answers) : nextStep}
-                disabled={!canContinue}
-                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600"
-            >
-                {step === filteredQuestions.length - 1 ? 'Gerar Treino' : 'Continuar'}
-            </button>
         </div>
-      </div>
-    </div>
+    </Portal>
   );
 };

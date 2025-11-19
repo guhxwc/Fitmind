@@ -65,7 +65,7 @@ const DeleteConfirmationModal: React.FC<{
 );
 
 
-const ProgressView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', title?: string) => void; }> = ({ onShowProModal }) => {
+const ProgressView: React.FC = () => {
   const { userData, weightHistory, setWeightHistory, progressPhotos, setProgressPhotos, updateStreak, theme } = useAppContext();
   const { addToast } = useToast();
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
@@ -162,9 +162,6 @@ const ProgressView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
         setWeightHistory(prev => [data[0], ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setIsWeightModalOpen(false);
         updateStreak();
-        if (weightHistory.length + 1 === 5) {
-            onShowProModal('engagement');
-        }
       }
       if (error) console.error("Error adding weight:", error);
     }
@@ -443,7 +440,7 @@ const ProgressView: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', 
   )
 }
 
-export const ProgressTab: React.FC<{ onShowProModal: (type: 'feature' | 'engagement', title?: string) => void; }> = ({ onShowProModal }) => {
+export const ProgressTab: React.FC = () => {
   const [view, setView] = useState<'progress' | 'calendar' | 'reports'>('progress');
   
   return (
@@ -459,9 +456,9 @@ export const ProgressTab: React.FC<{ onShowProModal: (type: 'feature' | 'engagem
         <TabButton label="Relatórios" isActive={view === 'reports'} onClick={() => setView('reports')} />
       </div>
 
-      {view === 'progress' && <ProgressView onShowProModal={onShowProModal} />}
+      {view === 'progress' && <ProgressView />}
       {view === 'calendar' && <CalendarView />}
-      {view === 'reports' && <ReportsView onShowProModal={onShowProModal} />}
+      {view === 'reports' && <ReportsView />}
     </div>
   );
 };
@@ -554,7 +551,7 @@ const PhotoComparisonModal: React.FC<{
                             <div className="w-8"></div>
                             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Selecione 2 Fotos</h2>
                             <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </header>
                         <main className="flex-grow overflow-y-auto p-4 grid grid-cols-3 gap-3">

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { useAppContext } from '../AppContext';
-import { FileTextIcon, StarIcon } from '../core/Icons';
+import { FileTextIcon } from '../core/Icons';
 import type { WeightEntry, ApplicationEntry, DailyNote, SideEffectEntry } from '../../types';
 
 interface ReportsViewProps {
-    onShowProModal: (type: 'feature' | 'engagement', title?: string) => void;
 }
 
 const isWithinLast7Days = (dateStr: string) => {
@@ -16,7 +15,7 @@ const isWithinLast7Days = (dateStr: string) => {
     return date >= sevenDaysAgo && date <= today;
 };
 
-export const ReportsView: React.FC<ReportsViewProps> = ({ onShowProModal }) => {
+export const ReportsView: React.FC<ReportsViewProps> = () => {
     const { userData, weightHistory, applicationHistory, sideEffects, dailyNotes } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const [report, setReport] = useState<string | null>(null);
@@ -24,10 +23,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onShowProModal }) => {
 
     const handleGenerateReport = async () => {
         if (!userData) return;
-        if (!userData.isPro) {
-            onShowProModal('feature', 'Relatórios Semanais com IA');
-            return;
-        }
 
         setIsLoading(true);
         setReport(null);
@@ -118,10 +113,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ onShowProModal }) => {
                         <span>Analisando...</span>
                         </>
                     ) : (
-                        <>
-                        <StarIcon className="w-5 h-5" />
-                        Gerar Relatório Semanal
-                        </>
+                        'Gerar Relatório Semanal'
                     )}
                 </button>
             </div>

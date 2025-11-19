@@ -1,47 +1,57 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { UserCircleIcon, StarIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon } from '../core/Icons';
+import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon } from '../core/Icons';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 
-interface SettingsTabProps {
-    onShowSubscription: () => void;
-}
+const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
+    <div className="mb-6">
+        {title && <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{title}</h3>}
+        <div className="bg-ios-card dark:bg-ios-dark-card rounded-[10px] overflow-hidden shadow-sm">
+            {children}
+        </div>
+    </div>
+);
 
-const SettingsItem: React.FC<{icon: React.ReactNode, label: string, onClick?: () => void}> = ({ icon, label, onClick }) => (
-    <button onClick={onClick} className="flex items-center w-full p-4 bg-gray-100/60 dark:bg-gray-800/50 rounded-xl hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition-all active:scale-[0.99]">
-        <div className="text-gray-600 dark:text-gray-300">{icon}</div>
-        <span className="ml-4 font-semibold text-gray-800 dark:text-gray-200">{label}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 dark:text-gray-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-    </button>
+const SettingsItem: React.FC<{icon?: React.ReactNode, label: string, value?: string, onClick?: () => void, isDestructive?: boolean, isLast?: boolean}> = ({ icon, label, value, onClick, isDestructive, isLast }) => (
+    <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
+        <button onClick={onClick} className={`flex items-center w-full py-3 pr-4 active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}>
+            {icon && <div className="text-gray-900 dark:text-white mr-3">{icon}</div>}
+            <span className={`flex-grow text-left font-medium text-[17px] ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{label}</span>
+            {value && <span className="text-gray-400 dark:text-gray-500 mr-2 text-[17px]">{value}</span>}
+            {!isDestructive && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+        </button>
+    </div>
 )
+
+const ToggleItem: React.FC<{ icon: React.ReactNode, label: string, isEnabled: boolean, onToggle: () => void, isLast?: boolean }> = ({ icon, label, isEnabled, onToggle, isLast }) => (
+    <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
+        <div className={`flex items-center justify-between py-3 pr-4 ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}>
+            <div className="flex items-center">
+                {icon && <div className="text-gray-900 dark:text-white mr-3">{icon}</div>}
+                <span className="font-medium text-gray-900 dark:text-white text-[17px]">{label}</span>
+            </div>
+            <div 
+                onClick={onToggle}
+                className={`w-[51px] h-[31px] rounded-full p-0.5 cursor-pointer transition-colors duration-300 ease-in-out shadow-inner ${isEnabled ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+                <div className={`bg-white w-[27px] h-[27px] rounded-full shadow-md transform transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${isEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+            </div>
+        </div>
+    </div>
+);
 
 const NotificationSettings: React.FC = () => {
     const { userData, setUserData } = useAppContext();
     const { addToast } = useToast();
     const [isEnabled, setIsEnabled] = useState(userData?.medicationReminder?.enabled ?? false);
     const [time, setTime] = useState(userData?.medicationReminder?.time ?? '09:00');
-    const [isSaving, setIsSaving] = useState(false);
 
-    const handleToggleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const checked = e.target.checked;
-        if (checked && typeof Notification !== 'undefined') {
-            if (Notification.permission === 'default') {
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    addToast('As notificações foram bloqueadas. Altere nas configurações do navegador.', 'error', { duration: 7000 });
-                    return; 
-                }
-            } else if (Notification.permission === 'denied') {
-                addToast('Notificações bloqueadas. Altere nas configurações do navegador.', 'error', { duration: 7000 });
-                return;
-            }
-        }
-        setIsEnabled(checked);
-        saveSettings(checked, time);
+    const handleToggle = async () => {
+        const newState = !isEnabled;
+        setIsEnabled(newState);
+        saveSettings(newState, time);
     };
 
     const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,44 +62,44 @@ const NotificationSettings: React.FC = () => {
 
     const saveSettings = async (enabled: boolean, newTime: string) => {
         if (!userData) return;
-        setIsSaving(true);
         const newReminderSettings = { enabled, time: newTime };
         
-        // FIX: The 'medication_reminder' column does not exist in the database.
-        // This database call is removed to prevent errors. The setting is only saved in the app's local state for the current session.
-        setUserData(prev => prev ? { ...prev, medicationReminder: newReminderSettings } : null);
-        
-        // Simulate a network delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        setIsSaving(false);
+        const { error } = await supabase
+            .from('profiles')
+            .update({ medication_reminder: newReminderSettings })
+            .eq('id', userData.id);
+
+        if (error) {
+            addToast('Falha ao salvar lembrete.', 'error');
+            setIsEnabled(userData.medicationReminder?.enabled ?? false);
+        } else {
+            setUserData(prev => prev ? { ...prev, medicationReminder: newReminderSettings } : null);
+        }
     };
 
     return (
-        <div className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <div className="text-gray-600 dark:text-gray-300"><BellIcon className="w-6 h-6"/></div>
-                    <span className="ml-4 font-semibold text-gray-800 dark:text-gray-200">Lembrete de Aplicação</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={isEnabled} onChange={handleToggleChange} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:peer-checked:bg-blue-500"></div>
-                </label>
-            </div>
+        <SettingsGroup title="Notificações">
+             <ToggleItem 
+                icon={<div className="bg-red-500 p-1.5 rounded-md text-white"><BellIcon className="w-4 h-4"/></div>}
+                label="Lembrete de Aplicação" 
+                isEnabled={isEnabled} 
+                onToggle={handleToggle} 
+                isLast={!isEnabled}
+            />
             {isEnabled && (
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between animate-fade-in">
-                    <label htmlFor="reminder-time" className="font-medium text-gray-700 dark:text-gray-300">Horário do lembrete</label>
-                    <input
-                        id="reminder-time"
-                        type="time"
-                        value={time}
-                        onChange={handleTimeChange}
-                        className="bg-gray-200/80 dark:bg-gray-700/80 border-none rounded-md px-3 py-1.5 font-semibold text-gray-800 dark:text-gray-200"
-                    />
+                <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
+                    <div className="flex items-center justify-between py-3 pr-4">
+                        <span className="text-gray-900 dark:text-white text-[17px]">Horário</span>
+                        <input
+                            type="time"
+                            value={time}
+                            onChange={handleTimeChange}
+                            className="bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono text-base"
+                        />
+                    </div>
                 </div>
             )}
-        </div>
+        </SettingsGroup>
     );
 };
 
@@ -97,23 +107,20 @@ const ThemeSettings: React.FC = () => {
     const { theme, toggleTheme } = useAppContext();
 
     return (
-        <div className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                    <div className="text-gray-600 dark:text-gray-300"><MoonIcon className="w-6 h-6"/></div>
-                    <span className="ml-4 font-semibold text-gray-800 dark:text-gray-200">Modo Escuro</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black dark:peer-checked:bg-blue-500"></div>
-                </label>
-            </div>
-        </div>
+        <SettingsGroup title="Aparência">
+            <ToggleItem 
+                icon={<div className="bg-indigo-500 p-1.5 rounded-md text-white"><MoonIcon className="w-4 h-4"/></div>}
+                label="Modo Escuro" 
+                isEnabled={theme === 'dark'} 
+                onToggle={toggleTheme} 
+                isLast
+            />
+        </SettingsGroup>
     );
 };
 
 
-export const SettingsTab: React.FC<SettingsTabProps> = ({ onShowSubscription }) => {
+export const SettingsTab: React.FC = () => {
     const { userData } = useAppContext();
     const navigate = useNavigate();
 
@@ -124,27 +131,57 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ onShowSubscription }) 
     if (!userData) return null;
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white dark:bg-black min-h-screen animate-fade-in">
-            <header>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Ajustes</h1>
-                <p className="text-gray-500 dark:text-gray-400">Gerencie sua conta e preferências</p>
+        <div className="px-5 pb-24 min-h-screen animate-fade-in">
+            <header className="mb-8 mt-4">
+                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ajustes</h1>
             </header>
 
-            <section className="space-y-3">
-                 <SettingsItem icon={<UserCircleIcon className="w-6 h-6"/>} label="Conta" onClick={() => navigate('/settings/account')} />
-                 <SettingsItem icon={<StarIcon className="w-6 h-6 text-blue-500"/>} label="Assinatura PRO" onClick={onShowSubscription} />
-                 <NotificationSettings />
-                 <ThemeSettings />
-                 <SettingsItem icon={<HelpCircleIcon className="w-6 h-6"/>} label="Ajuda & Suporte" onClick={() => navigate('/settings/help')} />
-                 <SettingsItem icon={<ShieldCheckIcon className="w-6 h-6"/>} label="Privacidade" onClick={() => navigate('/settings/privacy')} />
-            </section>
+            <div className="mb-8 flex items-center gap-4 bg-ios-card dark:bg-ios-dark-card p-4 rounded-[20px] shadow-sm">
+                <div className="w-16 h-16 bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-500 dark:text-gray-300 shadow-inner">
+                    {userData.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{userData.name}</h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{userData.medication.name} • {userData.medication.dose}</p>
+                </div>
+            </div>
+
+            <SettingsGroup>
+                 <SettingsItem 
+                    icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
+                    label="Minha Conta" 
+                    onClick={() => navigate('/settings/account')} 
+                    isLast
+                />
+            </SettingsGroup>
+
+            <NotificationSettings />
+            <ThemeSettings />
+
+            <SettingsGroup title="Suporte & Privacidade">
+                 <SettingsItem 
+                    icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><HelpCircleIcon className="w-4 h-4"/></div>}
+                    label="Ajuda & Suporte" 
+                    onClick={() => navigate('/settings/help')} 
+                />
+                 <SettingsItem 
+                    icon={<div className="bg-gray-500 p-1.5 rounded-md text-white"><ShieldCheckIcon className="w-4 h-4"/></div>}
+                    label="Privacidade e Dados" 
+                    onClick={() => navigate('/settings/privacy')} 
+                    isLast
+                />
+            </SettingsGroup>
             
-             <section className="pt-4 text-center space-y-4">
-                <button onClick={handleLogout} className="text-red-500 dark:text-red-400 font-semibold transition-transform active:scale-95">
+            <div className="mt-8">
+                <button 
+                    onClick={handleLogout} 
+                    className="w-full bg-ios-card dark:bg-ios-dark-card text-red-500 font-semibold text-[17px] py-3 rounded-[10px] shadow-sm active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
+                >
                     Sair da Conta
                 </button>
-                <button className="text-gray-500 dark:text-gray-400 font-semibold transition-transform active:scale-95">Sobre o FitMind</button>
-             </section>
+            </div>
+            
+            <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.2 • Feito com ❤️</p>
         </div>
     );
 };

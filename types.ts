@@ -123,8 +123,6 @@ export interface UserData {
     protein: number; // in g
     calories: number; // in kcal
   };
-  isPro: boolean;
-  stripeCustomerId?: string | null;
   streak: number;
   lastActivityDate: string | null;
 }

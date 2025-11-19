@@ -9,10 +9,6 @@ import { WorkoutQuiz } from './WorkoutQuiz';
 import { EXERCISE_DATABASE } from '../../workoutData';
 import { useAppContext } from '../AppContext';
 
-interface WorkoutsTabProps {
-  onShowProModal: (type: 'feature' | 'engagement', title?: string) => void;
-}
-
 const WorkoutIntro: React.FC<{ onGenerate: () => void }> = ({ onGenerate }) => (
     <div className="bg-gray-100/50 p-6 rounded-2xl text-center flex flex-col items-center mt-6 animate-fade-in">
         <DumbbellIcon />
@@ -152,7 +148,7 @@ const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => voi
     </button>
 );
 
-export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
+export const WorkoutsTab: React.FC = () => {
     const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak } = useAppContext();
     const [view, setView] = useState<'generate' | 'my_workouts' | 'history'>(workoutPlan ? 'my_workouts' : 'generate');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -289,19 +285,12 @@ export const WorkoutsTab: React.FC<WorkoutsTabProps> = ({ onShowProModal }) => {
             setWorkoutHistory(prev => [data[0], ...prev]);
             setActiveWorkoutDay(null); // Return to plan view
             updateStreak();
-            if (workoutHistory.length + 1 === 1) { // First workout completed
-                onShowProModal('engagement');
-            }
         }
         if (error) console.error("Error saving feedback:", error);
     };
 
     const handleGenerateClick = () => {
-        if (userData.isPro) {
-            setIsQuizOpen(true);
-        } else {
-            onShowProModal('feature', 'Personal Trainer com IA');
-        }
+        setIsQuizOpen(true);
     };
     
     const renderMainContent = () => {

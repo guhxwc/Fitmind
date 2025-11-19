@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { UserData, DietQuizAnswers } from '../../types';
 import { useAppContext } from '../AppContext';
+import Portal from '../core/Portal';
 
 interface DietQuizProps {
   onComplete: (answers: DietQuizAnswers) => void;
@@ -136,39 +137,41 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-      <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col">
-        <QuizHeader onClose={onClose} step={step} totalSteps={questions.length} />
-        <div className="flex-grow overflow-y-auto">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentQuestion.title}</h2>
-            {currentQuestion.subtitle && <p className="text-gray-500 dark:text-gray-400 mt-2">{currentQuestion.subtitle}</p>}
-            <div className="mt-8">
-                {currentQuestion.type === 'multiselect' ? (
-                     currentQuestion.options.map(opt => (
-                        <QuizOption key={opt.value} onClick={() => handleMultiSelect(opt.value)} isSelected={answers.restrictions.includes(opt.value)}>
-                            {opt.label}
-                        </QuizOption>
-                    ))
-                ) : (
-                    currentQuestion.options.map(opt => (
-                        <QuizOption key={opt.value.toString()} onClick={() => updateAnswer(currentQuestion.key as keyof DietQuizAnswers, opt.value)} isSelected={(answers as any)[currentQuestion.key] === opt.value}>
-                            {opt.label}
-                        </QuizOption>
-                    ))
-                )}
+    <Portal>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <QuizHeader onClose={onClose} step={step} totalSteps={questions.length} />
+            <div className="flex-grow overflow-y-auto">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentQuestion.title}</h2>
+                {currentQuestion.subtitle && <p className="text-gray-500 dark:text-gray-400 mt-2">{currentQuestion.subtitle}</p>}
+                <div className="mt-8">
+                    {currentQuestion.type === 'multiselect' ? (
+                        currentQuestion.options.map(opt => (
+                            <QuizOption key={opt.value} onClick={() => handleMultiSelect(opt.value)} isSelected={answers.restrictions.includes(opt.value)}>
+                                {opt.label}
+                            </QuizOption>
+                        ))
+                    ) : (
+                        currentQuestion.options.map(opt => (
+                            <QuizOption key={opt.value.toString()} onClick={() => updateAnswer(currentQuestion.key as keyof DietQuizAnswers, opt.value)} isSelected={(answers as any)[currentQuestion.key] === opt.value}>
+                                {opt.label}
+                            </QuizOption>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-auto pt-6 flex gap-4">
+                {step > 0 && <button onClick={prevStep} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold">Voltar</button>}
+                <button
+                    onClick={step === questions.length - 1 ? handleFinish : nextStep}
+                    className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold"
+                >
+                    {step === questions.length - 1 ? 'Gerar Dieta' : 'Continuar'}
+                </button>
             </div>
         </div>
-
-        <div className="mt-auto pt-6 flex gap-4">
-             {step > 0 && <button onClick={prevStep} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold">Voltar</button>}
-            <button
-                onClick={step === questions.length - 1 ? handleFinish : nextStep}
-                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold"
-            >
-                {step === questions.length - 1 ? 'Gerar Dieta' : 'Continuar'}
-            </button>
         </div>
-      </div>
-    </div>
+    </Portal>
   );
 };

@@ -1,176 +1,338 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Link } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon } from '../core/Icons';
+import { supabase } from '../../supabaseClient';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon } from '../core/Icons';
+import { ManualMealModal } from './ManualMealModal';
+import type { Meal } from '../../types';
 
-const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string | number; unit: string; progress?: number; color: string }> = ({ icon, title, value, unit, progress, color }) => {
-  const progressWidth = progress ? `${progress}%` : '0%';
-  return (
-    <div className="bg-gray-100/50 dark:bg-gray-800/50 p-4 rounded-2xl flex-1 min-w-[140px]">
-      <div className="flex items-center text-gray-500 dark:text-gray-400 mb-2">
-        {icon}
-        <span className="ml-2 font-medium">{title}</span>
-      </div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        {value} <span className="text-lg font-medium text-gray-500 dark:text-gray-400">{unit}</span>
-      </div>
-      {progress !== undefined && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-3">
-          <div className={`h-1.5 rounded-full`} style={{ width: progressWidth, backgroundColor: color }}></div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number; goal: number; unit: string; color: string }> = ({ icon, title, value, goal, unit, color }) => {
+const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number; goal: number; unit: string; color: string; accentColor: string }> = ({ icon, title, value, goal, unit, color, accentColor }) => {
   const data = [
     { name: 'completed', value: value, color: color },
-    { name: 'remaining', value: Math.max(0, goal - value), color: '#374151' }, // dark:bg-gray-700
+    { name: 'remaining', value: Math.max(0, goal - value), color: 'rgba(229, 229, 234, 0.5)' }, // lighter gray for track 
   ];
+  
+  // Dark mode track color adjustment handled via opacity/class in parent context if needed, but rgba works well for glass effect.
 
   return (
-    <div className="bg-gray-100/50 dark:bg-gray-800/50 p-4 rounded-2xl flex-1 min-w-[140px] text-center h-full flex flex-col">
-      <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 mb-2">
-        {icon}
-        <span className="ml-2 font-medium">{title}</span>
+    <div className="bg-ios-card dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft flex flex-col items-center justify-between h-full relative overflow-hidden transition-transform active:scale-[0.98] duration-200">
+      <div className="w-full flex justify-between items-center mb-2">
+          <span className={`text-xs font-bold uppercase tracking-widest ${accentColor} opacity-90`}>{title}</span>
+          <div className={`p-1.5 rounded-full bg-opacity-10 ${accentColor.replace('text-', 'bg-')}`}>
+             {React.cloneElement(icon as React.ReactElement, { className: `w-3.5 h-3.5 ${accentColor}` })}
+          </div>
       </div>
-      <div className="relative h-24 w-24 mx-auto flex-grow flex items-center">
+      
+      <div className="relative h-32 w-32 flex-grow flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} cx="50%" cy="50%" dataKey="value" innerRadius={28} outerRadius={38} startAngle={90} endAngle={-270} paddingAngle={0} cornerRadius={5}>
-              {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color}/>))}
+            <Pie 
+                data={data} 
+                cx="50%" 
+                cy="50%" 
+                dataKey="value" 
+                innerRadius={45} 
+                outerRadius={55} 
+                startAngle={90} 
+                endAngle={-270} 
+                paddingAngle={0} 
+                cornerRadius={10}
+                stroke="none"
+            >
+              {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={index === 1 && document.documentElement.classList.contains('dark') ? '#2C2C2E' : entry.color} />))}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{unit === 'L' ? value.toFixed(1) : value}</span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">/ {goal}{unit}</span>
+            <span className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{unit === 'L' ? value.toFixed(1) : value}</span>
+            <span className="text-[10px] text-gray-400 font-semibold uppercase mt-0.5">de {goal}</span>
         </div>
       </div>
     </div>
   );
 };
 
-const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNode, position: string, disabled?: boolean}> = ({onClick, children, position, disabled = false}) => (
+const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNode, disabled?: boolean}> = ({onClick, children, disabled = false}) => (
     <button 
       onClick={!disabled ? onClick : undefined} 
-      className={`absolute bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm w-8 h-8 rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 font-bold text-xl shadow-md transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'active:scale-90 hover:bg-white dark:hover:bg-gray-700' } ${position}`}
+      className={`w-10 h-10 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-900 dark:text-white font-bold text-xl transition-all active:scale-90 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
       disabled={disabled}
     >
       {children}
     </button>
 );
 
-const StreakIndicator: React.FC<{ count: number }> = ({ count }) => {
-  const [animate, setAnimate] = useState(false);
-  const prevCountRef = useRef(count);
-
-  useEffect(() => {
-    if (count > prevCountRef.current) {
-      setAnimate(true);
-      const timer = setTimeout(() => setAnimate(false), 600); // Animation duration
-      return () => clearTimeout(timer);
-    }
-    prevCountRef.current = count;
-  }, [count]);
-
-  return (
-    <div className={`flex items-center gap-1 text-lg font-bold ${count > 0 ? 'text-orange-500' : 'text-gray-400 dark:text-gray-500'}`}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={animate ? 'animate-streak' : ''}>
-        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
-      </svg>
-      <span className={animate ? 'animate-streak' : ''}>{count}</span>
+const MealRow: React.FC<{ icon: React.ReactNode, title: string, calories: number, goal: number, onAdd: () => void, color: string }> = ({ icon, title, calories, goal, onAdd, color }) => (
+    <div className="flex items-center justify-between py-3.5 group active:bg-gray-50 dark:active:bg-gray-800/50 rounded-xl px-2 -mx-2 transition-colors">
+        <div className="flex items-center gap-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${color} text-white`}>
+                {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+            </div>
+            <div>
+                <h4 className="text-base font-semibold text-gray-900 dark:text-white leading-none">
+                    {title}
+                </h4>
+                <div className="flex items-center gap-2 mt-1.5">
+                    <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${Math.min((calories/goal)*100, 100)}%`, backgroundColor: color.replace('bg-', 'text-') === 'text-orange-500' ? '#F97316' : color.replace('bg-', 'text-') === 'text-yellow-500' ? '#EAB308' : color.replace('bg-', 'text-') === 'text-purple-500' ? '#A855F7' : '#22C55E' }}></div>
+                    </div>
+                    <p className="text-xs text-gray-400 font-medium">{calories} kcal</p>
+                </div>
+            </div>
+        </div>
+        <button onClick={onAdd} className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors active:scale-90">
+            <PlusIcon className="w-5 h-5" />
+        </button>
     </div>
-  );
-};
+);
 
+const WeightCard: React.FC = () => {
+    const { userData, setUserData, setWeightHistory } = useAppContext();
+    const debounceTimer = useRef<number | null>(null);
+
+    if (!userData) return null;
+
+    const handleWeightUpdate = (change: number) => {
+        const currentWeight = userData.weight;
+        const newWeight = parseFloat((currentWeight + change).toFixed(1));
+
+        setUserData(prev => prev ? ({ ...prev, weight: newWeight }) : null);
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        setWeightHistory(prev => {
+            const existingEntryIndex = prev.findIndex(w => w.date.startsWith(todayStr));
+            if (existingEntryIndex > -1) {
+                const updatedHistory = [...prev];
+                updatedHistory[existingEntryIndex] = { ...updatedHistory[existingEntryIndex], weight: newWeight };
+                return updatedHistory;
+            } else {
+                return [{ id: -1, user_id: userData.id, date: new Date().toISOString(), weight: newWeight }, ...prev];
+            }
+        });
+
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+        
+        debounceTimer.current = window.setTimeout(async () => {
+            try {
+                await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
+                // Optimistic update logic for history omitted for brevity, assumes context handles sync
+                 await supabase
+                    .from('weight_history')
+                    .insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight });
+
+            } catch (error) {
+                console.error("Failed to update weight in DB:", error);
+            }
+        }, 1000);
+    };
+
+    return (
+        <div className="bg-ios-card dark:bg-ios-dark-card p-6 rounded-[24px] shadow-soft flex flex-col items-center text-center">
+             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 w-full text-left">Controle de Peso</h3>
+             <div className="flex items-center justify-between w-full mb-6">
+                 <button onClick={() => handleWeightUpdate(-0.1)} className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-90 transition-transform">
+                     <MinusIcon className="w-6 h-6" />
+                 </button>
+                 
+                 <div>
+                     <span className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tighter">{userData.weight.toFixed(1).replace('.', ',')}</span>
+                     <span className="text-base font-semibold text-gray-400 ml-1">kg</span>
+                 </div>
+
+                 <button onClick={() => handleWeightUpdate(0.1)} className="w-12 h-12 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+                     <PlusIcon className="w-6 h-6" />
+                 </button>
+             </div>
+             <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                 <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(((userData.weight - userData.targetWeight) / userData.weight) * 100, 100)}%`}}></div>
+             </div>
+             <div className="flex justify-between w-full mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">
+                 <span>Atual</span>
+                 <span>Meta: {userData.targetWeight}kg</span>
+             </div>
+        </div>
+    )
+}
 
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater } = useAppContext();
+  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater } = useAppContext();
+  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState('');
 
   if (!userData) return null;
   
   const totalProteinFromMeals = meals.reduce((sum, meal) => sum + meal.protein, 0);
   const totalProtein = totalProteinFromMeals + quickAddProtein;
 
-  const handleAddProtein = () => {
-    setQuickAddProtein(p => p + 5);
-  };
-
-  const handleRemoveProtein = () => {
-    setQuickAddProtein(p => Math.max(0, p - 5));
-  };
+  const handleAddProtein = () => setQuickAddProtein(p => p + 5);
+  const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 5));
   
-  const canRemoveProtein = quickAddProtein > 0;
+  const openAddMeal = (type: string) => {
+      setSelectedMealType(type);
+      setIsMealModalOpen(true);
+  };
 
+  const handleAddMeal = (newMealData: Omit<Meal, 'id' | 'time'>) => {
+    const newMeal: Meal = {
+        ...newMealData,
+        id: new Date().toISOString(),
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMeals(prevMeals => [...prevMeals, newMeal]);
+    updateStreak();
+    setIsMealModalOpen(false);
+  };
+
+  const getMealStats = (startTime: number, endTime: number) => {
+      const filteredMeals = meals.filter(m => {
+          const hour = parseInt(m.time.split(':')[0], 10);
+          return hour >= startTime && hour < endTime;
+      });
+      return filteredMeals.reduce((sum, m) => sum + m.calories, 0);
+  };
+
+  const breakfastCals = getMealStats(5, 11);
+  const lunchCals = getMealStats(11, 15);
+  const snackCals = getMealStats(15, 18) + getMealStats(0, 5) + getMealStats(22, 24);
+  const dinnerCals = getMealStats(18, 22);
+
+  const dailyGoal = userData.goals.calories;
+  const breakfastGoal = Math.round(dailyGoal * 0.20);
+  const lunchGoal = Math.round(dailyGoal * 0.35);
+  const dinnerGoal = Math.round(dailyGoal * 0.30);
+  const snackGoal = Math.round(dailyGoal * 0.15);
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white dark:bg-black animate-fade-in">
-      <header className="flex justify-between items-center">
+    <div className="px-5 space-y-6 animate-fade-in">
+      {/* Header */}
+      <header className="flex justify-between items-end pt-4">
         <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Resumo</h1>
-            <p className="text-gray-500 dark:text-gray-400">Seu progresso de hoje</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
         </div>
-        <StreakIndicator count={userData.streak} />
+        <Link to="/progress">
+            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 ring-2 ring-white dark:ring-black shadow-md">
+                {userData.name.charAt(0)}
+            </div>
+        </Link>
       </header>
 
-      <section>
-        <div className="bg-gray-100/50 dark:bg-gray-800/50 p-5 rounded-2xl">
-            <div className="flex justify-between items-start">
+      {/* Bento Grid */}
+      <div className="grid grid-cols-2 gap-4">
+          {/* Medication Card - Full Width */}
+          <div className="col-span-2 bg-gradient-to-br from-blue-600 to-blue-500 p-6 rounded-[24px] shadow-glow text-white relative overflow-hidden">
+            <div className="relative z-10 flex justify-between items-start">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Seu Plano Personalizado</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Baseado em suas metas e perfil</p>
+                    <div className="flex items-center gap-2 mb-1 opacity-90">
+                        <span className="text-xs font-bold uppercase tracking-widest">Aplicação</span>
+                    </div>
+                    <h2 className="text-3xl font-bold tracking-tight">{userData.medication.nextApplication}</h2>
+                    <p className="text-blue-100 text-sm font-medium mt-1 opacity-80">{userData.medication.name} • {userData.medication.dose}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                </div>
-            </div>
-            <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-baseline">
-                <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Peso Atual</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{userData.weight}kg</p>
-                </div>
-                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Meta Final</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{userData.targetWeight}kg</p>
+                <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-full shadow-inner">
+                    <EditIcon className="w-5 h-5 text-white" />
                 </div>
             </div>
-        </div>
-      </section>
+            {/* Decorative Circles */}
+            <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          </div>
 
-      <section className="grid grid-cols-2 gap-4">
-         <div className="bg-gray-100/50 dark:bg-gray-800/50 p-4 rounded-2xl col-span-2">
-            <div className="flex items-center text-gray-500 dark:text-gray-400 mb-2">
-                <EditIcon className="w-5 h-5" />
-                <span className="ml-2 font-medium">Próxima Aplicação</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{userData.medication.nextApplication}</p>
-            <p className="text-gray-500 dark:text-gray-400">Semanalmente</p>
-        </div>
+          {/* Protein Card */}
+          <div className="flex flex-col gap-3">
+             <div className="flex-grow">
+                <DonutCard 
+                    icon={<FlameIcon />} 
+                    title="Proteína" 
+                    value={totalProtein} 
+                    goal={userData.goals.protein} 
+                    unit="g" 
+                    color="#FF9500" 
+                    accentColor="text-orange-500"
+                />
+             </div>
+             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-2xl shadow-soft">
+                  <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>-</MiniControlButton>
+                  <MiniControlButton onClick={handleAddProtein}>+</MiniControlButton>
+             </div>
+          </div>
         
-        <div className="relative">
-          <DonutCard icon={<FlameIcon className="w-5 h-5 text-orange-500"/>} title="Proteína" value={totalProtein} goal={userData.goals.protein} unit="g" color="#f97316" />
-          <MiniControlButton onClick={handleRemoveProtein} position="bottom-3 left-3" disabled={!canRemoveProtein}>-</MiniControlButton>
-          <MiniControlButton onClick={handleAddProtein} position="bottom-3 right-3">+</MiniControlButton>
-        </div>
-        
-        <div className="relative">
-          <DonutCard icon={<WaterDropIcon className="w-5 h-5 text-blue-500"/>} title="Água" value={currentWater} goal={userData.goals.water} unit="L" color="#3b82f6" />
-          <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} position="bottom-3 left-3">-</MiniControlButton>
-          <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))} position="bottom-3 right-3">+</MiniControlButton>
-        </div>
-      </section>
+          {/* Water Card */}
+          <div className="flex flex-col gap-3">
+             <div className="flex-grow">
+                <DonutCard 
+                    icon={<WaterDropIcon />} 
+                    title="Hidratação" 
+                    value={currentWater} 
+                    goal={userData.goals.water} 
+                    unit="L" 
+                    color="#007AFF" 
+                    accentColor="text-blue-500"
+                />
+             </div>
+             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-2xl shadow-soft">
+                  <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))}>-</MiniControlButton>
+                  <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>+</MiniControlButton>
+             </div>
+          </div>
 
-      <section>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Fontes médicas usadas no app</h2>
-          <div className="space-y-2">
-            <a href="https://www.cnnbrasil.com.br/saude/remedios-para-emagrecer-ozempic-wegovy-e-mounjaro-entenda-semelhancas-e-diferencas/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 dark:text-blue-400 hover:underline">Eficácia e Riscos do GLP-1</a>
-            <a href="https://saude.abril.com.br/medicina/o-futuro-do-tratamento-da-obesidade/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 dark:text-blue-400 hover:underline">Futuro do Tratamento da Obesidade</a>
-            <a href="https://abeso.org.br/obesidade-e-sindrome-metabolica/calculadora-imc/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 dark:text-blue-400 hover:underline">Medição de Gordura Corporal e IMC</a>
-            <a href="https://saude.abril.com.br/medicina/novos-remedios-para-obesidade-o-que-vem-por-ai/" target="_blank" rel="noopener noreferrer" className="block text-blue-600 dark:text-blue-400 hover:underline">Pesquisas sobre Medicamentos GLP-1</a>
+          {/* Weight Control */}
+          <div className="col-span-2">
+              <WeightCard />
+          </div>
+      </div>
+      
+      {/* Meals List */}
+      <section className="pb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 px-1">Refeições</h2>
+          <div className="bg-ios-card dark:bg-ios-dark-card rounded-[24px] p-5 shadow-soft space-y-2">
+              <MealRow 
+                icon={<CoffeeIcon />} 
+                title="Café da manhã" 
+                calories={breakfastCals} 
+                goal={breakfastGoal} 
+                onAdd={() => openAddMeal('Café da manhã')}
+                color="bg-orange-500"
+              />
+               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
+              <MealRow 
+                icon={<SoupIcon />} 
+                title="Almoço" 
+                calories={lunchCals} 
+                goal={lunchGoal} 
+                onAdd={() => openAddMeal('Almoço')}
+                color="bg-yellow-500"
+              />
+               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
+              <MealRow 
+                icon={<UtensilsIcon />} 
+                title="Jantar" 
+                calories={dinnerCals} 
+                goal={dinnerGoal} 
+                onAdd={() => openAddMeal('Jantar')}
+                color="bg-purple-500"
+              />
+               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
+              <MealRow 
+                icon={<AppleIcon />} 
+                title="Lanches" 
+                calories={snackCals} 
+                goal={snackGoal} 
+                onAdd={() => openAddMeal('Lanche')}
+                color="bg-green-500"
+              />
           </div>
       </section>
+
+      {isMealModalOpen && (
+        <ManualMealModal
+            initialName={selectedMealType}
+            onClose={() => setIsMealModalOpen(false)}
+            onAddMeal={handleAddMeal}
+        />
+      )}
     </div>
   );
 };

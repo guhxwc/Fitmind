@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry } from '../types';
 import { DEFAULT_USER_DATA } from '../constants';
+import { useToast } from './ToastProvider';
 
 type Theme = 'light' | 'dark';
 
@@ -58,7 +60,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
+  const dailyRecordIdRef = useRef<number | null>(null);
   
+  const { addToast } = useToast();
+
   const [theme, setTheme] = useState<Theme>(() => {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme === 'light' || storedTheme === 'dark') {
@@ -93,8 +98,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       medication: profile.medication || DEFAULT_USER_DATA.medication,
       medicationReminder: profile.medication_reminder || DEFAULT_USER_DATA.medicationReminder,
       goals: profile.goals || DEFAULT_USER_DATA.goals,
-      isPro: profile.is_pro || false,
-      stripeCustomerId: profile.stripe_customer_id || null,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,
   });
@@ -111,54 +114,60 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     setLoading(true);
 
-    const userId = currentSession.user.id;
-    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+        const userId = currentSession.user.id;
+        const todayStr = new Date().toISOString().split('T')[0];
 
-    const [
-      profileRes,
-      weightRes,
-      photoRes,
-      planRes,
-      workoutHistoryRes,
-      applicationHistoryRes,
-      dailyRecordRes
-    ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
-        supabase.from('progress_photos').select('*').eq('user_id', userId).order('date', { ascending: false }),
-        supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single(),
-        supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
-        supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
-        supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).single()
-    ]);
+        const [
+          profileRes,
+          weightRes,
+          photoRes,
+          planRes,
+          workoutHistoryRes,
+          applicationHistoryRes,
+          dailyRecordRes
+        ] = await Promise.all([
+            supabase.from('profiles').select('*').eq('id', userId).single(),
+            supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('progress_photos').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
+            supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).limit(1).maybeSingle()
+        ]);
 
-    if (profileRes.data) {
-      setUserData(formatProfileToUserData(profileRes.data));
+        if (profileRes.data) {
+          setUserData(formatProfileToUserData(profileRes.data));
+        }
+        
+        setWeightHistory(weightRes.data || []);
+        setProgressPhotos(photoRes.data || []);
+        setWorkoutPlan(planRes.data && planRes.data.length > 0 ? planRes.data[0].plan : null);
+        setWorkoutHistory(workoutHistoryRes.data || []);
+        setApplicationHistory(applicationHistoryRes.data || []);
+        
+        if (dailyRecordRes.data) {
+            dailyRecordIdRef.current = dailyRecordRes.data.id;
+            setMeals(dailyRecordRes.data.meals || []);
+            setQuickAddProtein(dailyRecordRes.data.quick_add_protein_grams || 0);
+            setCurrentWater(dailyRecordRes.data.water_liters || 0);
+        } else {
+            dailyRecordIdRef.current = null;
+            setMeals([]);
+            setQuickAddProtein(0);
+            setCurrentWater(0);
+        }
+
+        setDailyNotes([]);
+        setSideEffects([]);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    } finally {
+        setLoading(false);
+        setTimeout(() => {
+            isInitialLoad.current = false;
+        }, 50); 
     }
-    
-    setWeightHistory(weightRes.data || []);
-    setProgressPhotos(photoRes.data || []);
-    setWorkoutPlan(planRes.data ? planRes.data.plan : null);
-    setWorkoutHistory(workoutHistoryRes.data || []);
-    setApplicationHistory(applicationHistoryRes.data || []);
-    
-    if (dailyRecordRes.data) {
-        setMeals(dailyRecordRes.data.meals || []);
-        setQuickAddProtein(dailyRecordRes.data.quick_add_protein_grams || 0);
-        setCurrentWater(dailyRecordRes.data.water_liters || 0);
-    } else {
-        setMeals([]);
-        setQuickAddProtein(0);
-        setCurrentWater(0);
-    }
-
-    setDailyNotes([]);
-    setSideEffects([]);
-    
-    setLoading(false);
-    setTimeout(() => {
-        isInitialLoad.current = false;
-    }, 500);
   }, []);
 
   useEffect(() => {
@@ -175,23 +184,102 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     debounceTimeoutRef.current = window.setTimeout(async () => {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const payload = {
-        user_id: userData.id,
-        date: todayStr,
-        meals: meals,
-        quick_add_protein_grams: quickAddProtein,
-        water_liters: currentWater,
-      };
-      await supabase.from('daily_records').upsert(payload, { onConflict: 'user_id, date' });
-    }, 1500);
+      try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          
+          // 1. Garante que temos o ID correto se ele existir
+          let targetId = dailyRecordIdRef.current;
+          if (!targetId) {
+              const { data: existing } = await supabase
+                .from('daily_records')
+                .select('id')
+                .eq('user_id', userData.id)
+                .eq('date', todayStr)
+                .maybeSingle();
+              
+              if (existing) {
+                  targetId = existing.id;
+                  dailyRecordIdRef.current = existing.id;
+              }
+          }
+
+          const payload = {
+            user_id: userData.id,
+            date: todayStr,
+            meals: meals,
+            quick_add_protein_grams: quickAddProtein,
+            water_liters: currentWater,
+          };
+
+          let resultData = null;
+          let resultError = null;
+
+          if (targetId) {
+              // 2. Se temos ID, fazemos UPDATE
+              const { data, error } = await supabase
+                .from('daily_records')
+                .update(payload)
+                .eq('id', targetId)
+                .select()
+                .single();
+              
+              resultData = data;
+              resultError = error;
+          } else {
+              // 3. Se não temos ID, fazemos INSERT
+              const { data, error } = await supabase
+                .from('daily_records')
+                .insert(payload)
+                .select()
+                .single();
+                
+              resultData = data;
+              resultError = error;
+
+              // Recuperação de erro: Se falhar por duplicidade (unique violation), tenta pegar o ID e atualizar
+              if (error && error.code === '23505') {
+                   const { data: existingRetry } = await supabase
+                        .from('daily_records')
+                        .select('id')
+                        .eq('user_id', userData.id)
+                        .eq('date', todayStr)
+                        .maybeSingle();
+                    
+                   if (existingRetry) {
+                       dailyRecordIdRef.current = existingRetry.id;
+                       const { data: retryData, error: retryError } = await supabase
+                           .from('daily_records')
+                           .update(payload)
+                           .eq('id', existingRetry.id)
+                           .select()
+                           .single();
+                       
+                       resultData = retryData;
+                       resultError = retryError;
+                   }
+              }
+          }
+
+          if (resultData) {
+              dailyRecordIdRef.current = resultData.id;
+          }
+          
+          if (resultError) {
+              console.error("Error saving daily record:", resultError);
+              addToast("Erro ao salvar dados. Verifique sua conexão.", "error");
+          }
+
+      } catch (err) {
+          console.error("Exception saving data:", err);
+      }
+    }, 1000);
 
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [meals, quickAddProtein, currentWater, userData, loading]);
+  }, [meals, quickAddProtein, currentWater, userData, loading, addToast]);
 
   const updateStreak = useCallback(async () => {
     if (!userData) return;

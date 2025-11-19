@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Meal } from '../../types';
 import { CameraIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
+import Portal from '../core/Portal';
 
 // Helper to convert blob to base64
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -188,36 +189,38 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-      <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up">
-        <div className="flex-shrink-0 flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CalorieCam</h2>
-          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-
-        <div className="flex-grow overflow-y-auto">
-          {renderContent()}
-        </div>
-
-        {stage === 'results' && (
-          <div className="mt-auto pt-6 flex gap-3">
-            <button onClick={handleRetry} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
-              <ArrowPathIcon className="w-5 h-5" />
-              Tentar
-            </button>
-            <button
-              onClick={handleAdd}
-              disabled={!analysisResult || !analysisResult.foodName}
-              className="w-2/3 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 flex items-center justify-center gap-2"
-            >
-              <PlusIcon className="w-6 h-6" />
-              Adicionar ao Diário
+    <Portal>
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0 flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CalorieCam</h2>
+            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
-        )}
+
+          <div className="flex-grow overflow-y-auto">
+            {renderContent()}
+          </div>
+
+          {stage === 'results' && (
+            <div className="mt-auto pt-6 flex gap-3">
+              <button onClick={handleRetry} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
+                <ArrowPathIcon className="w-5 h-5" />
+                Tentar
+              </button>
+              <button
+                onClick={handleAdd}
+                disabled={!analysisResult || !analysisResult.foodName}
+                className="w-2/3 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 flex items-center justify-center gap-2"
+              >
+                <PlusIcon className="w-6 h-6" />
+                Adicionar ao Diário
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 };

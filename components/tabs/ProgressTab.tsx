@@ -1,609 +1,391 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell } from 'recharts';
-import type { ProgressPhoto } from '../../types';
-import { CameraIcon, PlusIcon, TrashIcon, ArrowPathIcon, ScaleIcon, CheckCircleIcon } from '../core/Icons';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import type { ProgressPhoto, UserData } from '../../types';
+import { CameraIcon, TrashIcon, ScaleIcon, CheckCircleIcon, WavesIcon, UserCircleIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
-import { CalendarView } from './CalendarView';
-import { ReportsView } from './ReportsView';
 
+// --- Utilitários de Formatação e Cálculo ---
 const formatDate = (isoString: string) => new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
-const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; }> = ({ label, isActive, onClick }) => (
-    <button onClick={onClick} className={`w-1/3 py-2 rounded-lg font-semibold transition-all text-base active:scale-[0.98] ${isActive ? 'bg-white dark:bg-gray-700 shadow text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
-        {label}
-    </button>
-);
-
-const SinglePhotoViewerModal: React.FC<{photo: ProgressPhoto, onClose: () => void, onDelete: (photo: ProgressPhoto) => void}> = ({ photo, onClose, onDelete }) => {
-    return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-pop-in" onClick={onClose}>
-            <div className="relative bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                <img 
-                    src={photo.photo_url} 
-                    alt={`Progresso ${formatDate(photo.date)}`} 
-                    className="w-full h-auto object-contain rounded-2xl max-h-[75vh]" 
-                />
-                <button 
-                    onClick={onClose} 
-                    className="absolute top-3 right-3 bg-black/40 dark:bg-white/20 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/60 dark:hover:bg-white/30 transition-all"
-                >
-                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-                 <button 
-                    onClick={() => onDelete(photo)} 
-                    className="absolute top-3 left-3 bg-black/40 dark:bg-white/20 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-all"
-                    aria-label="Excluir foto"
-                >
-                    <TrashIcon className="w-5 h-5" />
-                </button>
-            </div>
-        </div>
-    );
-}
-
-const DeleteConfirmationModal: React.FC<{
-    onConfirm: () => void;
-    onClose: () => void;
-}> = ({ onConfirm, onClose }) => (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={onClose}>
-        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm text-center animate-pop-in" onClick={(e) => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                <TrashIcon className="w-8 h-8"/>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Excluir Foto?</h2>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-                Esta ação é permanente e não pode ser desfeita.
-            </p>
-            <div className="flex flex-col gap-3 mt-6">
-                <button onClick={onConfirm} className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold">Excluir</button>
-                <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-semibold">Cancelar</button>
-            </div>
-        </div>
-    </div>
-);
-
-
-const ProgressView: React.FC = () => {
-  const { userData, weightHistory, setWeightHistory, progressPhotos, setProgressPhotos, updateStreak, theme } = useAppContext();
-  const { addToast } = useToast();
-  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
-  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [viewingPhoto, setViewingPhoto] = useState<ProgressPhoto | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [photoToDelete, setPhotoToDelete] = useState<ProgressPhoto | null>(null);
-  
-  const sortedPhotos = useMemo(() => [...progressPhotos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [progressPhotos]);
-
-  useEffect(() => {
-     if (sortedPhotos.length > 0 && currentPhotoIndex >= sortedPhotos.length) {
-        setCurrentPhotoIndex(sortedPhotos.length - 1);
-    } else if (sortedPhotos.length === 0) {
-        setCurrentPhotoIndex(0);
-    }
-  }, [sortedPhotos, currentPhotoIndex]);
-  
-  // Body scroll lock effect for modals
-  useEffect(() => {
-    const isModalOpen = !!viewingPhoto || isComparisonModalOpen || isWeightModalOpen || !!photoToDelete;
-    if (isModalOpen) {
-        document.body.style.overflow = 'hidden';
-    } else {
-        document.body.style.overflow = 'auto';
-    }
-    // Cleanup function
-    return () => {
-        document.body.style.overflow = 'auto';
-    };
-  }, [viewingPhoto, isComparisonModalOpen, isWeightModalOpen, photoToDelete]);
-
-  const handleDeleteRequest = (photo: ProgressPhoto) => {
-    setPhotoToDelete(photo);
-  };
-  
-  const confirmDelete = async () => {
-      if (photoToDelete) {
-          if (viewingPhoto && viewingPhoto.id === photoToDelete.id) {
-              setViewingPhoto(null);
-          }
-          if (!userData) return;
-          try {
-              const url = new URL(photoToDelete.photo_url);
-              const path = url.pathname.split('/progress_photos/')[1];
-              
-              const { error: storageError } = await supabase.storage.from('progress_photos').remove([path]);
-              if (storageError) {
-                  console.error("Error deleting photo from storage:", storageError);
-                  throw new Error("Não foi possível excluir o arquivo da foto.");
-              }
-
-              const { error: dbError } = await supabase.from('progress_photos').delete().eq('id', photoToDelete.id);
-              if (dbError) {
-                  console.error("Error deleting photo from database:", dbError);
-                  throw new Error("Não foi possível excluir o registro da foto.");
-              }
-
-              setProgressPhotos(prev => prev.filter(p => p.id !== photoToDelete.id));
-              addToast('Foto excluída com sucesso.', 'success');
-          } catch (error: any) {
-              console.error("Error processing photo deletion:", error);
-              addToast(error.message || "Ocorreu um erro ao excluir a foto.", 'error');
-          }
-          setPhotoToDelete(null);
-      }
-  };
-
-
-  const handleOlderPhoto = () => {
-    setCurrentPhotoIndex(prev => Math.min(prev + 1, sortedPhotos.length - 1));
-  };
-  const handleNewerPhoto = () => {
-    setCurrentPhotoIndex(prev => Math.max(0, prev - 1));
-  };
-
-  const currentPhoto = sortedPhotos[currentPhotoIndex];
-
-
-  const latestWeightEntry = useMemo(() => [...weightHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] || { weight: userData.weight }, [weightHistory, userData.weight]);
- 
-  const handleAddWeight = async (newWeight: number) => {
-    if (newWeight > 30 && newWeight < 300) {
-      const newEntry = {
-        user_id: userData.id,
-        date: new Date().toISOString(),
-        weight: newWeight
-      };
-      
-      const { data, error } = await supabase.from('weight_history').insert(newEntry).select();
-      
-      if (data) {
-        setWeightHistory(prev => [data[0], ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        setIsWeightModalOpen(false);
-        updateStreak();
-      }
-      if (error) console.error("Error adding weight:", error);
-    }
-  };
-
-  const handleAddPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const filePath = `${userData.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('progress_photos').upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading photo:', uploadError);
-        return;
-      }
-      
-      const { data: { publicUrl } } = supabase.storage.from('progress_photos').getPublicUrl(filePath);
-
-      const newPhotoData = {
-          user_id: userData.id,
-          date: new Date().toISOString(),
-          photo_url: publicUrl,
-      };
-
-      const { data: dbData, error: dbError } = await supabase.from('progress_photos').insert(newPhotoData).select();
-
-      if (dbData) {
-          setProgressPhotos(prev => [dbData[0], ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-          updateStreak();
-      }
-       if (dbError) console.error('Error saving photo record:', dbError);
-    }
-  };
-  
-  const sortedWeightHistory = useMemo(() => [...weightHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [weightHistory]);
-  
-  const calculateIMC = (weight: number, heightCm: number) => {
-      if (heightCm === 0) return 0;
-      const heightM = heightCm / 100;
-      return parseFloat((weight / (heightM * heightM)).toFixed(1));
-  }
-  
-  const imcHistory = useMemo(() => sortedWeightHistory.map(entry => ({
-      date: entry.date,
-      imc: calculateIMC(entry.weight, userData.height)
-  })), [sortedWeightHistory, userData.height]);
-
-  const startWeight = userData.weight;
-  const currentWeight = latestWeightEntry.weight;
-  const targetWeight = userData.targetWeight;
-  const totalDistance = startWeight - targetWeight;
-  const distanceCovered = startWeight - currentWeight;
-
-  let progressPercentage = 0;
-  if (totalDistance > 0) {
-      progressPercentage = Math.max(0, Math.min(100, (distanceCovered / totalDistance) * 100));
-  }
-
-  const donutData = [
-      { name: 'progress', value: progressPercentage },
-      { name: 'remaining', value: 100 - progressPercentage },
-  ];
-  const DONUT_COLORS = theme === 'dark' ? ['#f9fafb', '#374151'] : ['#111827', '#e5e7eb'];
-  
-  const tooltipStyle = {
-    backgroundColor: theme === 'dark' ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-    backdropFilter: 'blur(4px)',
-    border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`,
-    borderRadius: '0.75rem',
-    color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
-  };
-
-
-  return (
-    <>
-      <section className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col space-y-3">
-            <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-sm rounded-3xl aspect-square flex items-center justify-center p-2 group">
-              {sortedPhotos.length > 0 && currentPhoto ? (
-                  <div className="relative w-full h-full rounded-2xl overflow-hidden">
-                      <div onClick={() => setViewingPhoto(currentPhoto)} className="w-full h-full block cursor-pointer">
-                          <img
-                              key={currentPhoto.id}
-                              src={currentPhoto.photo_url}
-                              alt={`Progresso ${formatDate(currentPhoto.date)}`}
-                              className="w-full h-full object-cover animate-fade-in"
-                          />
-                      </div>
-                       <button
-                          onClick={() => handleDeleteRequest(currentPhoto)}
-                          className="absolute top-3 right-3 bg-black/40 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-all z-10"
-                          aria-label="Excluir foto"
-                      >
-                          <TrashIcon className="w-5 h-5" />
-                      </button>
-                      
-                      {sortedPhotos.length > 1 && (
-                          <>
-                              <button
-                                  onClick={handleNewerPhoto}
-                                  disabled={currentPhotoIndex === 0}
-                                  aria-label="Foto mais nova"
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 text-white backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/50 transition-all disabled:opacity-0 disabled:pointer-events-none"
-                              >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                              </button>
-                              <button
-                                  onClick={handleOlderPhoto}
-                                  disabled={currentPhotoIndex === sortedPhotos.length - 1}
-                                  aria-label="Foto mais antiga"
-                                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 text-white backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/50 transition-all disabled:opacity-0 disabled:pointer-events-none"
-                              >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                              </button>
-                          </>
-                      )}
-                  </div>
-              ) : (
-                  <div className="text-center text-gray-400 dark:text-gray-500">
-                      <CameraIcon className="w-12 h-12 mx-auto" />
-                      <p className="mt-2 font-medium">Sem fotos ainda</p>
-                  </div>
-              )}
-          </div>
-          
-          <div className="flex justify-center items-center gap-2 py-1">
-              {sortedPhotos.length > 1 && (
-                  sortedPhotos.map((_, index) => (
-                      <button 
-                          key={index} 
-                          onClick={() => setCurrentPhotoIndex(index)}
-                          aria-label={`Ir para foto ${index + 1}`}
-                          className={`w-2 h-2 rounded-full transition-all duration-300 ${currentPhotoIndex === index ? 'bg-black dark:bg-white scale-125' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'}`}
-                      />
-                  ))
-              )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-              <button
-                  onClick={() => setIsComparisonModalOpen(true)}
-                  disabled={progressPhotos.length < 2}
-                  className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold py-3 rounded-xl disabled:opacity-50 transition-transform active:scale-95"
-              >
-                  Comparar
-              </button>
-              <button
-                  onClick={() => photoInputRef.current?.click()}
-                  className="w-full bg-black dark:bg-white text-white dark:text-black font-semibold py-3 rounded-xl transition-transform active:scale-95"
-              >
-                  Adicionar
-              </button>
-          </div>
-          <input type="file" accept="image/*" ref={photoInputRef} onChange={handleAddPhoto} className="hidden" />
-      </div>
-        
-        <div className="bg-gray-100/60 dark:bg-gray-800/50 rounded-3xl p-5 flex flex-col justify-between">
-            <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ScaleIcon className="w-5 h-5" />
-                <span className="ml-2 font-semibold">Peso</span>
-            </div>
-            <div className="relative flex-grow flex items-center justify-center my-4 min-h-[150px]">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie 
-                            data={donutData} 
-                            cx="50%" 
-                            cy="50%" 
-                            dataKey="value" 
-                            innerRadius="75%" 
-                            outerRadius="100%" 
-                            startAngle={90} 
-                            endAngle={-270}
-                            paddingAngle={progressPercentage > 0 && progressPercentage < 100 ? 4 : 0}
-                            cornerRadius={progressPercentage > 0 ? 99 : 0}
-                            stroke="none"
-                        >
-                            {donutData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                            ))}
-                        </Pie>
-                    </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-4xl font-bold tracking-tighter leading-tight text-gray-900 dark:text-gray-100">{currentWeight.toFixed(1)}</span>
-                    <span className="text-lg text-gray-500 dark:text-gray-400 font-medium -mt-1">kg</span>
-                </div>
-            </div>
-            <div className="border-t border-gray-200/80 dark:border-gray-700 pt-4 flex justify-between items-center text-center">
-                <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Meta</p>
-                    <p className="font-semibold text-lg text-gray-900 dark:text-gray-100">{userData.targetWeight} kg</p>
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Faltam</p>
-                    <p className="font-semibold text-lg text-gray-900 dark:text-gray-100">{(currentWeight - userData.targetWeight).toFixed(1)} kg</p>
-                </div>
-            </div>
-        </div>
-      </section>
-      
-       <section className="bg-gray-100/60 dark:bg-gray-800/50 rounded-3xl p-5">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Histórico de Peso</h2>
-          <div className="space-y-3">
-              {weightHistory.length > 0 ? (
-                weightHistory.slice(0, 4).map(entry => (
-                  <div key={entry.id} className="flex justify-between items-center text-gray-700 dark:text-gray-300 pb-3 border-b border-gray-200/80 dark:border-gray-700/80 last:border-b-0 last:pb-0">
-                      <p className="font-medium">{new Date(entry.date).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })}</p>
-                      <p className="font-semibold text-gray-900 dark:text-gray-100">{entry.weight.toFixed(1)} kg</p>
-                  </div>
-                ))
-              ) : (
-                 <p className="text-center text-gray-500 dark:text-gray-400 py-4">Nenhum registro de peso.</p>
-              )}
-          </div>
-      </section>
-
-      <section className="bg-gray-100/60 dark:bg-gray-800/50 rounded-3xl p-5">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Evolução do Peso</h2>
-          <div className="h-60 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={sortedWeightHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <defs>
-                          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={theme === 'dark' ? '#f9fafb' : '#111827'} stopOpacity={0.1}/>
-                              <stop offset="95%" stopColor={theme === 'dark' ? '#f9fafb' : '#111827'} stopOpacity={0}/>
-                          </linearGradient>
-                      </defs>
-                      <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={['dataMin - 2', 'dataMax + 2']} unit="kg" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Area type="monotone" dataKey="weight" stroke={theme === 'dark' ? '#f9fafb' : '#111827'} strokeWidth={2} fillOpacity={1} fill="url(#colorUv)" activeDot={{ r: 6 }} />
-                  </AreaChart>
-              </ResponsiveContainer>
-          </div>
-      </section>
-      
-       <section className="bg-gray-100/60 dark:bg-gray-800/50 rounded-3xl p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-white dark:bg-gray-900/50 p-2 rounded-full shadow-sm"><ScaleIcon className="w-5 h-5 text-gray-600 dark:text-gray-300"/></div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Índice de Massa Corporal (IMC)</h2>
-          </div>
-          <div className="h-40 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={imcHistory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={['dataMin - 1', 'dataMax + 1']} tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Line type="monotone" dataKey="imc" stroke="#2563eb" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                  </LineChart>
-              </ResponsiveContainer>
-          </div>
-      </section>
-      
-      <footer className="pt-4 pb-4">
-         <button onClick={() => setIsWeightModalOpen(true)} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-semibold transform active:scale-95 transition-transform">
-             Registrar Peso
-         </button>
-      </footer>
-
-      {isWeightModalOpen && <RegisterWeightModal onSave={handleAddWeight} onClose={() => setIsWeightModalOpen(false)} />}
-      {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={handleDeleteRequest} />}
-      {isComparisonModalOpen && (
-        <PhotoComparisonModal
-            photos={progressPhotos}
-            onClose={() => setIsComparisonModalOpen(false)}
-        />
-       )}
-       {photoToDelete && (
-        <DeleteConfirmationModal 
-            onConfirm={confirmDelete}
-            onClose={() => setPhotoToDelete(null)}
-        />
-       )}
-    </>
-  )
-}
-
-export const ProgressTab: React.FC = () => {
-  const [view, setView] = useState<'progress' | 'calendar' | 'reports'>('progress');
-  
-  return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-white dark:bg-black min-h-screen animate-fade-in">
-      <header>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Progresso</h1>
-        <p className="text-gray-500 dark:text-gray-400">Sua jornada visual e diária</p>
-      </header>
-
-      <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-        <TabButton label="Progresso" isActive={view === 'progress'} onClick={() => setView('progress')} />
-        <TabButton label="Calendário" isActive={view === 'calendar'} onClick={() => setView('calendar')} />
-        <TabButton label="Relatórios" isActive={view === 'reports'} onClick={() => setView('reports')} />
-      </div>
-
-      {view === 'progress' && <ProgressView />}
-      {view === 'calendar' && <CalendarView />}
-      {view === 'reports' && <ReportsView />}
-    </div>
-  );
+const calculateTMB = (user: UserData) => {
+    // Fórmula de Mifflin-St Jeor (Padrão Ouro para TMB)
+    const s = user.gender === 'Masculino' ? 5 : -161;
+    const tmb = (10 * user.weight) + (6.25 * user.height) - (5 * user.age) + s;
+    return Math.round(tmb);
 };
 
+const getIMCStatus = (imc: number) => {
+    if (imc < 18.5) return { label: 'Abaixo do Peso', color: 'text-blue-500' };
+    if (imc < 24.9) return { label: 'Peso Ideal', color: 'text-green-500' };
+    if (imc < 29.9) return { label: 'Sobrepeso', color: 'text-yellow-500' };
+    if (imc < 34.9) return { label: 'Obesidade Grau I', color: 'text-orange-500' };
+    if (imc < 39.9) return { label: 'Obesidade Grau II', color: 'text-red-500' };
+    return { label: 'Obesidade Grau III', color: 'text-red-700' };
+};
+
+// --- Subcomponentes Visuais ---
+
+const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string | number, subtext?: string, color?: string }> = ({ icon, label, value, subtext, color = "bg-white dark:bg-gray-900" }) => (
+    <div className={`p-4 rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-between ${color} relative overflow-hidden group transition-transform active:scale-[0.98]`}>
+        <div className="flex justify-between items-start z-10">
+            <div className="p-2 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl backdrop-blur-md">{icon}</div>
+        </div>
+        <div className="mt-3 z-10">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+            {subtext && <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-1">{subtext}</p>}
+        </div>
+    </div>
+);
 
 const RegisterWeightModal: React.FC<{onClose: () => void, onSave: (weight: number) => void}> = ({ onClose, onSave }) => {
     const [weight, setWeight] = useState('');
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Novo Peso</h2>
-                <div className="relative my-6">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-900 rounded-[32px] p-6 w-full max-w-sm shadow-2xl animate-pop-in" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Registrar Peso</h2>
+                <div className="relative my-8">
                     <input
                         type="number"
                         value={weight}
                         onChange={(e) => setWeight(e.target.value)}
-                        className="w-full h-20 px-4 text-center text-4xl font-bold bg-gray-100/80 dark:bg-gray-800/80 rounded-2xl shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-gray-900 dark:text-white"
-                        placeholder="70.5"
+                        className="w-full h-24 px-4 text-center text-5xl font-bold bg-gray-100 dark:bg-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        placeholder="0.0"
                         autoFocus
                     />
-                    <span className="absolute bottom-3 right-5 text-lg text-gray-400 dark:text-gray-500 pointer-events-none">kg</span>
+                    <span className="absolute bottom-4 right-6 text-xl font-bold text-gray-400 dark:text-gray-500 pointer-events-none">kg</span>
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-semibold">Cancelar</button>
-                    <button onClick={() => onSave(parseFloat(weight))} disabled={!weight} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600">Salvar</button>
+                    <button onClick={onClose} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-2xl font-bold text-lg">Cancelar</button>
+                    <button onClick={() => onSave(parseFloat(weight))} disabled={!weight} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg disabled:opacity-50 shadow-lg">Salvar</button>
                 </div>
             </div>
         </div>
     );
 };
 
-function calculateDateDifference(dateStr1: string, dateStr2: string): string {
-    const d1 = new Date(dateStr1);
-    const d2 = new Date(dateStr2);
-    
-    const diffTime = Math.abs(d2.getTime() - d1.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const SinglePhotoViewerModal: React.FC<{photo: ProgressPhoto, onClose: () => void, onDelete: (photo: ProgressPhoto) => void}> = ({ photo, onClose, onDelete }) => (
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={onClose}>
+        <div className="relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <img 
+                src={photo.photo_url} 
+                alt={`Progresso ${formatDate(photo.date)}`} 
+                className="w-full h-auto object-contain rounded-2xl shadow-2xl max-h-[80vh]" 
+            />
+            <div className="absolute -bottom-16 left-0 right-0 flex justify-center gap-4">
+                <button onClick={onClose} className="bg-white/20 backdrop-blur-md text-white p-4 rounded-full hover:bg-white/30 transition-all">
+                    <ArrowPathIcon className="w-6 h-6" />
+                </button>
+                <button onClick={() => onDelete(photo)} className="bg-red-500/80 backdrop-blur-md text-white p-4 rounded-full hover:bg-red-600 transition-all">
+                    <TrashIcon className="w-6 h-6" />
+                </button>
+            </div>
+        </div>
+    </div>
+);
 
-    if (diffDays <= 1) return "Diferença de 1 dia";
-    
-    const weeks = Math.floor(diffDays / 7);
-    const remainingDays = diffDays % 7;
-
-    let parts = [];
-    if (weeks > 0) {
-        parts.push(`${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`);
-    }
-    if (remainingDays > 0) {
-        parts.push(`${remainingDays} ${remainingDays === 1 ? 'dia' : 'dias'}`);
-    }
-
-    return `Diferença de ${parts.join(' e ')}`;
-}
-
-const PhotoComparisonModal: React.FC<{
-    photos: ProgressPhoto[];
-    onClose: () => void;
-}> = ({ photos, onClose }) => {
+const PhotoComparisonModal: React.FC<{ photos: ProgressPhoto[]; onClose: () => void; }> = ({ photos, onClose }) => {
     const [selectedPhotos, setSelectedPhotos] = useState<ProgressPhoto[]>([]);
     const [view, setView] = useState<'select' | 'compare'>('select');
 
     const handleSelectPhoto = (photo: ProgressPhoto) => {
         if (selectedPhotos.some(p => p.id === photo.id)) {
             setSelectedPhotos(prev => prev.filter(p => p.id !== photo.id));
-            return;
-        }
-        if (selectedPhotos.length < 2) {
+        } else if (selectedPhotos.length < 2) {
             setSelectedPhotos(prev => [...prev, photo].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
         }
     };
 
-    const handleCompareClick = () => {
-        if (selectedPhotos.length === 2) {
-            setView('compare');
-        }
-    };
-    
-    const handleBackClick = () => {
-        setView('select');
-    };
-    
-    const sortedPhotos = useMemo(() => [...photos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [photos]);
+    const sortedPhotos = [...photos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md max-h-[90vh] flex flex-col animate-pop-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-900 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md h-[90vh] sm:h-[80vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
                 {view === 'select' ? (
                     <>
-                        <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                            <div className="w-8"></div>
-                            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Selecione 2 Fotos</h2>
-                            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                        <header className="p-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Selecionar 2 Fotos</h2>
+                            <button onClick={onClose} className="text-gray-500 dark:text-gray-400">Fechar</button>
                         </header>
-                        <main className="flex-grow overflow-y-auto p-4 grid grid-cols-3 gap-3">
+                        <div className="flex-grow overflow-y-auto p-4 grid grid-cols-3 gap-2 content-start">
                             {sortedPhotos.map(photo => {
                                 const isSelected = selectedPhotos.some(p => p.id === photo.id);
                                 return (
-                                    <button key={photo.id} onClick={() => handleSelectPhoto(photo)} className="relative aspect-square rounded-xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                        <img src={photo.photo_url} alt={`Progresso ${formatDate(photo.date)}`} className={`w-full h-full object-cover transition-transform duration-200 ${isSelected ? 'scale-90' : 'group-hover:scale-95'}`} />
-                                        <div className={`absolute inset-0 transition-all duration-200 ${isSelected ? 'bg-black/40' : 'bg-transparent'}`}></div>
+                                    <button key={photo.id} onClick={() => handleSelectPhoto(photo)} className="relative aspect-square rounded-xl overflow-hidden group">
+                                        <img src={photo.photo_url} alt="" className={`w-full h-full object-cover transition-all duration-300 ${isSelected ? 'scale-100 opacity-100' : 'opacity-70'}`} />
                                         {isSelected && (
-                                            <div className="absolute top-2 right-2 bg-white text-blue-500 w-6 h-6 rounded-full flex items-center justify-center transform scale-100 transition-transform">
-                                                <CheckCircleIcon className="w-6 h-6" />
+                                            <div className="absolute inset-0 bg-blue-500/20 border-4 border-blue-500 flex items-center justify-center">
+                                                <div className="bg-blue-500 text-white rounded-full p-1"><CheckCircleIcon className="w-5 h-5"/></div>
                                             </div>
                                         )}
                                     </button>
                                 );
                             })}
-                        </main>
-                        <footer className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
-                            <button onClick={handleCompareClick} disabled={selectedPhotos.length !== 2} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
-                                Comparar ({selectedPhotos.length}/2)
+                        </div>
+                        <div className="p-6 pt-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+                            <button 
+                                onClick={() => setView('compare')} 
+                                disabled={selectedPhotos.length !== 2} 
+                                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg disabled:opacity-50 transition-all"
+                            >
+                                Comparar Fotos
                             </button>
-                        </footer>
+                        </div>
                     </>
                 ) : (
                     <>
-                        <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                            <button onClick={handleBackClick} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold text-base px-2 py-1">Voltar</button>
-                            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Comparação</h2>
-                            <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                        <header className="p-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                            <button onClick={() => setView('select')} className="text-blue-500 font-semibold">Voltar</button>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Comparação</h2>
+                            <div className="w-10"></div>
                         </header>
-                        <main className="flex-grow overflow-y-auto p-4">
-                             <div className="w-full text-center mb-4">
-                                <p className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                                    {calculateDateDifference(selectedPhotos[0].date, selectedPhotos[1].date)}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">de progresso</p>
-                            </div>
-                            <div className="flex gap-4 w-full">
-                                {selectedPhotos.map(photo => (
-                                    <div key={photo.id} className="w-1/2">
-                                        <img src={photo.photo_url} alt={`Progresso ${formatDate(photo.date)}`} className="w-full object-cover rounded-xl aspect-[3/4]" />
-                                        <p className="text-center text-gray-700 dark:text-gray-300 font-semibold mt-2">{formatDate(photo.date)}</p>
+                        <div className="flex-grow p-4 flex items-center justify-center gap-2 overflow-hidden bg-gray-50 dark:bg-black">
+                            {selectedPhotos.map((photo, idx) => (
+                                <div key={photo.id} className="flex-1 h-full flex flex-col">
+                                    <div className="flex-grow relative rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800">
+                                         <img src={photo.photo_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
                                     </div>
-                                ))}
-                            </div>
-                        </main>
+                                    <p className="text-center font-bold mt-3 text-gray-900 dark:text-white text-sm bg-white dark:bg-gray-800 py-2 rounded-lg shadow-sm">
+                                        {formatDate(photo.date)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
                     </>
                 )}
             </div>
         </div>
     );
+};
+
+// --- Componente Principal ---
+
+export const ProgressTab: React.FC = () => {
+  const { userData, weightHistory, setWeightHistory, progressPhotos, setProgressPhotos, updateStreak, sideEffects, theme } = useAppContext();
+  const { addToast } = useToast();
+  
+  // Estados
+  const [view, setView] = useState<'overview' | 'photos'>('overview');
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<ProgressPhoto | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  if (!userData) return null;
+
+  // Dados Computados
+  const sortedWeight = useMemo(() => [...weightHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [weightHistory]);
+  const currentWeight = userData.weight || 0;
+  const startWeight = sortedWeight.length > 0 ? sortedWeight[0].weight : currentWeight;
+  const lostWeight = startWeight - currentWeight;
+  const imc = (currentWeight / ((userData.height / 100) ** 2)).toFixed(1);
+  const tmb = calculateTMB(userData);
+  
+  // Dados de Colaterais para Gráfico
+  const sideEffectStats = useMemo(() => {
+      const counts: Record<string, number> = {};
+      sideEffects.forEach(entry => {
+          entry.effects.forEach(e => {
+              counts[e.name] = (counts[e.name] || 0) + 1;
+          });
+      });
+      return Object.entries(counts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 4); // Top 4
+  }, [sideEffects]);
+
+  const handleAddWeight = async (newWeight: number) => {
+      if(!userData) return;
+      const { data } = await supabase.from('weight_history').insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight }).select();
+      if(data) {
+          setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+          setIsWeightModalOpen(false);
+          updateStreak();
+          addToast("Peso registrado!", "success");
+      }
+  };
+
+  const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.[0] || !userData) return;
+      const file = e.target.files[0];
+      const path = `${userData.id}/${Date.now()}_${file.name}`;
+      
+      addToast("Enviando foto...", "info");
+      
+      const { error: uploadError } = await supabase.storage.from('progress_photos').upload(path, file);
+      if (uploadError) {
+          addToast("Erro ao enviar foto.", "error");
+          return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage.from('progress_photos').getPublicUrl(path);
+      const { data, error } = await supabase.from('progress_photos').insert({ user_id: userData.id, date: new Date().toISOString(), photo_url: publicUrl }).select();
+      
+      if(data) {
+          setProgressPhotos(prev => [data[0], ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+          addToast("Foto adicionada!", "success");
+      } else if (error) {
+          console.error(error);
+          addToast("Erro ao salvar registro.", "error");
+      }
+  };
+
+  const handleDeletePhoto = async (photo: ProgressPhoto) => {
+      if (window.confirm("Tem certeza que deseja excluir esta foto?")) {
+          const url = new URL(photo.photo_url);
+          const path = url.pathname.split('/progress_photos/')[1];
+          await supabase.storage.from('progress_photos').remove([path]);
+          await supabase.from('progress_photos').delete().eq('id', photo.id);
+          setProgressPhotos(prev => prev.filter(p => p.id !== photo.id));
+          setViewingPhoto(null);
+          addToast("Foto excluída.", "success");
+      }
+  }
+  
+  const sortedPhotos = useMemo(() => [...progressPhotos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [progressPhotos]);
+
+  return (
+    <div className="px-5 pb-24 animate-fade-in min-h-screen">
+      <header className="pt-4 mb-8 flex justify-between items-end">
+        <div>
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Progresso</p>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Saúde</h1>
+        </div>
+        <div className="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
+            <button onClick={() => setView('overview')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'overview' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Dados</button>
+            <button onClick={() => setView('photos')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'photos' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Fotos</button>
+        </div>
+      </header>
+
+      {view === 'overview' ? (
+          <div className="space-y-6">
+              {/* Painel Principal de Métricas */}
+              <div className="grid grid-cols-2 gap-3">
+                  <StatCard 
+                    icon={<ScaleIcon className="w-6 h-6 text-blue-500"/>} 
+                    label="Peso Atual" 
+                    value={`${currentWeight} kg`} 
+                    subtext={lostWeight > 0 ? `Perdidos: ${lostWeight.toFixed(1)} kg` : `Ganho: ${Math.abs(lostWeight).toFixed(1)} kg`}
+                    color="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900"
+                  />
+                  <StatCard 
+                    icon={<UserCircleIcon className="w-6 h-6 text-purple-500"/>} 
+                    label="IMC Atual" 
+                    value={imc} 
+                    subtext={getIMCStatus(Number(imc)).label}
+                    color="bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-900"
+                  />
+                  <StatCard 
+                    icon={<WavesIcon className="w-6 h-6 text-orange-500"/>} 
+                    label="Metabolismo (TMB)" 
+                    value={`${tmb} kcal`} 
+                    subtext="Gasto em repouso"
+                    color="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900"
+                  />
+                  <div 
+                    onClick={() => setIsWeightModalOpen(true)}
+                    className="p-4 rounded-[24px] border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-all active:scale-95"
+                  >
+                      <div className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center mb-2 shadow-lg">
+                          <PlusIcon className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-wider">Pesar Agora</span>
+                  </div>
+              </div>
+
+              {/* Gráfico de Peso */}
+              <section className="bg-white dark:bg-gray-900 p-6 rounded-[24px] shadow-soft border border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Evolução do Peso</h3>
+                    <span className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-md">Últimos 30 dias</span>
+                  </div>
+                  <div className="h-64 w-full -ml-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={sortedWeight}>
+                            <defs>
+                                <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <XAxis dataKey="date" tickFormatter={formatDate} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis domain={['dataMin - 2', 'dataMax + 2']} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} unit="kg" width={40} />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', backgroundColor: theme === 'dark' ? '#1f2937' : '#fff', color: theme === 'dark' ? '#fff' : '#000' }}
+                                labelFormatter={(label) => formatDate(label as string)}
+                            />
+                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+              </section>
+
+              {/* Efeitos Colaterais */}
+              {sideEffectStats.length > 0 && (
+                <section className="bg-white dark:bg-gray-900 p-6 rounded-[24px] shadow-soft border border-gray-100 dark:border-gray-800">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Efeitos Colaterais Frequentes</h3>
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={sideEffectStats} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }} />
+                                <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={24}>
+                                    {sideEffectStats.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={['#f87171', '#fb923c', '#fbbf24', '#60a5fa'][index % 4]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </section>
+              )}
+          </div>
+      ) : (
+          <div className="space-y-6">
+               <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => photoInputRef.current?.click()}
+                    className="bg-black dark:bg-white text-white dark:text-black p-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                  >
+                      <CameraIcon className="w-5 h-5" />
+                      Adicionar Foto
+                  </button>
+                  <button 
+                    onClick={() => setIsComparisonModalOpen(true)}
+                    disabled={progressPhotos.length < 2}
+                    className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 p-4 rounded-[20px] font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 transition-transform"
+                  >
+                      <ArrowPathIcon className="w-5 h-5" />
+                      Comparar
+                  </button>
+              </div>
+              <input type="file" accept="image/*" ref={photoInputRef} onChange={handleAddPhoto} className="hidden" />
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {sortedPhotos.length > 0 ? sortedPhotos.map(photo => (
+                      <div key={photo.id} onClick={() => setViewingPhoto(photo)} className="aspect-[3/4] rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm">
+                          <img src={photo.photo_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                              <p className="text-white font-bold text-sm">{formatDate(photo.date)}</p>
+                          </div>
+                      </div>
+                  )) : (
+                      <div className="col-span-2 py-12 text-center text-gray-400 dark:text-gray-600 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
+                          <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                          <p>Nenhuma foto ainda.</p>
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+
+      {isWeightModalOpen && <RegisterWeightModal onSave={handleAddWeight} onClose={() => setIsWeightModalOpen(false)} />}
+      {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={handleDeletePhoto} />}
+      {isComparisonModalOpen && <PhotoComparisonModal photos={progressPhotos} onClose={() => setIsComparisonModalOpen(false)} />}
+    </div>
+  );
 };

@@ -1,9 +1,48 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import type { Weekday, ApplicationEntry, MedicationName } from '../../types';
-import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon } from '../core/Icons';
+import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon } from '../core/Icons';
 import { WEEKDAYS, MEDICATIONS } from '../../constants';
 import { useAppContext } from '../AppContext';
+
+// --- Sub-componente: Mapa Visual de Aplicação ---
+const InjectionSiteSelector: React.FC<{
+    selectedSite: string;
+    onSelect: (site: string) => void;
+}> = ({ selectedSite, onSelect }) => {
+    const sites = [
+        { id: 'abdomen_dir', label: 'Abdômen Dir.', short: 'Abd. Dir' },
+        { id: 'abdomen_esq', label: 'Abdômen Esq.', short: 'Abd. Esq' },
+        { id: 'coxa_dir', label: 'Coxa Direita', short: 'Coxa Dir.' },
+        { id: 'coxa_esq', label: 'Coxa Esquerda', short: 'Coxa Esq.' },
+        { id: 'braco_dir', label: 'Braço Direito', short: 'Braço Dir.' },
+        { id: 'braco_esq', label: 'Braço Esquerdo', short: 'Braço Esq.' },
+    ];
+
+    return (
+        <div className="grid grid-cols-2 gap-3">
+            {sites.map((site) => (
+                <button
+                    key={site.id}
+                    onClick={() => onSelect(site.label)}
+                    className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-2 active:scale-95 ${
+                        selectedSite === site.label
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'border-transparent bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                    {/* Ícone de alvo se selecionado */}
+                    {selectedSite === site.label && (
+                        <div className="absolute top-2 right-2 text-blue-500 animate-bounce">
+                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        </div>
+                    )}
+                    <span className="font-bold text-sm">{site.short}</span>
+                </button>
+            ))}
+        </div>
+    );
+};
 
 const formatDate = (isoString: string) => new Date(isoString).toLocaleDateString('pt-BR', {
   day: '2-digit',
@@ -24,21 +63,6 @@ const getNextApplicationDate = (weekday: Weekday): Date => {
     return nextDate;
 }
 
-const SelectionButton: React.FC<{
-  onClick: () => void;
-  isSelected: boolean;
-  children: React.ReactNode;
-}> = ({ onClick, isSelected, children }) => (
-  <button
-    onClick={onClick}
-    className={`w-full text-center py-3 px-2 rounded-xl border-2 transition-all duration-200 font-semibold active:scale-[0.98] ${
-      isSelected ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' : 'bg-gray-100/60 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-100/60 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
-    }`}
-  >
-    {children}
-  </button>
-);
-
 const EditApplicationModal: React.FC<{
   entry: ApplicationEntry;
   onClose: () => void;
@@ -52,15 +76,6 @@ const EditApplicationModal: React.FC<{
 
     const availableDoses = MEDICATIONS.find(m => m.name === med)?.doses || [];
 
-    const handleMedicationSelect = (medName: MedicationName) => {
-        setMed(medName);
-        const newMedDoses = MEDICATIONS.find(m => m.name === medName)?.doses || [];
-        // If the old dose doesn't exist for the new med, select the first one
-        if (!newMedDoses.includes(dose)) {
-            setDose(newMedDoses[0] || '');
-        }
-    };
-    
     const handleSaveClick = async () => {
         setIsSaving(true);
         await onSave({ ...entry, medication: med, dose: dose });
@@ -68,7 +83,7 @@ const EditApplicationModal: React.FC<{
     };
 
     const handleDeleteClick = async () => {
-        if(window.confirm("Tem certeza que deseja remover este registro? Esta ação não pode ser desfeita.")) {
+        if(window.confirm("Tem certeza que deseja remover este registro?")) {
             setIsDeleting(true);
             await onDelete(entry.id);
             setIsDeleting(false);
@@ -76,50 +91,49 @@ const EditApplicationModal: React.FC<{
     }
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Editar Registro</h2>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">Modifique ou exclua esta aplicação.</p>
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-6 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-white/10" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Editar Registro</h2>
                 
                 <div className="space-y-4">
-                    <section>
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-300">Medicamento</h3>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Medicamento</label>
+                        <div className="flex flex-wrap gap-2">
                             {MEDICATIONS.map(medItem => (
-                                <SelectionButton key={medItem.name} onClick={() => handleMedicationSelect(medItem.name)} isSelected={med === medItem.name}>
+                                <button 
+                                    key={medItem.name} 
+                                    onClick={() => setMed(medItem.name)} 
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${med === medItem.name ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                                >
                                     {medItem.name}
-                                </SelectionButton>
+                                </button>
                             ))}
                         </div>
-                    </section>
-                    <section>
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-300">Dose</h3>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                             {availableDoses.map(doseItem => (
-                                <SelectionButton key={doseItem} onClick={() => setDose(doseItem)} isSelected={dose === doseItem}>
-                                    {doseItem}
-                                </SelectionButton>
-                            ))}
-                        </div>
-                    </section>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Dose</label>
+                        <select 
+                            value={dose} 
+                            onChange={(e) => setDose(e.target.value)}
+                            className="w-full p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
-                    <button onClick={handleSaveClick} disabled={isSaving || isDeleting} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-semibold disabled:bg-gray-400 dark:disabled:bg-gray-600">
+                <div className="mt-8 flex flex-col gap-3">
+                    <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-white dark:bg-white text-black py-3.5 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
-                    <button onClick={handleDeleteClick} disabled={isSaving || isDeleting} className="w-full bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-400 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-                       <TrashIcon className="w-5 h-5"/> {isDeleting ? 'Excluindo...' : 'Excluir Registro'}
-                    </button>
-                    <button onClick={onClose} className="w-full text-gray-600 dark:text-gray-300 py-2 rounded-xl font-semibold">
-                       Cancelar
+                    <button onClick={handleDeleteClick} className="w-full text-red-500 font-semibold py-2">
+                        Excluir Registro
                     </button>
                 </div>
             </div>
         </div>
     );
 };
-
 
 export const ApplicationTab: React.FC = () => {
   const { userData, applicationHistory, setApplicationHistory, updateStreak } = useAppContext();
@@ -131,19 +145,22 @@ export const ApplicationTab: React.FC = () => {
 
   const [selectedMed, setSelectedMed] = useState<MedicationName>(userData.medication.name);
   const [selectedDose, setSelectedDose] = useState<string>(userData.medication.dose);
+  const [selectedSite, setSelectedSite] = useState<string>('Abdômen Dir.');
 
   const handleMedicationSelect = (medName: MedicationName) => {
     setSelectedMed(medName);
     const newMedDoses = MEDICATIONS.find(m => m.name === medName)?.doses || [];
-    setSelectedDose(newMedDoses[0] || ''); // Select the first dose of the new med
+    setSelectedDose(newMedDoses[0] || '');
   };
 
   const handleLogApplication = async () => {
     setLoading(true);
+    
     const newEntry: Omit<ApplicationEntry, 'id' | 'user_id'> = {
       date: new Date().toISOString(),
       medication: selectedMed,
       dose: selectedDose,
+      // site: selectedSite // Futuramente adicionar isso ao banco
     };
 
     const { data, error } = await supabase.from('applications').insert({ ...newEntry, user_id: userData.id }).select();
@@ -158,7 +175,7 @@ export const ApplicationTab: React.FC = () => {
     }
     setLoading(false);
   };
-  
+
   const handleUpdateApplication = async (updatedEntry: ApplicationEntry) => {
     const { data, error } = await supabase
         .from('applications')
@@ -190,91 +207,110 @@ export const ApplicationTab: React.FC = () => {
   const availableDoses = MEDICATIONS.find(m => m.name === selectedMed)?.doses || [];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 bg-white dark:bg-black min-h-screen animate-fade-in">
+    <div className="p-5 space-y-8 animate-fade-in pb-24">
       <header>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Aplicação</h1>
-        <p className="text-gray-500 dark:text-gray-400">Registre sua dose semanal</p>
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Aplicação</h1>
+        <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Registre sua dose e local.</p>
       </header>
       
-      <div className="space-y-6">
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">1. Selecione o medicamento</h2>
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            {MEDICATIONS.map(med => (
-              <SelectionButton key={med.name} onClick={() => handleMedicationSelect(med.name)} isSelected={selectedMed === med.name}>
-                {med.name}
-              </SelectionButton>
-            ))}
-          </div>
+      <div className="space-y-8">
+        
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-[24px] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div className="relative z-10">
+                <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Sua próxima dose é</p>
+                <h2 className="text-3xl font-bold">{userData.medication.nextApplication}</h2>
+                <div className="flex items-center gap-2 mt-2 text-indigo-100 bg-white/20 w-fit px-3 py-1 rounded-lg backdrop-blur-md">
+                     <span className="text-sm font-medium">{nextApplicationDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}</span>
+                </div>
+            </div>
+        </div>
+
+        <section className="space-y-4">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold">1</div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">O que você vai aplicar?</h2>
+            </div>
+            
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-[24px] border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                    {MEDICATIONS.map(med => (
+                    <button 
+                        key={med.name} 
+                        onClick={() => handleMedicationSelect(med.name)} 
+                        className={`flex-shrink-0 px-4 py-2 rounded-full font-semibold transition-all ${selectedMed === med.name ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}
+                    >
+                        {med.name}
+                    </button>
+                    ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                    {availableDoses.map(dose => (
+                    <button 
+                        key={dose} 
+                        onClick={() => setSelectedDose(dose)} 
+                        className={`py-2 rounded-lg text-sm font-semibold transition-all border ${selectedDose === dose ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 text-gray-400'}`}
+                    >
+                        {dose}
+                    </button>
+                    ))}
+                </div>
+            </div>
         </section>
 
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">2. Selecione a dose</h2>
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            {availableDoses.map(dose => (
-              <SelectionButton key={dose} onClick={() => setSelectedDose(dose)} isSelected={selectedDose === dose}>
-                {dose}
-              </SelectionButton>
-            ))}
-          </div>
+        <section className="space-y-4">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold">2</div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Onde foi a aplicação?</h2>
+            </div>
+            <InjectionSiteSelector selectedSite={selectedSite} onSelect={setSelectedSite} />
+            <p className="text-xs text-center text-gray-400">Fazer rodízio dos locais ajuda na absorção e evita marcas na pele.</p>
         </section>
         
         <button 
             onClick={handleLogApplication}
             disabled={loading || isSuccess}
-            className={`w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:cursor-not-allowed active:scale-[0.98] ${isSuccess ? 'bg-green-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}
+            className={`w-full py-4 rounded-[20px] font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg active:scale-[0.98] ${isSuccess ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-black dark:bg-white text-white dark:text-black shadow-black/20 dark:shadow-white/10'}`}
             >
             {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white dark:text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+               <span>Salvando...</span>
             ) : isSuccess ? (
                 <>
-                <CheckCircleIcon />
-                <span>Registrado!</span>
+                <CheckCircleIcon className="w-6 h-6" />
+                <span>Registrado com Sucesso!</span>
                 </>
             ) : (
                 <>
-                <SyringeIcon />
-                <span>Apliquei Agora</span>
+                <SyringeIcon className="w-6 h-6" />
+                <span>Confirmar Aplicação</span>
                 </>
             )}
         </button>
-
-         <div className="bg-gray-100/60 dark:bg-gray-800/50 p-5 rounded-2xl">
-            <h3 className="text-md font-semibold text-gray-600 dark:text-gray-300">Próxima Aplicação</h3>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{userData.medication.nextApplication}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                {nextApplicationDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
-            </p>
-        </div>
       </div>
 
-
-      <section>
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 pt-4 border-t border-gray-200 dark:border-gray-700">Histórico de Aplicações</h2>
-        <div className="space-y-3">
-          {applicationHistory.length > 0 ? (
-            applicationHistory.map((entry) => (
-              <div key={entry.id} className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(entry.date)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{entry.medication} - {entry.dose}</p>
+      {applicationHistory.length > 0 && (
+        <section className="pt-8 border-t border-gray-100 dark:border-gray-800">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Histórico Recente</h2>
+            <div className="space-y-3">
+            {applicationHistory.slice(0, 3).map((entry) => (
+                <div key={entry.id} className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                            <SyringeIcon className="w-5 h-5"/>
+                        </div>
+                        <div>
+                            <p className="font-bold text-gray-900 dark:text-white">{entry.medication}</p>
+                            <p className="text-xs text-gray-500">{formatDate(entry.date)} • {entry.dose}</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setEditingEntry(entry)} className="text-gray-300 hover:text-gray-600 dark:hover:text-white transition-colors">
+                        <EditIcon className="w-5 h-5" />
+                    </button>
                 </div>
-                <button onClick={() => setEditingEntry(entry)} className="p-2 rounded-full hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-transform active:scale-95">
-                    <EditIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 bg-gray-100/60 dark:bg-gray-800/50 rounded-xl">
-              <p className="font-medium text-gray-600 dark:text-gray-300">Nenhuma aplicação registrada.</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Seu histórico aparecerá aqui.</p>
+            ))}
             </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {editingEntry && (
         <EditApplicationModal

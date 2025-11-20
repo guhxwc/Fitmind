@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -56,7 +57,7 @@ const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number;
 const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNode, disabled?: boolean}> = ({onClick, children, disabled = false}) => (
     <button 
       onClick={!disabled ? onClick : undefined} 
-      className={`w-10 h-10 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-900 dark:text-white font-bold text-xl transition-all active:scale-90 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
+      className={`flex-1 h-11 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl flex items-center justify-center text-gray-900 dark:text-white transition-all active:scale-95 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
       disabled={disabled}
     >
       {children}
@@ -253,9 +254,13 @@ export const SummaryTab: React.FC = () => {
                     accentColor="text-orange-500"
                 />
              </div>
-             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-2xl shadow-soft">
-                  <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>-</MiniControlButton>
-                  <MiniControlButton onClick={handleAddProtein}>+</MiniControlButton>
+             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
+                  <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>
+                      <MinusIcon className="w-5 h-5" />
+                  </MiniControlButton>
+                  <MiniControlButton onClick={handleAddProtein}>
+                      <PlusIcon className="w-5 h-5" />
+                  </MiniControlButton>
              </div>
           </div>
         
@@ -272,9 +277,13 @@ export const SummaryTab: React.FC = () => {
                     accentColor="text-blue-500"
                 />
              </div>
-             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-2xl shadow-soft">
-                  <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))}>-</MiniControlButton>
-                  <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>+</MiniControlButton>
+             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
+                  <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} disabled={currentWater <= 0}>
+                      <MinusIcon className="w-5 h-5" />
+                  </MiniControlButton>
+                  <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>
+                      <PlusIcon className="w-5 h-5" />
+                  </MiniControlButton>
              </div>
           </div>
 

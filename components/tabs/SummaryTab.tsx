@@ -4,8 +4,9 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon } from '../core/Icons';
 import { ManualMealModal } from './ManualMealModal';
+import { SmartLogModal } from '../SmartLogModal';
 import type { Meal } from '../../types';
 
 const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number; goal: number; unit: string; color: string; accentColor: string }> = ({ icon, title, value, goal, unit, color, accentColor }) => {
@@ -161,6 +162,7 @@ const WeightCard: React.FC = () => {
 export const SummaryTab: React.FC = () => {
   const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater } = useAppContext();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+  const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
 
   if (!userData) return null;
@@ -207,7 +209,7 @@ export const SummaryTab: React.FC = () => {
   const snackGoal = Math.round(dailyGoal * 0.15);
 
   return (
-    <div className="px-5 space-y-6 animate-fade-in">
+    <div className="px-5 space-y-6 animate-fade-in relative pb-24">
       {/* Header */}
       <header className="flex justify-between items-end pt-4">
         <div>
@@ -335,12 +337,26 @@ export const SummaryTab: React.FC = () => {
           </div>
       </section>
 
+      {/* Smart Action Button */}
+      <div className="fixed bottom-24 right-5 z-40">
+          <button
+            onClick={() => setIsSmartLogOpen(true)}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-90 transition-transform"
+          >
+              <SparklesIcon className="w-7 h-7 text-white" />
+          </button>
+      </div>
+
       {isMealModalOpen && (
         <ManualMealModal
             initialName={selectedMealType}
             onClose={() => setIsMealModalOpen(false)}
             onAddMeal={handleAddMeal}
         />
+      )}
+
+      {isSmartLogOpen && (
+          <SmartLogModal onClose={() => setIsSmartLogOpen(false)} />
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon } from '../core/Icons';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
 import type { Meal } from '../../types';
@@ -225,23 +225,27 @@ export const SummaryTab: React.FC = () => {
 
       {/* Bento Grid */}
       <div className="grid grid-cols-2 gap-4">
-          {/* Medication Card - Full Width */}
-          <div className="col-span-2 bg-gradient-to-br from-blue-600 to-blue-500 p-6 rounded-[24px] shadow-glow text-white relative overflow-hidden">
-            <div className="relative z-10 flex justify-between items-start">
-                <div>
-                    <div className="flex items-center gap-2 mb-1 opacity-90">
-                        <span className="text-xs font-bold uppercase tracking-widest">Aplicação</span>
-                    </div>
-                    <h2 className="text-3xl font-bold tracking-tight">{userData.medication.nextApplication}</h2>
-                    <p className="text-blue-100 text-sm font-medium mt-1 opacity-80">{userData.medication.name} • {userData.medication.dose}</p>
+          {/* Medication Card - Full Width - REDESIGNED */}
+          <Link to="/applications" className="col-span-2 bg-white dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft border border-gray-100 dark:border-white/5 flex items-center justify-between relative overflow-hidden group active:scale-[0.99] transition-all">
+            <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Próxima Dose</span>
                 </div>
-                <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-full shadow-inner">
-                    <EditIcon className="w-5 h-5 text-white" />
-                </div>
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{userData.medication.nextApplication}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-0.5">{userData.medication.name} • {userData.medication.dose}</p>
             </div>
-            {/* Decorative Circles */}
-            <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          </div>
+            
+            <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-900 dark:text-white group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300 shadow-sm border border-gray-100 dark:border-white/5">
+                <SyringeIcon className="w-5 h-5" />
+            </div>
+            
+            {/* Subtle decorative blob */}
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          </Link>
 
           {/* Protein Card */}
           <div className="flex flex-col gap-3">

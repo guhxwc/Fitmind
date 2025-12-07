@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import type { Weekday, ApplicationEntry, MedicationName } from '../../types';
@@ -55,7 +56,10 @@ const getNextApplicationDate = (weekday: Weekday): Date => {
     const todayDayIndex = today.getDay();
     const targetDayIndex = WEEKDAYS.indexOf(weekday);
     let dayDifference = targetDayIndex - todayDayIndex;
-    if (dayDifference <= 0) {
+    
+    // Se o dia já passou nesta semana, vai para a próxima.
+    // Se for hoje (0), mantém hoje.
+    if (dayDifference < 0) {
         dayDifference += 7;
     }
     const nextDate = new Date();
@@ -206,6 +210,14 @@ export const ApplicationTab: React.FC = () => {
   const nextApplicationDate = getNextApplicationDate(userData.medication.nextApplication);
   const availableDoses = MEDICATIONS.find(m => m.name === selectedMed)?.doses || [];
 
+  // Calculate days remaining
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const target = new Date(nextApplicationDate);
+  target.setHours(0,0,0,0);
+  const diffTime = target.getTime() - today.getTime();
+  const daysRemaining = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
   return (
     <div className="p-5 space-y-8 animate-fade-in pb-24">
       <header>
@@ -215,13 +227,40 @@ export const ApplicationTab: React.FC = () => {
       
       <div className="space-y-8">
         
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-[24px] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-            <div className="relative z-10">
-                <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Sua próxima dose é</p>
-                <h2 className="text-3xl font-bold">{userData.medication.nextApplication}</h2>
-                <div className="flex items-center gap-2 mt-2 text-indigo-100 bg-white/20 w-fit px-3 py-1 rounded-lg backdrop-blur-md">
-                     <span className="text-sm font-medium">{nextApplicationDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}</span>
+        {/* Modern iOS Style Card */}
+        <div className="relative overflow-hidden bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 shadow-soft border border-gray-100 dark:border-white/5">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+            
+            <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className={`flex h-2 w-2 rounded-full ${daysRemaining === 0 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></span>
+                            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Próxima Dose</p>
+                        </div>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                            {userData.medication.nextApplication}
+                        </h2>
+                        <p className="text-lg text-gray-500 dark:text-gray-400 font-medium mt-1">
+                            {nextApplicationDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+                        </p>
+                    </div>
+                    
+                    {/* Days Pill */}
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-sm backdrop-blur-md ${daysRemaining === 0 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                        {daysRemaining === 0 ? 'É Hoje!' : daysRemaining === 1 ? 'Amanhã' : `Faltam ${daysRemaining} dias`}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/30">
+                    <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-700 shadow-sm flex items-center justify-center text-blue-500 dark:text-blue-400">
+                        <SyringeIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-base font-bold text-gray-900 dark:text-white">{userData.medication.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{userData.medication.dose}</p>
+                    </div>
                 </div>
             </div>
         </div>

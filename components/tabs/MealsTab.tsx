@@ -3,12 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import { RECIPES_DATABASE, Recipe } from './recipesData';
 import Portal from '../core/Portal';
-import { FlameIcon, ClockIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, StarIcon, UtensilsIcon, AppleIcon, CoffeeIcon, SoupIcon, CheckCircleIcon, LockIcon, EditIcon, PersonStandingIcon, BarChartIcon, CalendarIcon, ArrowPathIcon } from '../core/Icons';
+import { FlameIcon, ClockIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, StarIcon, UtensilsIcon, AppleIcon, CoffeeIcon, SoupIcon, CheckCircleIcon, LockIcon, EditIcon, PersonStandingIcon, BarChartIcon, CalendarIcon, ArrowPathIcon, RefrigeratorIcon } from '../core/Icons';
 import type { Meal } from '../../types';
 import { ManualMealModal } from './ManualMealModal';
 import { CalorieCamModal } from './CalorieCamModal';
 import { DietQuiz } from './DietQuiz';
 import { FastingQuiz } from './FastingQuiz';
+import { PantryChefModal } from './PantryChefModal';
 
 // --- HELPER TYPES & DATA FOR FASTING ---
 
@@ -39,83 +40,137 @@ const BIOLOGICAL_STAGES = [
     { start: 24, end: 72, title: "Pico de GH", description: "Hormônio do crescimento em níveis máximos para preservação muscular.", icon: "💪" },
 ];
 
-// --- Recipe Detail Modal (Premium Redesign) ---
+// --- Recipe Detail Modal (Redesigned UI/UX) ---
 const RecipeDetailModal: React.FC<{ recipe: Recipe; onClose: () => void; onLog: () => void }> = ({ recipe, onClose, onLog }) => {
+    // Prevent scrolling on body when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, []);
+
     return (
         <Portal>
-            <div className="fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
-                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-lg h-[95vh] sm:h-[85vh] sm:rounded-[32px] rounded-t-[32px] flex flex-col relative overflow-hidden shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
-                    
-                    {/* Image Header */}
-                    <div className="h-80 w-full relative shrink-0">
-                        <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
-                        
-                        <button onClick={onClose} className="absolute top-4 left-4 bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors border border-white/10">
-                             <ChevronLeftIcon className="w-6 h-6"/>
-                        </button>
-                        
-                        <div className="absolute bottom-0 left-0 p-6 w-full">
-                             <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                {recipe.tags.slice(0, 3).map(tag => (
-                                    <span key={tag} className="px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider border border-white/10 shadow-sm">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight shadow-sm mb-2">{recipe.name}</h2>
-                            <div className="flex items-center gap-4 text-white/90 text-sm font-medium">
-                                <span className="flex items-center gap-1.5 bg-black/30 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10"><FlameIcon className="w-4 h-4 text-orange-400"/> {recipe.calories} kcal</span>
-                                <span className="flex items-center gap-1.5 bg-black/30 px-2 py-1 rounded-lg backdrop-blur-sm border border-white/10"><ClockIcon className="w-4 h-4 text-blue-400"/> {recipe.prepTime}</span>
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+                <div 
+                    className="bg-white dark:bg-[#000000] w-full h-full sm:h-[90vh] sm:max-w-md sm:rounded-[40px] flex flex-col relative overflow-hidden shadow-2xl animate-slide-up" 
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Top Navigation & Image Hero */}
+                    <div className="relative h-[40vh] w-full shrink-0 group">
+                        <img 
+                            src={recipe.image} 
+                            alt={recipe.name} 
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80"></div>
+
+                        <div className="absolute top-0 left-0 right-0 p-4 pt-safe-top flex justify-between items-center z-20">
+                            <button 
+                                onClick={onClose} 
+                                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/40 transition-all active:scale-95"
+                            >
+                                 <ChevronLeftIcon className="w-6 h-6"/>
+                            </button>
+                            <button 
+                                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/40 transition-all active:scale-95"
+                            >
+                                 <StarIcon className="w-5 h-5"/>
+                            </button>
+                        </div>
+
+                        <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+                            <h2 className="text-3xl font-extrabold text-white leading-tight shadow-sm tracking-tight mb-2">
+                                {recipe.name}
+                            </h2>
+                            <div className="flex flex-wrap gap-2">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white text-xs font-bold">
+                                    <ClockIcon className="w-3.5 h-3.5" /> {recipe.prepTime}
+                                </div>
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white text-xs font-bold">
+                                    <FlameIcon className="w-3.5 h-3.5 text-orange-300" /> {recipe.calories} kcal
+                                </div>
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white text-xs font-bold">
+                                    <BarChartIcon className="w-3.5 h-3.5 text-green-300" /> {recipe.protein}g Prot
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex-grow overflow-y-auto p-6 hide-scrollbar bg-white dark:bg-[#1C1C1E]">
-                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-8 text-[15px]">{recipe.description}</p>
-
-                        {/* Ingredients */}
-                        <div className="mb-8">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-green-500">🥬</span> Ingredientes
-                            </h3>
-                            <ul className="space-y-3">
-                                {recipe.ingredients.map((ing, i) => (
-                                    <li key={i} className="flex items-start gap-3 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/30">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></div>
-                                        <span className="text-gray-700 dark:text-gray-200 text-sm font-medium leading-relaxed">{ing}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                    {/* Scrollable Content */}
+                    <div className="flex-1 bg-white dark:bg-[#1C1C1E] -mt-6 rounded-t-[32px] relative z-10 overflow-y-auto hide-scrollbar pb-32">
+                        {/* Drag Handle */}
+                        <div className="w-full flex justify-center pt-3 pb-2 sticky top-0 bg-white dark:bg-[#1C1C1E] z-20">
+                            <div className="w-12 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700"></div>
                         </div>
 
-                        {/* Instructions */}
-                        <div className="mb-24">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-orange-500">👨‍🍳</span> Modo de Preparo
-                            </h3>
-                            <div className="space-y-6 relative pl-4">
-                                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 dark:bg-gray-800"></div>
-                                {recipe.instructions.map((step, i) => (
-                                    <div key={i} className="relative pl-6">
-                                        <div className="absolute left-[-28px] top-0 w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center font-bold text-xs text-blue-600 dark:text-blue-400 border-4 border-white dark:border-[#1C1C1E] z-10">
-                                            {i + 1}
+                        <div className="px-6 pb-6">
+                            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed font-medium mt-2">
+                                {recipe.description}
+                            </p>
+
+                            <div className="my-8">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Ingredientes</h3>
+                                <div className="space-y-3">
+                                    {recipe.ingredients.map((ing, i) => (
+                                        <div key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                                            <div className="w-5 h-5 mt-0.5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"></div>
+                                            <span className="text-gray-800 dark:text-gray-200 text-sm font-medium">{ing}</span>
                                         </div>
-                                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{step}</p>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* INSTRUCTIONS SECTION - REDESIGNED */}
+                            <div className="mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Modo de Preparo</h3>
+                                <div className="relative pl-3">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-[15px] top-3 bottom-0 w-[2px] bg-gray-100 dark:bg-gray-800"></div>
+                                    
+                                    <div className="space-y-8">
+                                        {recipe.instructions.map((step, i) => {
+                                            const isLast = i === recipe.instructions.length - 1;
+                                            return (
+                                                <div key={i} className="relative flex gap-5 group">
+                                                    {/* Number Circle */}
+                                                    <div className={`
+                                                        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white shadow-lg ring-[6px] ring-white dark:ring-[#1C1C1E] z-10 transition-transform duration-300
+                                                        ${isLast ? 'bg-green-500 scale-110' : 'bg-blue-600 group-hover:scale-110'}
+                                                    `}>
+                                                        {i + 1}
+                                                    </div>
+                                                    
+                                                    {/* Text Content */}
+                                                    <div className={`pt-0.5 transition-opacity duration-300 ${isLast ? 'opacity-100' : 'opacity-90'}`}>
+                                                        <p className={`text-[15px] leading-relaxed font-medium ${isLast ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                            {step}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
+                                    
+                                    {/* Finish Flag */}
+                                    <div className="flex gap-5 mt-8 items-center opacity-40 pl-0.5">
+                                         <div className="w-8 flex justify-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                                         </div>
+                                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Finalizado</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer Action */}
-                    <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-white via-white to-transparent dark:from-[#1C1C1E] dark:via-[#1C1C1E] pt-12">
+                    {/* Footer */}
+                    <div className="absolute bottom-0 left-0 w-full p-6 pt-4 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#000000] dark:via-[#000000]/95 z-30">
                         <button 
                             onClick={onLog}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl text-lg shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-4 rounded-[20px] text-lg shadow-xl shadow-black/10 dark:shadow-white/5 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                         >
                             <PlusIcon className="w-6 h-6" />
-                            Adicionar ao Diário
+                            <span>Registrar Refeição</span>
                         </button>
                     </div>
                 </div>
@@ -379,6 +434,7 @@ const RecipesView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => vo
     const [activeTab, setActiveTab] = useState<'discover' | 'favorites'>('discover');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+    const [isPantryChefOpen, setIsPantryChefOpen] = useState(false);
 
     // Featured Recipes
     const featuredRecipes = RECIPES_DATABASE.filter(r => 
@@ -447,8 +503,29 @@ const RecipesView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => vo
 
             {activeTab === 'discover' ? (
                 <div className="space-y-6 animate-fade-in">
+                    
+                    {/* 0. Pantry Chef (New Feature) */}
+                    <section className="px-5 mt-2">
+                        <button 
+                            onClick={() => setIsPantryChefOpen(true)}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 rounded-3xl shadow-lg shadow-blue-500/20 flex items-center justify-between relative overflow-hidden active:scale-[0.98] transition-transform group"
+                        >
+                            <div className="relative z-10 flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/10">
+                                    <RefrigeratorIcon className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="font-bold text-lg">Chef da Despensa</h3>
+                                    <p className="text-blue-100 text-sm opacity-90">Diga o que tem na geladeira</p>
+                                </div>
+                            </div>
+                            <ChevronRightIcon className="w-5 h-5 text-white/70" />
+                            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-colors"></div>
+                        </button>
+                    </section>
+
                     {/* 1. Common Categories */}
-                    <section className="pt-2">
+                    <section>
                         <SectionHeader title="Categorias comuns" />
                         <HorizontalScrollList>
                             {commonCategories.map(cat => (
@@ -545,6 +622,13 @@ const RecipesView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => vo
                         });
                         setSelectedRecipe(null);
                     }}
+                />
+            )}
+
+            {isPantryChefOpen && (
+                <PantryChefModal
+                    onClose={() => setIsPantryChefOpen(false)}
+                    onSelectRecipe={setSelectedRecipe}
                 />
             )}
         </div>

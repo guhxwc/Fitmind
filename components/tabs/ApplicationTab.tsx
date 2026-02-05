@@ -6,41 +6,51 @@ import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon }
 import { WEEKDAYS, MEDICATIONS } from '../../constants';
 import { useAppContext } from '../AppContext';
 
-// --- Sub-componente: Mapa Visual de Aplicação ---
+// --- Sub-componente: Mapa Visual de Aplicação Compacto ---
 const InjectionSiteSelector: React.FC<{
     selectedSite: string;
     onSelect: (site: string) => void;
 }> = ({ selectedSite, onSelect }) => {
-    const sites = [
-        { id: 'abdomen_dir', label: 'Abdômen Dir.', short: 'Abd. Dir' },
-        { id: 'abdomen_esq', label: 'Abdômen Esq.', short: 'Abd. Esq' },
-        { id: 'coxa_dir', label: 'Coxa Direita', short: 'Coxa Dir.' },
-        { id: 'coxa_esq', label: 'Coxa Esquerda', short: 'Coxa Esq.' },
-        { id: 'braco_dir', label: 'Braço Direito', short: 'Braço Dir.' },
-        { id: 'braco_esq', label: 'Braço Esquerdo', short: 'Braço Esq.' },
-    ];
+    
+    // Configuração visual dos botões de local
+    const renderButton = (id: string, label: string, position: string) => {
+        const isSelected = selectedSite === label;
+        
+        return (
+            <button
+                key={id}
+                onClick={() => onSelect(label)}
+                className={`relative h-14 w-full rounded-xl border font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-95
+                    ${isSelected 
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-700'
+                    }`}
+            >
+                <span>{position}</span>
+                {isSelected && <CheckCircleIcon className="w-4 h-4" />}
+            </button>
+        );
+    };
 
     return (
-        <div className="grid grid-cols-2 gap-3">
-            {sites.map((site) => (
-                <button
-                    key={site.id}
-                    onClick={() => onSelect(site.label)}
-                    className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-2 active:scale-95 ${
-                        selectedSite === site.label
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                            : 'border-transparent bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                >
-                    {/* Ícone de alvo se selecionado */}
-                    {selectedSite === site.label && (
-                        <div className="absolute top-2 right-2 text-blue-500 animate-bounce">
-                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        </div>
-                    )}
-                    <span className="font-bold text-sm">{site.short}</span>
-                </button>
-            ))}
+        <div className="flex flex-col gap-2 w-full">
+            {/* Linha Superior: Braços */}
+            <div className="flex gap-2">
+                <div className="w-1/2">{renderButton('braco_esq', 'Braço Esquerdo', 'Braço Esq.')}</div>
+                <div className="w-1/2">{renderButton('braco_dir', 'Braço Direito', 'Braço Dir.')}</div>
+            </div>
+            
+            {/* Linha do Meio: Abdômen */}
+            <div className="flex gap-2">
+                <div className="w-1/2">{renderButton('abdomen_esq', 'Abdômen Esq.', 'Abdômen Esq.')}</div>
+                <div className="w-1/2">{renderButton('abdomen_dir', 'Abdômen Dir.', 'Abdômen Dir.')}</div>
+            </div>
+
+            {/* Linha Inferior: Coxas */}
+            <div className="flex gap-2">
+                <div className="w-1/2">{renderButton('coxa_esq', 'Coxa Esquerda', 'Coxa Esq.')}</div>
+                <div className="w-1/2">{renderButton('coxa_dir', 'Coxa Direita', 'Coxa Dir.')}</div>
+            </div>
         </div>
     );
 };
@@ -302,8 +312,12 @@ export const ApplicationTab: React.FC = () => {
                 <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-xs font-bold">2</div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">Onde foi a aplicação?</h2>
             </div>
-            <InjectionSiteSelector selectedSite={selectedSite} onSelect={setSelectedSite} />
-            <p className="text-xs text-center text-gray-400">Fazer rodízio dos locais ajuda na absorção e evita marcas na pele.</p>
+            
+            {/* Seletor de Local Melhorado e Compacto */}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-[24px] border border-gray-100 dark:border-gray-800 shadow-sm">
+                <InjectionSiteSelector selectedSite={selectedSite} onSelect={setSelectedSite} />
+            </div>
+            <p className="text-xs text-center text-gray-400 px-4">Fazer rodízio dos locais ajuda na absorção e evita marcas na pele.</p>
         </section>
         
         <button 

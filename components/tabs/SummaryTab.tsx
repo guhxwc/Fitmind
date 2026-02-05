@@ -4,7 +4,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon } from '../core/Icons';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
 import type { Meal } from '../../types';
@@ -15,8 +15,6 @@ const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number;
     { name: 'remaining', value: Math.max(0, goal - value), color: 'rgba(229, 229, 234, 0.5)' }, // lighter gray for track 
   ];
   
-  // Dark mode track color adjustment handled via opacity/class in parent context if needed, but rgba works well for glass effect.
-
   return (
     <div className="bg-ios-card dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft flex flex-col items-center justify-between h-full relative overflow-hidden transition-transform active:scale-[0.98] duration-200">
       <div className="w-full flex justify-between items-center mb-2">
@@ -65,25 +63,30 @@ const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNod
     </button>
 );
 
-const MealRow: React.FC<{ icon: React.ReactNode, title: string, calories: number, goal: number, onAdd: () => void, color: string }> = ({ icon, title, calories, goal, onAdd, color }) => (
-    <div className="flex items-center justify-between py-3.5 group active:bg-gray-50 dark:active:bg-gray-800/50 rounded-xl px-2 -mx-2 transition-colors">
-        <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${color} text-white`}>
-                {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: number, goal: number, onAdd: () => void, color: string, bgClass: string }> = ({ icon, title, calories, goal, onAdd, color, bgClass }) => (
+    <div className="bg-ios-card dark:bg-ios-dark-card p-4 rounded-[24px] shadow-soft mb-3 flex items-center justify-between border border-gray-100 dark:border-white/5 active:scale-[0.99] transition-transform">
+        <div className="flex items-center gap-4 flex-1">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${bgClass} text-white`}>
+                {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
             </div>
-            <div>
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white leading-none">
-                    {title}
-                </h4>
-                <div className="flex items-center gap-2 mt-1.5">
-                    <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min((calories/goal)*100, 100)}%`, backgroundColor: color.replace('bg-', 'text-') === 'text-orange-500' ? '#F97316' : color.replace('bg-', 'text-') === 'text-yellow-500' ? '#EAB308' : color.replace('bg-', 'text-') === 'text-purple-500' ? '#A855F7' : '#22C55E' }}></div>
+            <div className="flex-1">
+                <div className="flex justify-between items-end mb-1 pr-4">
+                    <h4 className="text-base font-bold text-gray-900 dark:text-white leading-none">{title}</h4>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        <span className={`text-sm font-bold ${color}`}>{calories}</span> / {goal} kcal
+                    </p>
+                </div>
+                <div className="w-full pr-4">
+                    <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                            className={`h-full rounded-full ${bgClass.replace('bg-', 'bg-')}`} // Use dynamic bg
+                            style={{ width: `${Math.min((calories/goal)*100, 100)}%` }}
+                        ></div>
                     </div>
-                    <p className="text-xs text-gray-400 font-medium">{calories} kcal</p>
                 </div>
             </div>
         </div>
-        <button onClick={onAdd} className="w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors active:scale-90">
+        <button onClick={onAdd} className="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-90 border border-gray-200 dark:border-gray-700">
             <PlusIcon className="w-5 h-5" />
         </button>
     </div>
@@ -120,7 +123,6 @@ const WeightCard: React.FC = () => {
         debounceTimer.current = window.setTimeout(async () => {
             try {
                 await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
-                // Optimistic update logic for history omitted for brevity, assumes context handles sync
                  await supabase
                     .from('weight_history')
                     .insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight });
@@ -299,44 +301,45 @@ export const SummaryTab: React.FC = () => {
           </div>
       </div>
       
-      {/* Meals List */}
+      {/* Meals List - REDESIGNED */}
       <section className="pb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 px-1">Refeições</h2>
-          <div className="bg-ios-card dark:bg-ios-dark-card rounded-[24px] p-5 shadow-soft space-y-2">
-              <MealRow 
+          <div className="space-y-3">
+              <MealCard 
                 icon={<CoffeeIcon />} 
                 title="Café da manhã" 
                 calories={breakfastCals} 
                 goal={breakfastGoal} 
                 onAdd={() => openAddMeal('Café da manhã')}
-                color="bg-orange-500"
+                color="text-orange-500"
+                bgClass="bg-orange-500"
               />
-               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
-              <MealRow 
+              <MealCard 
                 icon={<SoupIcon />} 
                 title="Almoço" 
                 calories={lunchCals} 
                 goal={lunchGoal} 
                 onAdd={() => openAddMeal('Almoço')}
-                color="bg-yellow-500"
+                color="text-yellow-500"
+                bgClass="bg-yellow-500"
               />
-               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
-              <MealRow 
+              <MealCard 
                 icon={<UtensilsIcon />} 
                 title="Jantar" 
                 calories={dinnerCals} 
                 goal={dinnerGoal} 
                 onAdd={() => openAddMeal('Jantar')}
-                color="bg-purple-500"
+                color="text-purple-500"
+                bgClass="bg-purple-500"
               />
-               <div className="h-px bg-gray-100 dark:bg-gray-800 ml-14"></div>
-              <MealRow 
+              <MealCard 
                 icon={<AppleIcon />} 
                 title="Lanches" 
                 calories={snackCals} 
                 goal={snackGoal} 
                 onAdd={() => openAddMeal('Lanche')}
-                color="bg-green-500"
+                color="text-green-500"
+                bgClass="bg-green-500"
               />
           </div>
       </section>

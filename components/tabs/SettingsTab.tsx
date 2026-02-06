@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon } from '../core/Icons';
+import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon } from '../core/Icons';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
+import { SubscriptionPage } from '../SubscriptionPage';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -121,8 +123,9 @@ const ThemeSettings: React.FC = () => {
 
 
 export const SettingsTab: React.FC = () => {
-    const { userData } = useAppContext();
+    const { userData, unlockPro } = useAppContext();
     const navigate = useNavigate();
+    const [showSubPage, setShowSubPage] = useState(false);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -136,14 +139,18 @@ export const SettingsTab: React.FC = () => {
                 <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ajustes</h1>
             </header>
 
-            <div className="mb-8 flex items-center gap-4 bg-ios-card dark:bg-ios-dark-card p-4 rounded-[20px] shadow-sm">
-                <div className="w-16 h-16 bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-500 dark:text-gray-300 shadow-inner">
+            <div className="mb-8 flex items-center gap-4 bg-ios-card dark:bg-ios-dark-card p-4 rounded-[20px] shadow-sm relative overflow-hidden">
+                <div className="w-16 h-16 bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-500 dark:text-gray-300 shadow-inner z-10">
                     {userData.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{userData.name}</h2>
+                <div className="z-10">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{userData.name}</h2>
+                        {userData.isPro && <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">PRO</span>}
+                    </div>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{userData.medication.name} • {userData.medication.dose}</p>
                 </div>
+                {userData.isPro && <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>}
             </div>
 
             <SettingsGroup>
@@ -151,8 +158,16 @@ export const SettingsTab: React.FC = () => {
                     icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
                     label="Minha Conta" 
                     onClick={() => navigate('/settings/account')} 
-                    isLast
+                    isLast={userData.isPro}
                 />
+                {!userData.isPro && (
+                    <SettingsItem 
+                        icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
+                        label="Assinar FitMind PRO" 
+                        onClick={() => setShowSubPage(true)} 
+                        isLast
+                    />
+                )}
             </SettingsGroup>
 
             <NotificationSettings />
@@ -182,6 +197,16 @@ export const SettingsTab: React.FC = () => {
             </div>
             
             <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.2 • Feito com ❤️</p>
+
+            {showSubPage && (
+                <SubscriptionPage 
+                    onClose={() => setShowSubPage(false)}
+                    onSubscribe={() => {
+                        unlockPro();
+                        setShowSubPage(false);
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -37,6 +37,7 @@ interface AppContextType {
   updateStreak: () => void;
   theme: Theme;
   toggleTheme: () => void;
+  unlockPro: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -86,6 +87,15 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
+  // Mock function to enable pro (in a real app, this would verify a receipt)
+  const unlockPro = () => {
+      if(userData) {
+          const updated = { ...userData, isPro: true, subscriptionStatus: 'trial' };
+          setUserData(updated as UserData);
+          addToast("FitMind PRO ativado! Aproveite os 7 dias grátis.", "success");
+      }
+  }
+
   const formatProfileToUserData = (profile: any): UserData => ({
       id: profile.id,
       name: profile.name || DEFAULT_USER_DATA.name,
@@ -100,6 +110,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,
+      isPro: false, // Default to false, in a real app check DB
+      subscriptionStatus: 'free',
   });
 
   const fetchData = useCallback(async () => {
@@ -187,7 +199,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // 1. Garante que temos o ID correto se ele existir
           let targetId = dailyRecordIdRef.current;
           if (!targetId) {
               const { data: existing } = await supabase
@@ -215,7 +226,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           let resultError = null;
 
           if (targetId) {
-              // 2. Se temos ID, fazemos UPDATE
               const { data, error } = await supabase
                 .from('daily_records')
                 .update(payload)
@@ -226,7 +236,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               resultData = data;
               resultError = error;
           } else {
-              // 3. Se não temos ID, fazemos INSERT
               const { data, error } = await supabase
                 .from('daily_records')
                 .insert(payload)
@@ -236,7 +245,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               resultData = data;
               resultError = error;
 
-              // Recuperação de erro: Se falhar por duplicidade (unique violation), tenta pegar o ID e atualizar
               if (error && error.code === '23505') {
                    const { data: existingRetry } = await supabase
                         .from('daily_records')
@@ -348,6 +356,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     updateStreak,
     theme,
     toggleTheme,
+    unlockPro,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

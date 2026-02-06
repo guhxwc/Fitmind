@@ -7,6 +7,8 @@ import { supabase } from '../../supabaseClient';
 import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon } from '../core/Icons';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
+import { ProFeatureModal } from '../ProFeatureModal';
+import { SubscriptionPage } from '../SubscriptionPage';
 import type { Meal } from '../../types';
 
 const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number; goal: number; unit: string; color: string; accentColor: string }> = ({ icon, title, value, goal, unit, color, accentColor }) => {
@@ -162,10 +164,14 @@ const WeightCard: React.FC = () => {
 }
 
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater } = useAppContext();
+  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro } = useAppContext();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
+  
+  // Pro Features Logic
+  const [showProModal, setShowProModal] = useState(false);
+  const [showSubPage, setShowSubPage] = useState(false);
 
   if (!userData) return null;
   
@@ -178,6 +184,25 @@ export const SummaryTab: React.FC = () => {
   const openAddMeal = (type: string) => {
       setSelectedMealType(type);
       setIsMealModalOpen(true);
+  };
+
+  const handleSmartLogClick = () => {
+      if (userData.isPro) {
+          setIsSmartLogOpen(true);
+      } else {
+          setShowProModal(true);
+      }
+  };
+
+  const handleUnlock = () => {
+      setShowProModal(false);
+      setShowSubPage(true);
+  };
+
+  const handleSubscribe = () => {
+      unlockPro();
+      setShowSubPage(false);
+      setIsSmartLogOpen(true); // Open what they wanted
   };
 
   const handleAddMeal = (newMealData: Omit<Meal, 'id' | 'time'>) => {
@@ -302,7 +327,7 @@ export const SummaryTab: React.FC = () => {
       </div>
       
       {/* Meals List - REDESIGNED */}
-      <section className="pb-6">
+      <section>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 px-1">Refeições</h2>
           <div className="space-y-3">
               <MealCard 
@@ -344,15 +369,29 @@ export const SummaryTab: React.FC = () => {
           </div>
       </section>
 
-      {/* Smart Action Button */}
-      <div className="fixed bottom-24 right-5 z-40">
-          <button
-            onClick={() => setIsSmartLogOpen(true)}
-            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-90 transition-transform"
-          >
-              <SparklesIcon className="w-7 h-7 text-white" />
-          </button>
-      </div>
+      {/* AI Smart Action Button */}
+      <button
+        onClick={handleSmartLogClick}
+        className="w-full bg-white dark:bg-gray-900 p-4 rounded-[24px] shadow-soft border border-blue-100 dark:border-blue-900/30 flex items-center justify-between group active:scale-[0.99] transition-all relative overflow-hidden"
+      >
+        {!userData.isPro && (
+            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-xl font-bold z-10">
+                PRO
+            </div>
+        )}
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center shadow-sm">
+                <SparklesIcon className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+            </div>
+            <div className="text-left">
+                <h3 className="text-gray-900 dark:text-white font-bold text-base leading-tight">Registro Inteligente</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-0.5">Descreva o que comeu para a IA</p>
+            </div>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-full group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
+            <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+        </div>
+      </button>
 
       {isMealModalOpen && (
         <ManualMealModal
@@ -364,6 +403,20 @@ export const SummaryTab: React.FC = () => {
 
       {isSmartLogOpen && (
           <SmartLogModal onClose={() => setIsSmartLogOpen(false)} />
+      )}
+      
+      {showProModal && (
+          <ProFeatureModal 
+              title="Registro com IA"
+              onClose={() => setShowProModal(false)}
+              onUnlock={handleUnlock}
+          />
+      )}
+      {showSubPage && (
+          <SubscriptionPage 
+              onClose={() => setShowSubPage(false)}
+              onSubscribe={handleSubscribe}
+          />
       )}
     </div>
   );

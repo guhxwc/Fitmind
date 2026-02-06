@@ -8,6 +8,8 @@ import { WorkoutQuiz } from './WorkoutQuiz';
 import { EXERCISE_DATABASE } from '../../workoutData';
 import { useAppContext } from '../AppContext';
 import Portal from '../core/Portal';
+import { SubscriptionPage } from '../SubscriptionPage';
+import { ProFeatureModal } from '../ProFeatureModal';
 
 const WorkoutIntro: React.FC<{ onGenerate: () => void }> = ({ onGenerate }) => (
     <div className="bg-gray-100/50 dark:bg-gray-800/50 p-6 rounded-2xl text-center flex flex-col items-center mt-6 animate-fade-in">
@@ -202,12 +204,16 @@ const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => voi
 );
 
 export const WorkoutsTab: React.FC = () => {
-    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak } = useAppContext();
+    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak, unlockPro } = useAppContext();
     const [view, setView] = useState<'generate' | 'my_workouts' | 'history'>(workoutPlan ? 'my_workouts' : 'generate');
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeWorkoutDay, setActiveWorkoutDay] = useState<number | null>(null);
+    
+    // Pro Modal State
+    const [showProModal, setShowProModal] = useState(false);
+    const [showSubPage, setShowSubPage] = useState(false);
 
     if (!userData) return null;
 
@@ -343,6 +349,21 @@ export const WorkoutsTab: React.FC = () => {
     };
 
     const handleGenerateClick = () => {
+        if (userData.isPro) {
+            setIsQuizOpen(true);
+        } else {
+            setShowProModal(true);
+        }
+    };
+
+    const handleUnlock = () => {
+        setShowProModal(false);
+        setShowSubPage(true);
+    };
+
+    const handleSubscribe = () => {
+        unlockPro();
+        setShowSubPage(false);
         setIsQuizOpen(true);
     };
     
@@ -410,6 +431,20 @@ export const WorkoutsTab: React.FC = () => {
             {renderMainContent()}
 
             {isQuizOpen && <WorkoutQuiz onComplete={handleQuizComplete} onClose={() => setIsQuizOpen(false)} />}
+            
+            {showProModal && (
+                <ProFeatureModal 
+                    title="Personal Trainer IA"
+                    onClose={() => setShowProModal(false)}
+                    onUnlock={handleUnlock}
+                />
+            )}
+            {showSubPage && (
+                <SubscriptionPage 
+                    onClose={() => setShowSubPage(false)}
+                    onSubscribe={handleSubscribe}
+                />
+            )}
         </div>
     );
 };

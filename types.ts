@@ -125,6 +125,8 @@ export interface UserData {
   };
   streak: number;
   lastActivityDate: string | null;
+  isPro?: boolean;
+  subscriptionStatus?: 'free' | 'trial' | 'active' | 'cancelled';
 }
 
 export interface Medication {

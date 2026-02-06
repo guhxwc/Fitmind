@@ -1,451 +1,392 @@
 
-import React, { useState } from 'react';
-import { ClockIcon, PersonStandingIcon, BarChartIcon, CalendarIcon, EditIcon, ArrowPathIcon, FlameIcon, ChevronLeftIcon, LockIcon, CheckCircleIcon } from '../core/Icons';
+import React, { useState, useEffect } from 'react';
+import { ClockIcon, PersonStandingIcon, BarChartIcon, CalendarIcon, EditIcon, ArrowPathIcon, FlameIcon, ChevronLeftIcon, CheckCircleIcon, ShieldCheckIcon, LeafIcon } from '../core/Icons';
 import { FastingQuiz } from './FastingQuiz';
 
-type FastingTab = 'timer' | 'body' | 'stats' | 'calendar';
+// --- Types & Data ---
 
 interface FastingPlanData {
     id: string;
     icon: string;
     label: string;
-    shortDesc: string;
-    fullDesc: string;
+    subtitle: string; // Short description for card
     fastingHours: number;
     eatingHours: number;
-    tags: string[];
-    users: string; // Social proof number
-    difficulty: 'Iniciante' | 'Intermediário' | 'Avançado' | 'Especial';
-    scientificNote?: string; // From PDF
+    difficulty: 'Iniciante' | 'Intermediário' | 'Avançado' | 'Expert';
+    
+    // Detailed Content
+    description: string; // Intro text
+    mechanism: string; // How it works clinically
+    execution: string[]; // Step by step tutorial
+    benefits: string[];
+    risks: string[];
+    scientificNote?: string;
 }
 
-const FASTING_CATEGORIES: { title: string; plans: FastingPlanData[] }[] = [
+const FASTING_CATEGORIES: { title: string; color: string; plans: FastingPlanData[] }[] = [
   {
-    title: 'Iniciante',
+    title: 'Iniciante & Adaptação',
+    color: 'text-green-500',
     plans: [
       { 
           id: '12:12', 
-          icon: '🐣', 
-          label: '12:12', 
-          shortDesc: 'Nosso plano mais fácil. Comece de leve.',
-          fullDesc: 'Quer experimentar o jejum intermitente? Uma boa ideia é começar com o plano 12:12! Ficar sem comer por 12 horas não deve ser uma mudança tão brusca e é ótimo para tentar se acostumar a uma alimentação restritiva. O corpo começa a esgotar os estoques de glicogênio.',
-          fastingHours: 12,
-          eatingHours: 12,
-          tags: ['iniciante', 'manutenção de peso', 'adaptação'],
-          users: '71.272 jejuantes',
-          difficulty: 'Iniciante'
+          icon: '🌅', 
+          label: '12:12 Circadiano', 
+          subtitle: 'Alinhado com o sol. O mais natural.',
+          fastingHours: 12, eatingHours: 12, difficulty: 'Iniciante',
+          description: 'A porta de entrada para o jejum. Você basicamente para de comer após o jantar e só come no café da manhã do dia seguinte.',
+          mechanism: 'Permite que o sistema digestivo descanse por 12 horas completas, o suficiente para esgotar parte do glicogênio hepático e iniciar uma leve cetose ao acordar.',
+          execution: [
+              'Jante até as 20:00.',
+              'Não consuma calorias (apenas água, chá, café sem açúcar) até as 08:00 da manhã seguinte.',
+              'Tome seu café da manhã normalmente.'
+          ],
+          benefits: ['Melhora o sono e ritmo circadiano', 'Reduz inchaço matinal', 'Fácil adaptação social'],
+          risks: ['Risco muito baixo', 'Pode causar leve fome antes de dormir nos primeiros dias'],
+          scientificNote: 'Estudos mostram melhora na digestão e qualidade do sono.'
       },
       { 
           id: '13:11', 
-          icon: '🐹', 
-          label: '13:11', 
-          shortDesc: 'Coma por 11h, jejue por 13h. Nada de lanchinho da madrugada!',
-          fullDesc: 'Um passo pequeno além do 12:12. Ajuda a eliminar o hábito de comer tarde da noite, melhorando a qualidade do sono e a digestão antes de dormir.',
-          fastingHours: 13,
-          eatingHours: 11,
-          tags: ['iniciante', 'sono melhor', 'digestão'],
-          users: '24.103 jejuantes',
-          difficulty: 'Iniciante'
+          icon: '🍵', 
+          label: '13:11 Leve', 
+          subtitle: 'Um pequeno passo além do básico.',
+          fastingHours: 13, eatingHours: 11, difficulty: 'Iniciante',
+          description: 'Ideal para quem já se adaptou ao 12:12 e quer eliminar o hábito de beliscar tarde da noite.',
+          mechanism: 'Aumenta ligeiramente o tempo de queima de gordura pela manhã.',
+          execution: [
+              'Termine o jantar às 19:30.',
+              'Jejum até as 08:30 do dia seguinte.',
+              'Hidrate-se bem ao acordar.'
+          ],
+          benefits: ['Maior controle do apetite noturno', 'Desinchaço'],
+          risks: ['Leve dor de cabeça se não beber água suficiente']
       },
       { 
           id: '14:10', 
-          icon: '🐰', 
-          label: '14:10', 
-          shortDesc: 'Comece devagar com 14h de jejum e 10h de alimentação.',
-          fullDesc: 'O plano 14:10 é um excelente ponto de partida para a perda de peso. Estudos indicam melhorias na pressão arterial e nos níveis de colesterol (LDL) com este protocolo.',
-          fastingHours: 14,
-          eatingHours: 10,
-          tags: ['iniciante', 'saúde cardíaca', 'leve perda de peso'],
-          users: '156.932 jejuantes',
-          difficulty: 'Iniciante',
+          icon: '🥑', 
+          label: '14:10 Metabólico', 
+          subtitle: 'Protocolo clínico padrão inicial.',
+          fastingHours: 14, eatingHours: 10, difficulty: 'Iniciante',
+          description: 'O ponto ideal entre facilidade e resultado metabólico. Muito usado em estudos de obesidade e diabetes leve.',
+          mechanism: 'Neste ponto, o corpo começa a usar gordura como fonte primária de energia nas últimas 2 horas do jejum.',
+          execution: [
+              'Jantar às 20:00.',
+              'Pular o café da manhã cedo.',
+              'Primeira refeição às 10:00 da manhã.'
+          ],
+          benefits: ['Redução da pressão arterial', 'Melhora da sensibilidade à insulina', 'Sustentável a longo prazo'],
+          risks: ['Fome no meio da manhã', 'Irritabilidade leve na adaptação'],
           scientificNote: 'Baseado em evidências de melhoria cardiometabólica (Wilkinson et al., 2020).'
       },
+    ]
+  },
+  {
+    title: 'Queima de Gordura',
+    color: 'text-orange-500',
+    plans: [
       { 
           id: '15:9', 
-          icon: '🐨', 
-          label: '15:9', 
-          shortDesc: 'Prepare-se para jejuns longos com períodos de jejum de 15h.',
-          fullDesc: 'Um meio termo perfeito. Você começa a estender o período de queima de gordura sem o rigor total do 16:8. Ideal para quem acorda sem muita fome.',
-          fastingHours: 15,
-          eatingHours: 9,
-          tags: ['iniciante', 'controle de glicose'],
-          users: '32.441 jejuantes',
-          difficulty: 'Iniciante'
+          icon: '🏃', 
+          label: '15:9 Ativo', 
+          subtitle: 'A porta de entrada para a queima acelerada.',
+          fastingHours: 15, eatingHours: 9, difficulty: 'Intermediário',
+          description: 'Um meio termo perfeito para quem treina pela manhã em jejum.',
+          mechanism: 'Otimiza a oxidação de lipídios durante exercícios aeróbicos matinais.',
+          execution: [
+              'Jantar às 20:00.',
+              'Treino leve pela manhã em jejum.',
+              'Almoço/Desjejum às 11:00.'
+          ],
+          benefits: ['Flexibilidade de horários', 'Energia estável'],
+          risks: ['Tontura se o treino for muito intenso sem adaptação']
       },
       { 
           id: '16:8', 
-          icon: '🦊', 
-          label: '16:8', 
-          shortDesc: '16h de jejum, 8h de alimentação. Nosso plano mais popular!',
-          fullDesc: 'O protocolo mais estudado e praticado. Alinha-se ao ritmo circadiano, melhora a sensibilidade à insulina, reduz a inflamação (TNF-α, IL-6) e promove a oxidação de gorduras.',
-          fastingHours: 16,
-          eatingHours: 8,
-          tags: ['iniciante', 'queima de gordura', 'anti-inflamatório'],
-          users: '1.204.392 jejuantes',
-          difficulty: 'Iniciante',
+          icon: '🔥', 
+          label: '16:8 Leangains', 
+          subtitle: 'O padrão ouro. Resultados comprovados.',
+          fastingHours: 16, eatingHours: 8, difficulty: 'Intermediário',
+          description: 'O protocolo mais popular do mundo. Divide o dia em 8h de alimentação e 16h de jejum.',
+          mechanism: 'Maximiza a queima de gordura sem sacrificar massa muscular, pois mantém o GH (Hormônio do Crescimento) elevado.',
+          execution: [
+              'Opção A: Comer das 12:00 às 20:00 (Pula café da manhã).',
+              'Opção B: Comer das 08:00 às 16:00 (Pula jantar).',
+              'Nas 8h de janela, faça 2 a 3 refeições ricas em proteína.'
+          ],
+          benefits: ['Queima de gordura visceral', 'Definição muscular', 'Simplicidade (pula uma refeição)'],
+          risks: ['Compulsão alimentar na janela se não planejar bem', 'Exige disciplina social'],
           scientificNote: 'Reduz massa gorda mantendo massa muscular (Moro et al., 2016).'
+      },
+      { 
+          id: '17:7', 
+          icon: '⚡', 
+          label: '17:7 Cetose', 
+          subtitle: 'Para quebrar platôs de peso.',
+          fastingHours: 17, eatingHours: 7, difficulty: 'Intermediário',
+          description: 'Uma hora extra que faz diferença para quem estagnou no 16:8.',
+          mechanism: 'Aprofunda a cetose nutricional, forçando o uso de estoques antigos de gordura.',
+          execution: [
+              'Janela de alimentação das 13:00 às 20:00.',
+              'Foco em gorduras boas e proteínas na primeira refeição para não disparar insulina.'
+          ],
+          benefits: ['Quebra de platô', 'Clareza mental intensa'],
+          risks: ['Pode atrapalhar o sono se comer muito tarde']
       },
     ]
   },
   {
-    title: 'Intermediário',
+    title: 'Autofagia & Longevidade',
+    color: 'text-purple-500',
     plans: [
       { 
-          id: '17:7', 
-          icon: '🐶', 
-          label: '17:7', 
-          shortDesc: 'Difícil, mas com ótimos resultados! Dê uma chance ao 17:7.',
-          fullDesc: 'Aumentando a janela de jejum, você prolonga o estado de cetose, onde o corpo usa gordura como fonte primária de energia de forma mais eficiente.',
-          fastingHours: 17,
-          eatingHours: 7,
-          tags: ['intermediário', 'cetose leve', 'foco mental'],
-          users: '45.100 jejuantes',
-          difficulty: 'Intermediário'
-      },
-      { 
           id: '18:6', 
-          icon: '🦁', 
-          label: '18:6', 
-          shortDesc: 'Pouca flexibilidade. O jejum de 18h é para os experientes.',
-          fullDesc: 'Um jejum mais profundo. Estudos mostram maior redução de peso e gordura visceral. Pode aumentar a expressão de genes ligados à longevidade (Sirtuínas).',
-          fastingHours: 18,
-          eatingHours: 6,
-          tags: ['intermediário', 'perda de peso', 'longevidade'],
-          users: '210.558 jejuantes',
-          difficulty: 'Intermediário',
-          scientificNote: 'Potencializa a redução de insulina e melhora resistência ao estresse oxidativo (Sutton et al., 2018).'
+          icon: '🧬', 
+          label: '18:6 Autofagia', 
+          subtitle: 'Limpeza celular profunda.',
+          fastingHours: 18, eatingHours: 6, difficulty: 'Avançado',
+          description: 'Onde a mágica da renovação celular começa a acontecer com mais força.',
+          mechanism: 'Redução drástica de insulina permite o início da autofagia (reciclagem de células velhas).',
+          execution: [
+              'Almoço às 14:00.',
+              'Jantar/Lanche até as 20:00.',
+              'Apenas líquidos não calóricos no resto do tempo.'
+          ],
+          benefits: ['Anti-envelhecimento', 'Pele mais limpa', 'Imunidade'],
+          risks: ['Dificuldade em bater as proteínas do dia em 6h'],
+          scientificNote: 'Melhora resistência ao estresse oxidativo.'
       },
       { 
           id: '19:5', 
-          icon: '🐮', 
-          label: '19:5', 
-          shortDesc: 'Jejum 19hr: moderadamente desafiador.',
-          fullDesc: 'Quase um dia inteiro. Exige planejamento das refeições para garantir a ingestão de nutrientes em apenas 5 horas.',
-          fastingHours: 19,
-          eatingHours: 5,
-          tags: ['intermediário', 'disciplina', 'detox'],
-          users: '18.900 jejuantes',
-          difficulty: 'Intermediário'
+          icon: '🧘', 
+          label: '19:5 Foco', 
+          subtitle: 'Clareza mental elevada.',
+          fastingHours: 19, eatingHours: 5, difficulty: 'Avançado',
+          description: 'Ideal para dias de trabalho intenso onde você precisa de foco total.',
+          mechanism: 'Aumento de noradrenalina e BDNF (fator neurotrófico) melhora a função cognitiva.',
+          execution: [
+              'Pequena janela de alimentação no final da tarde (ex: 15h às 20h).',
+              'Foco total nas tarefas durante o dia.'
+          ],
+          benefits: ['Produtividade máxima', 'Desinflamação sistêmica'],
+          risks: ['Pode causar ansiedade em pessoas predispostas']
       },
       { 
         id: '20:4', 
-        icon: '🐵', 
-        label: '20:4', 
-        shortDesc: '1-2 refeições por dia em um período de 4hr',
-        fullDesc: 'Conhecida como Dieta do Guerreiro. Grande redução calórica natural. Pode aumentar níveis de autofagia (limpeza celular) e reparo de DNA.',
-        fastingHours: 20,
-        eatingHours: 4,
-        tags: ['avançado', 'autofagia', 'guerreiro'],
-        users: '89.221 jejuantes',
-        difficulty: 'Avançado',
-        scientificNote: 'Redução significativa de peso e gordura corporal (Cienfuegos et al., 2020).'
-    },
+        icon: '⚔️', 
+        label: '20:4 Guerreiro', 
+        subtitle: 'Dieta do Guerreiro.',
+        fastingHours: 20, eatingHours: 4, difficulty: 'Avançado',
+        description: 'Baseado em guerreiros antigos: jejuar o dia todo e banquetear à noite.',
+        mechanism: 'Explora o sistema nervoso simpático durante o dia (alerta) e parassimpático à noite (digestão/relaxamento).',
+        execution: [
+            'Durante o dia: Pequenas porções de vegetais crus ou frutas (opcional, mas o jejum estrito é melhor).',
+            'Janela de 4h à noite: Uma refeição gigante e completa.'
+        ],
+        benefits: ['Liberdade alimentar durante a janela', 'Alta queima calórica'],
+        risks: ['Digestão pesada antes de dormir', 'Risco de refluxo']
+      },
     ]
   },
   {
-    title: 'Avançado',
+    title: 'Expert & Prolongado',
+    color: 'text-red-500',
     plans: [
       { 
+          id: '21:3', 
+          icon: '🚀', 
+          label: '21:3 Pré-OMAD', 
+          subtitle: 'Quase uma refeição só.',
+          fastingHours: 21, eatingHours: 3, difficulty: 'Expert',
+          description: 'Para quem quer os benefícios do OMAD mas precisa de mais tempo para comer.',
+          mechanism: 'Insulina basal mínima.',
+          execution: ['Janela das 17h às 20h.', 'Foque em densidade nutricional alta.'],
+          benefits: ['Preparo para jejuns longos'],
+          risks: ['Hipoglicemia em usuários de medicação']
+      },
+      { 
+          id: '22:2', 
+          icon: '🏔️', 
+          label: '22:2 Pico', 
+          subtitle: 'Janela estrita.',
+          fastingHours: 22, eatingHours: 2, difficulty: 'Expert',
+          description: 'Limite extremo do jejum diário.',
+          mechanism: 'Forte estímulo à lipólise.',
+          execution: ['Comer em uma janela de 2h.'],
+          benefits: ['Disciplina mental'],
+          risks: ['Difícil socialização']
+      },
+      { 
           id: '23:1', 
-          icon: '🐸', 
-          label: '23:1 (OMAD)', 
-          shortDesc: 'Uma refeição por dia com o período de alimentação de 1 hora.',
-          fullDesc: 'One Meal A Day (OMAD). Nível máximo de jejum diário. Maximiza a autofagia e a sensibilidade à insulina, mas requer cuidado nutricional extremo.',
-          fastingHours: 23,
-          eatingHours: 1,
-          tags: ['expert', 'OMAD', 'reparo celular'],
-          users: '65.302 jejuantes',
-          difficulty: 'Avançado',
-          scientificNote: 'Forte efeito metabólico, potencial para suportar função mitocondrial.'
+          icon: '🍽️', 
+          label: 'OMAD (23:1)', 
+          subtitle: 'Uma refeição por dia.',
+          fastingHours: 23, eatingHours: 1, difficulty: 'Expert',
+          description: 'One Meal A Day. A forma mais simples e extrema de jejum intermitente diário.',
+          mechanism: 'Mantém o corpo em estado de queima de gordura por 23h. Estômago diminui de tamanho.',
+          execution: [
+              'Escolha uma hora do dia (ex: almoço ou jantar).',
+              'Coma todos os seus nutrientes nessa hora.',
+              'Não coma nada nas outras 23 horas.'
+          ],
+          benefits: ['Perda de peso rápida', 'Praticidade total', 'Economia de tempo'],
+          risks: ['Deficiência nutricional se a refeição for pobre', 'Dilatação gástrica se comer demais de uma vez'],
+          scientificNote: 'Forte efeito metabólico e mitocondrial.'
+      },
+      { 
+          id: '24h', 
+          icon: '🛑', 
+          label: 'Eat-Stop-Eat (24h)', 
+          subtitle: 'Reset completo semanal.',
+          fastingHours: 24, eatingHours: 0, difficulty: 'Expert',
+          description: 'Jejum de jantar a jantar. Feito 1 ou 2 vezes na semana.',
+          mechanism: 'Cria um déficit calórico semanal agressivo sem alterar a dieta dos outros dias.',
+          execution: [
+              'Jante hoje às 20h.',
+              'Só coma novamente no jantar de amanhã às 20h.',
+              'Dias normais: alimentação padrão.'
+          ],
+          benefits: ['Flexibilidade social', 'Reset do paladar'],
+          risks: ['Irritabilidade extrema', 'Dor de cabeça'],
+      },
+      { 
+          id: '36h', 
+          icon: '🧘‍♂️', 
+          label: 'Monk Fast (36h)', 
+          subtitle: 'Apenas água.',
+          fastingHours: 36, eatingHours: 0, difficulty: 'Expert',
+          description: 'Jejum do Monge. Promove autofagia profunda e redefinição do sistema imunológico.',
+          mechanism: 'Esgota completamente glicogênio hepático e muscular. Cetose profunda.',
+          execution: [
+              'Pare de comer após o jantar de domingo.',
+              'Passe a segunda-feira inteira em jejum.',
+              'Coma no café da manhã de terça-feira.'
+          ],
+          benefits: ['Autofagia máxima', 'Perda de gordura teimosa'],
+          risks: ['Perda de massa magra se frequente', 'Desbalanço eletrolítico (necessário sal/minerais)'],
       },
     ]
   },
 ];
 
-const CardTabView: React.FC<{ activeTab: FastingTab; plan: string; icon?: string }> = ({ activeTab, plan, icon }) => {
-    const [isFasting, setIsFasting] = useState(false);
+const BIOLOGICAL_STAGES = [
+    { start: 0, end: 4, title: "Digestão", description: "Níveis de açúcar no sangue sobem. Insulina é liberada.", icon: "🍽️" },
+    { start: 4, end: 8, title: "Queda de Insulina", description: "O açúcar no sangue normaliza. O corpo para de estocar gordura.", icon: "📉" },
+    { start: 8, end: 12, title: "Gliconeogênese", description: "O corpo começa a produzir glicose e despertar a queima de gordura.", icon: "🔥" },
+    { start: 12, end: 18, title: "Cetose Leve", description: "O corpo muda o combustível principal de açúcar para gordura.", icon: "⚡" },
+    { start: 18, end: 24, title: "Autofagia", description: "Modo de limpeza celular. Reciclagem de componentes velhos.", icon: "🧬" },
+    { start: 24, end: 72, title: "Pico de GH", description: "Hormônio do crescimento aumenta para preservar músculo.", icon: "💪" },
+];
 
-    if (activeTab === 'timer') {
-        return (
-            <div className="flex flex-col items-center text-center p-6 flex-grow justify-around">
-                 <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold text-white">
-                        {isFasting ? "Você está em jejum" : "Prepare-se para jejuar"}
-                    </h2>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                </div>
-                
-                <div className="relative my-4">
-                    <div className="w-40 h-40 rounded-full bg-slate-700/50 flex items-center justify-center">
-                        <div className="w-32 h-32 rounded-full bg-slate-900/50 flex flex-col items-center justify-center">
-                            <span className="text-6xl">{icon || (plan.includes(':') ? '⏱️' : '🗓️')}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <p className="text-gray-400 font-medium">Meu relógio</p>
-                    <p className="text-white text-3xl font-bold">{plan}</p>
-                </div>
-
-                <button onClick={() => setIsFasting(!isFasting)} className="bg-teal-500 text-slate-900 font-bold py-3 px-8 rounded-full flex items-center gap-2 my-4 transition-transform active:scale-95">
-                    <ClockIcon className="w-5 h-5"/>
-                    <span>{isFasting ? "Finalizar Jejum" : "Iniciar relógio"}</span>
-                </button>
-
-                <div className="flex justify-between w-full text-sm">
-                    <div>
-                        <p className="text-gray-400">Início do jejum</p>
-                        <p className="text-white font-semibold">Hoje, 20:00</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-gray-400">Fim do jejum</p>
-                        <p className="text-white font-semibold">Amanhã, 12:00</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    
-    if (activeTab === 'body') {
-        return (
-            <div className="flex flex-col items-center text-center p-6 flex-grow justify-around">
-                <div className="w-32 h-32 rounded-full bg-slate-700/50 flex items-center justify-center mb-4">
-                    <div className="w-24 h-24 rounded-full bg-slate-900/50 flex flex-col items-center justify-center">
-                         <ArrowPathIcon className="w-12 h-12 text-purple-400"/>
-                    </div>
-                </div>
-                <p className="text-white font-semibold max-w-sm">Enquanto estiver de jejum, confira aqui por qual fase o seu corpo está passando.</p>
-                
-                <div className="flex gap-4 w-full mt-6">
-                    <div className="bg-slate-700/50 rounded-xl p-3 flex-1">
-                        <p className="font-semibold text-white">Queima de gordura</p>
-                        <div className="flex items-center justify-center gap-2 bg-slate-900/50 text-white rounded-full py-1 px-3 mt-2">
-                           <FlameIcon className="w-4 h-4 text-orange-400" /> <span className="font-mono">0min</span>
-                        </div>
-                    </div>
-                     <div className="bg-slate-700/50 rounded-xl p-3 flex-1">
-                        <p className="font-semibold text-white">Autofagia</p>
-                        <div className="flex items-center justify-center gap-2 bg-slate-900/50 text-white rounded-full py-1 px-3 mt-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-400"><path d="m21.5 2-5.4 5.4"></path><path d="m2.5 22 5.4-5.4"></path><path d="m16.1 2-2.7 2.7"></path><path d="m7.9 22 2.7-2.7"></path><path d="m12 10.6 3.4-3.4"></path><path d="m8.6 17.4 3.4-3.4"></path><path d="M2 8.6l3.4 3.4"></path><path d="M12 13.4 8.6 10"></path><path d="M15.4 22l-3.4-3.4"></path><path d="M10 12l-3.4 3.4"></path><path d="m22 15.4-3.4-3.4"></path><path d="M13.4 12l3.4-3.4"></path></svg>
-                            <span className="font-mono">0min</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    
-    if (activeTab === 'stats') {
-         return (
-             <div className="flex flex-col items-center text-center p-6 flex-grow justify-around text-white">
-                <h2 className="text-xl font-semibold">Complete seu primeiro dia de jejum para ver seu histórico.</h2>
-                <div className="w-full my-6">
-                    <div className="h-32 w-full flex flex-col justify-between">
-                        <div className="flex items-end h-full relative">
-                            <svg viewBox="0 0 300 100" className="w-full h-full absolute" preserveAspectRatio="none">
-                                <path d="M0,80 Q50,50 100,60 T200,80 T300,50" stroke="#475569" fill="none" strokeWidth="2" />
-                            </svg>
-                            <div className="w-full flex justify-between items-center text-gray-400 text-xs font-semibold border-t border-dashed border-gray-600 pt-1">
-                                <span>16h</span>
-                            </div>
-                        </div>
-                         <div className="w-full flex justify-between items-center text-gray-400 text-xs font-semibold border-t border-dashed border-gray-600 pt-1 mt-4">
-                                <span>12h</span>
-                         </div>
-                         <div className="w-full flex justify-between items-center text-gray-400 text-xs font-semibold border-t border-dashed border-gray-600 pt-1 mt-4">
-                                <span>8h</span>
-                         </div>
-                         <div className="w-full flex justify-between items-center text-gray-400 text-xs font-semibold border-t border-dashed border-gray-600 pt-1 mt-4">
-                                <span>4h</span>
-                         </div>
-                    </div>
-                    <div className="flex justify-around mt-2 text-gray-400 font-semibold text-sm">
-                        {['ter', 'qua', 'qui', 'sex', 'sáb', 'dom', 'seg'].map(day => (
-                            <div key={day} className="flex flex-col items-center gap-1">
-                                <div className="w-3 h-3 border-2 border-gray-600 rounded-full"></div>
-                                <span>{day}.</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                 <div className="flex gap-4 w-full">
-                    <div className="bg-slate-700/50 rounded-xl p-3 flex-1">
-                        <p className="font-semibold text-white">Total</p>
-                        <div className="flex items-center justify-center gap-2 bg-slate-900/50 text-white rounded-full py-1 px-3 mt-2">
-                           <ClockIcon className="w-4 h-4"/> <span>0h</span>
-                        </div>
-                    </div>
-                     <div className="bg-slate-700/50 rounded-xl p-3 flex-1">
-                        <p className="font-semibold text-white">Média diária</p>
-                        <div className="flex items-center justify-center gap-2 bg-slate-900/50 text-white rounded-full py-1 px-3 mt-2">
-                            <ClockIcon className="w-4 h-4"/> <span>0h</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (activeTab === 'calendar') {
-        const days = ['ter', 'qua', 'qui', 'sex', 'sáb', 'dom', 'seg'];
-        return (
-            <div className="flex flex-col items-center text-center p-6 flex-grow justify-around text-white">
-                <h2 className="text-xl font-semibold">Jejum de 20:00 a 12:00.</h2>
-                <div className="flex gap-4 text-xs my-4">
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-white"></div><span>Período de jejum</span></div>
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-slate-600"></div><span>Período de alimentação</span></div>
-                </div>
-
-                <div className="w-full h-40 flex items-end justify-around gap-2 px-2">
-                    {days.map(day => (
-                        <div key={day} className="flex-1 flex flex-col items-center gap-1">
-                            <div className="w-full h-full bg-slate-600 rounded-full flex flex-col justify-end overflow-hidden">
-                                 <div className="bg-white" style={{height: '66.66%'}}></div>
-                            </div>
-                             <span className="text-sm font-semibold text-gray-400 mt-1">{day}.</span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="flex justify-between w-full text-sm mt-6">
-                    <div>
-                        <p className="text-gray-400">Início do jejum</p>
-                        <p className="text-white font-semibold">Hoje, 20:00</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-gray-400">Fim do jejum</p>
-                        <p className="text-white font-semibold">Amanhã, 12:00</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    
-    return null;
-}
-
-const FastingCard: React.FC<{plan: string; icon?: string}> = ({ plan, icon }) => {
-    const [activeTab, setActiveTab] = useState<FastingTab>('timer');
-
-    const navItems = [
-        { id: 'timer' as FastingTab, icon: <ClockIcon /> },
-        { id: 'body' as FastingTab, icon: <PersonStandingIcon /> },
-        { id: 'stats' as FastingTab, icon: <BarChartIcon /> },
-        { id: 'calendar' as FastingTab, icon: <CalendarIcon /> },
-    ];
-    
-    return (
-        <div className="bg-slate-800 text-white rounded-3xl shadow-lg overflow-hidden flex flex-col min-h-[500px]">
-            <div className="p-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold">Relógio de jejum</h2>
-                <button className="flex items-center gap-2 text-teal-400 font-semibold">
-                    <EditIcon className="w-4 h-4" /> {plan}
-                </button>
-            </div>
-
-            <div className="relative flex-grow flex flex-col">
-                 <div className="absolute inset-0 overflow-hidden">
-                    <svg width="100%" height="100%" preserveAspectRatio="none" className="absolute bottom-0 text-slate-900/50">
-                        <path d="M0,150 C150,200 250,100 500,150 L500,250 L0,250 Z" fill="currentColor"></path>
-                    </svg>
-                     <svg width="100%" height="100%" preserveAspectRatio="none" className="absolute bottom-0 text-slate-900/50" style={{transform: 'scaleX(-1)'}}>
-                        <path d="M0,180 C150,230 250,130 500,180 L500,250 L0,250 Z" fill="currentColor"></path>
-                    </svg>
-                </div>
-                <div className="relative flex-grow flex flex-col">
-                    <CardTabView activeTab={activeTab} plan={plan} icon={icon} />
-                </div>
-            </div>
-
-            <div className="bg-slate-900/50 p-2 flex justify-around items-center">
-                {navItems.map(item => (
-                    <button 
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`p-3 rounded-full transition-colors ${activeTab === item.id ? 'bg-slate-700 text-white' : 'text-gray-400 hover:bg-slate-800'}`}
-                    >
-                        {item.icon}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-};
+// --- Detail Modal ---
 
 const FastingDetailModal: React.FC<{ plan: FastingPlanData, onClose: () => void, onSelect: (id: string) => void }> = ({ plan, onClose, onSelect }) => {
-    // Helper to render the bar chart of the day
-    const renderHours = () => {
-        const totalBars = 7; // Simplified representation like the screenshot
-        const fastingBars = Math.round((plan.fastingHours / 24) * totalBars);
-        
-        return (
-            <div className="flex justify-center items-end gap-3 h-24 my-6 px-4">
-                {Array.from({length: totalBars}).map((_, i) => {
-                    const isFasting = i < fastingBars;
-                    return (
-                        <div key={i} className={`w-4 rounded-full ${isFasting ? 'bg-white h-16' : 'bg-white/20 h-10'}`}></div>
-                    );
-                })}
-            </div>
-        );
-    };
+    const [activeTab, setActiveTab] = useState<'guia' | 'beneficios' | 'cuidados'>('guia');
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-end justify-center p-4 animate-fade-in" onClick={onClose}>
-            <div className="bg-[#1C1C1E] w-full max-w-md rounded-3xl p-6 flex flex-col relative text-white max-h-[90vh] overflow-y-auto hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-end justify-center p-0 sm:p-4 animate-fade-in backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] sm:rounded-[32px] flex flex-col relative text-gray-900 dark:text-white max-h-[95vh] shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-
-                <div className="flex flex-col items-center text-center mt-2">
-                    <span className="text-6xl mb-4">{plan.icon}</span>
-                    <h2 className="text-3xl font-bold">{plan.id}</h2>
-                    <p className="text-gray-400 font-medium mt-1">{plan.shortDesc}</p>
+                {/* Header Compacto com Imagem/Icone */}
+                <div className="relative p-6 pb-0 flex flex-col items-center border-b border-gray-100 dark:border-gray-800">
+                    <button onClick={onClose} className="absolute top-6 right-6 bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     
-                    <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
-                        <ClockIcon className="w-4 h-4" />
-                        <span>{plan.users}</span>
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center text-5xl shadow-lg mb-4">
+                        {plan.icon}
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold tracking-tight text-center">{plan.label}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-6 text-center max-w-xs">{plan.description}</p>
+
+                    {/* Stats Row */}
+                    <div className="flex gap-4 w-full justify-center mb-6">
+                        <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl w-24">
+                            <span className="text-xs text-gray-400 font-bold uppercase">Jejum</span>
+                            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{plan.fastingHours}h</span>
+                        </div>
+                        <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800/50 p-2 rounded-2xl w-24">
+                            <span className="text-xs text-gray-400 font-bold uppercase">Janela</span>
+                            <span className="text-xl font-bold text-green-600 dark:text-green-400">{plan.eatingHours}h</span>
+                        </div>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-2 mt-4">
-                        <span className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-300 uppercase tracking-wide">{plan.difficulty}</span>
-                        {plan.tags.map(tag => (
-                             <span key={tag} className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-xs font-semibold text-gray-300 capitalize">{tag}</span>
-                        ))}
+                    {/* Tab Navigation */}
+                    <div className="flex w-full mb-0 border-b border-gray-200 dark:border-gray-700">
+                        <button onClick={() => setActiveTab('guia')} className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'guia' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>Guia</button>
+                        <button onClick={() => setActiveTab('beneficios')} className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'beneficios' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>Benefícios</button>
+                        <button onClick={() => setActiveTab('cuidados')} className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'cuidados' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>Cuidados</button>
                     </div>
                 </div>
 
-                <div className="bg-gray-800/50 rounded-2xl mt-6 p-4 text-center">
-                    <p className="text-gray-300 text-sm mb-2">Jejum de 21:00 a {(21 + plan.fastingHours) % 24}:00</p>
-                    {renderHours()}
-                    <div className="flex justify-between text-xs text-gray-400 px-8">
-                         <span>0h</span>
-                         <span>6h</span>
-                         <span>12h</span>
-                         <span>18h</span>
-                    </div>
-                </div>
+                {/* Content Area */}
+                <div className="p-6 overflow-y-auto hide-scrollbar flex-grow bg-white dark:bg-[#1C1C1E]">
+                    {activeTab === 'guia' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <div>
+                                <h3 className="text-sm font-bold uppercase text-gray-400 mb-3 flex items-center gap-2"><ClockIcon className="w-4 h-4" /> Como Funciona</h3>
+                                <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">{plan.mechanism}</p>
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-sm font-bold uppercase text-gray-400 mb-3 flex items-center gap-2"><CheckCircleIcon className="w-4 h-4" /> Passo a Passo</h3>
+                                <ul className="space-y-3">
+                                    {plan.execution.map((step, idx) => (
+                                        <li key={idx} className="flex gap-3 text-sm text-gray-800 dark:text-gray-200">
+                                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">{idx + 1}</span>
+                                            <span className="pt-0.5">{step}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
 
-                <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Sobre este jejum</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm">{plan.fullDesc}</p>
-                    
-                    {plan.scientificNote && (
-                        <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800/50 rounded-xl">
-                             <p className="text-blue-300 text-xs">🧬 <strong>Nota Científica:</strong> {plan.scientificNote}</p>
+                    {activeTab === 'beneficios' && (
+                        <div className="space-y-4 animate-fade-in">
+                            {plan.benefits.map((benefit, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/30">
+                                    <LeafIcon className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                    <p className="text-sm font-medium text-green-800 dark:text-green-200">{benefit}</p>
+                                </div>
+                            ))}
+                            {plan.scientificNote && (
+                                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl">
+                                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Nota Científica</p>
+                                    <p className="text-xs text-blue-800 dark:text-blue-200 italic">"{plan.scientificNote}"</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'cuidados' && (
+                        <div className="space-y-4 animate-fade-in">
+                            <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                                <h4 className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm mb-2">
+                                    <ShieldCheckIcon className="w-4 h-4"/> Atenção aos Riscos
+                                </h4>
+                                <ul className="space-y-2">
+                                    {plan.risks.map((risk, idx) => (
+                                        <li key={idx} className="text-sm text-red-800 dark:text-red-200 flex items-start gap-2">
+                                            <span className="mt-1.5 w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0"></span>
+                                            {risk}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <p className="text-xs text-gray-400 text-center px-4">
+                                Se você usa medicamentos para diabetes (como Ozempic/Mounjaro), consulte seu médico antes de fazer jejuns prolongados (>16h).
+                            </p>
                         </div>
                     )}
                 </div>
 
-                <div className="mt-8 pb-2 sticky bottom-0 bg-[#1C1C1E] pt-4">
+                <div className="p-6 pt-4 bg-white dark:bg-[#1C1C1E] border-t border-gray-100 dark:border-gray-800">
                      <button 
                         onClick={() => onSelect(plan.id)}
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-4 rounded-2xl text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-4 rounded-2xl text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
-                        <CheckCircleIcon className="w-6 h-6 text-black" />
-                        Definir como meu plano
+                        Iniciar este Plano
                     </button>
                 </div>
             </div>
@@ -453,54 +394,61 @@ const FastingDetailModal: React.FC<{ plan: FastingPlanData, onClose: () => void,
     );
 }
 
+// --- Library List View ---
+
 const FastingPlansView: React.FC<{ onClose: () => void, onSelect: (plan: string) => void }> = ({ onClose, onSelect }) => {
   const [selectedDetail, setSelectedDetail] = useState<FastingPlanData | null>(null);
-
-  const handleSelectPlan = (plan: FastingPlanData) => {
-      setSelectedDetail(plan);
-  }
 
   const handleConfirmPlan = (id: string) => {
       onSelect(id);
       setSelectedDetail(null);
-      onClose(); // Close the full view as well
+      onClose();
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-900 z-50 overflow-y-auto animate-fade-in">
-      <div className="p-4 sm:p-6">
-        <header className="flex items-center gap-4 mb-8 sticky top-0 bg-gray-900/95 backdrop-blur-sm z-10 py-2">
-          <button onClick={onClose} className="text-blue-400 p-2 -ml-2 rounded-full hover:bg-gray-800">
-            <ChevronLeftIcon className="w-6 h-6" />
-          </button>
-          <h1 className="text-xl font-bold text-white text-center flex-grow mr-8">Relógios de jejum</h1>
+    <div className="fixed inset-0 bg-gray-50 dark:bg-black z-50 overflow-y-auto animate-slide-up">
+      <div className="p-5 pb-20">
+        <header className="flex items-center justify-between mb-8 sticky top-0 bg-gray-50/95 dark:bg-black/95 backdrop-blur-md z-20 py-2">
+          <div className="flex items-center gap-4">
+              <button onClick={onClose} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 rounded-full text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition-colors">
+                <ChevronLeftIcon className="w-5 h-5" />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Biblioteca</h1>
+          </div>
         </header>
 
-        <div className="space-y-8 pb-10">
+        <div className="space-y-8">
           {FASTING_CATEGORIES.map((category) => (
-            <div key={category.title}>
-              <h2 className="text-lg font-bold text-white mb-4 px-1">{category.title}</h2>
-              <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <section key={category.title}>
+              <div className="flex items-center gap-2 mb-4 px-1">
+                  <h2 className={`text-sm font-bold uppercase tracking-widest ${category.color}`}>
+                      {category.title}
+                  </h2>
+                  <div className="h-[1px] flex-grow bg-gray-200 dark:bg-gray-800"></div>
+              </div>
+              
+              <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-4 -mx-5 px-5 snap-x">
                 {category.plans.map((plan) => (
                   <button 
                     key={plan.id}
-                    onClick={() => handleSelectPlan(plan)}
-                    className="min-w-[280px] max-w-[280px] bg-[#1C1C1E] p-5 rounded-2xl flex items-start text-left relative group active:scale-95 transition-transform flex-shrink-0 border border-transparent hover:border-gray-700"
+                    onClick={() => setSelectedDetail(plan)}
+                    className="min-w-[240px] w-[240px] bg-white dark:bg-gray-900 rounded-[24px] p-5 flex flex-col items-start text-left relative group active:scale-[0.98] transition-all border border-gray-100 dark:border-gray-800 shadow-sm snap-center"
                   >
-                    <div className="absolute top-3 right-3 text-gray-600">
-                        <LockIcon className="w-4 h-4" />
+                    <div className="flex justify-between items-start w-full mb-3">
+                        <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                            {plan.icon}
+                        </div>
+                        <span className="text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-lg">
+                            {plan.fastingHours}h
+                        </span>
                     </div>
-                    <div className="mr-4">
-                        <span className="text-4xl">{plan.icon}</span>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-white mb-1">{plan.label}</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed line-clamp-3">{plan.shortDesc}</p>
-                    </div>
+                    
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-1">{plan.label}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{plan.subtitle}</p>
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       </div>
@@ -516,73 +464,215 @@ const FastingPlansView: React.FC<{ onClose: () => void, onSelect: (plan: string)
   );
 }
 
+// --- Icons Helper ---
+// Redefining ChevronRight locally for this file if not exported, otherwise ensure it's in Icons.tsx
+const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>
+);
+
+
+// --- Main Component ---
+
+const ScientificSourceFooter: React.FC = () => (
+    <div className="mt-8 text-center px-6 pb-6">
+        <div className="inline-flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+            <p className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-widest font-bold">Base Científica</p>
+            <a 
+                href="https://www.hopkinsmedicine.org/health/wellness-and-prevention/intermittent-fasting-what-is-it-and-how-does-it-work" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border-b border-dashed border-gray-300 dark:border-gray-700 pb-0.5"
+            >
+                Johns Hopkins Medicine & New England Journal of Medicine
+            </a>
+        </div>
+    </div>
+);
+
 export const FastingView: React.FC = () => {
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [showAllPlans, setShowAllPlans] = useState(false);
-    const [currentPlan, setCurrentPlan] = useState('16:8');
-
-    const getPlanIcon = (planId: string) => {
-        for (const cat of FASTING_CATEGORIES) {
-            const plan = cat.plans.find(p => p.id === planId);
-            if (plan) return plan.icon;
-        }
-        return undefined;
-    };
     
-    const currentIcon = getPlanIcon(currentPlan);
+    // Timer State
+    const [currentPlanId, setCurrentPlanId] = useState<string>(localStorage.getItem('fastingPlanId') || '16:8');
+    const [isFasting, setIsFasting] = useState<boolean>(localStorage.getItem('isFasting') === 'true');
+    const [startTime, setStartTime] = useState<number | null>(localStorage.getItem('fastingStartTime') ? parseInt(localStorage.getItem('fastingStartTime')!) : null);
+    const [elapsedTime, setElapsedTime] = useState<number>(0);
 
-    const handlePlanUpdate = (plan: string) => {
-        setCurrentPlan(plan);
+    // Get current plan object
+    const getCurrentPlan = () => {
+        for (const cat of FASTING_CATEGORIES) {
+            const found = cat.plans.find(p => p.id === currentPlanId);
+            if (found) return found;
+        }
+        return FASTING_CATEGORIES[1].plans[1]; // Default 16:8
+    };
+    const plan = getCurrentPlan();
+
+    useEffect(() => {
+        let interval: any;
+        if (isFasting && startTime) {
+            interval = setInterval(() => {
+                const now = Date.now();
+                setElapsedTime(now - startTime);
+            }, 1000);
+        } else {
+            setElapsedTime(0);
+        }
+        return () => clearInterval(interval);
+    }, [isFasting, startTime]);
+
+    useEffect(() => {
+        if (isFasting && startTime) {
+            setElapsedTime(Date.now() - startTime);
+        }
+    }, []);
+
+    const toggleFasting = () => {
+        if (isFasting) {
+            setIsFasting(false);
+            setStartTime(null);
+            setElapsedTime(0);
+            localStorage.setItem('isFasting', 'false');
+            localStorage.removeItem('fastingStartTime');
+        } else {
+            const now = Date.now();
+            setIsFasting(true);
+            setStartTime(now);
+            localStorage.setItem('isFasting', 'true');
+            localStorage.setItem('fastingStartTime', now.toString());
+        }
+    };
+
+    const handlePlanUpdate = (newPlanId: string) => {
+        setCurrentPlanId(newPlanId);
+        localStorage.setItem('fastingPlanId', newPlanId);
         setIsQuizOpen(false);
         setShowAllPlans(false);
     }
+
+    // Calculations
+    const totalSeconds = plan.fastingHours * 3600;
+    const elapsedSeconds = Math.floor(elapsedTime / 1000);
+    const progress = Math.min((elapsedSeconds / totalSeconds) * 100, 100);
+    const hoursElapsed = Math.floor(elapsedSeconds / 3600);
+    const minutesElapsed = Math.floor((elapsedSeconds % 3600) / 60);
+    const secondsElapsed = elapsedSeconds % 60;
+
+    // Current Biological Stage
+    const currentStage = BIOLOGICAL_STAGES.find(s => hoursElapsed >= s.start && hoursElapsed < s.end) || BIOLOGICAL_STAGES[BIOLOGICAL_STAGES.length - 1];
+
+    // Circular Progress Data
+    const radius = 120;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
 
     if (showAllPlans) {
         return <FastingPlansView onClose={() => setShowAllPlans(false)} onSelect={handlePlanUpdate} />;
     }
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            <FastingCard plan={currentPlan} icon={currentIcon} />
+        <div className="p-5 space-y-6 pb-24 animate-fade-in min-h-screen bg-gray-50 dark:bg-black">
             
-            <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Quiz de jejum</h2>
-                <div 
-                    onClick={() => setIsQuizOpen(true)}
-                    className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"
-                >
-                    <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                        <span className="text-3xl">📝</span>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-900 dark:text-white">Não sabe por onde começar?</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Faça o quiz e descubra qual jejum é o mais indicado para os seus objetivos e necessidades!</p>
+            {/* Hero / Timer Section */}
+            <div className="flex flex-col items-center justify-center pt-6 relative">
+                <div className="relative w-[280px] h-[280px] flex items-center justify-center">
+                    {/* Background Circle */}
+                    <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                            cx="140"
+                            cy="140"
+                            r={radius}
+                            className="stroke-gray-200 dark:stroke-gray-800"
+                            strokeWidth="20"
+                            fill="transparent"
+                        />
+                        {/* Progress Circle */}
+                        <circle
+                            cx="140"
+                            cy="140"
+                            r={radius}
+                            className={`transition-all duration-1000 ease-linear stroke-blue-500`}
+                            strokeWidth="20"
+                            fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                    
+                    {/* Inner Content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        {isFasting ? (
+                            <>
+                                <span className="text-gray-500 dark:text-gray-400 font-medium text-sm mb-1">Tempo Decorrido</span>
+                                <div className="text-5xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">
+                                    {hoursElapsed}:{minutesElapsed.toString().padStart(2, '0')}:{secondsElapsed.toString().padStart(2, '0')}
+                                </div>
+                                <span className="text-blue-500 font-semibold mt-2 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full text-xs uppercase tracking-wide">
+                                    Meta: {plan.fastingHours}h
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-3">
+                                    <span className="text-4xl">{plan.icon}</span>
+                                </div>
+                                <span className="text-gray-500 dark:text-gray-400 font-medium">Pronto para jejuar?</span>
+                                <span className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{plan.label}</span>
+                            </>
+                        )}
                     </div>
                 </div>
+
+                {/* Action Button */}
+                <button 
+                    onClick={toggleFasting}
+                    className={`mt-8 w-full max-w-xs py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${isFasting ? 'bg-red-500 text-white shadow-red-500/30' : 'bg-black dark:bg-white text-white dark:text-black shadow-black/20 dark:shadow-white/10'}`}
+                >
+                    {isFasting ? 'Encerrar Jejum' : 'Iniciar Agora'}
+                </button>
             </div>
 
-            <div className="space-y-4">
-                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Monitores populares</h2>
-                    <button onClick={() => setShowAllPlans(true)} className="font-semibold text-blue-600 dark:text-blue-400">Mais</button>
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                     <button onClick={() => setCurrentPlan('16:8')} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95">
-                        <span className="text-4xl">🦊</span>
-                        <h3 className="font-bold text-lg mt-2 text-gray-900 dark:text-white">16:8</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">16h de jejum, 8h de alimentação. Nosso plano mais popular!</p>
-                     </button>
-                     <button onClick={() => setCurrentPlan('14:10')} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95">
-                        <span className="text-4xl">🐰</span>
-                        <h3 className="font-bold text-lg mt-2 text-gray-900 dark:text-white">14:10</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">Comece com este plano de jejum mais curto.</p>
-                     </button>
-                 </div>
+            {/* Current Biological Stage */}
+            <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-white/5">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">O que está acontecendo?</h3>
+                    <span className="text-2xl">{isFasting ? currentStage.icon : '🤔'}</span>
+                </div>
+                {isFasting ? (
+                    <div className="animate-fade-in">
+                        <p className="text-blue-600 dark:text-blue-400 font-bold text-lg mb-1">{currentStage.title}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{currentStage.description}</p>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-4 overflow-hidden">
+                            <div className="bg-blue-500 h-full rounded-full" style={{width: `${Math.min(((hoursElapsed - currentStage.start) / (currentStage.end - currentStage.start)) * 100, 100)}%`}}></div>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2 text-right">Próxima fase em {Math.max(0, currentStage.end - hoursElapsed)}h</p>
+                    </div>
+                ) : (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Inicie o cronômetro para acompanhar as fases biológicas do seu corpo em tempo real.</p>
+                )}
             </div>
 
-            <div>
-                <a href="#" className="block text-center text-blue-600 dark:text-blue-400 font-semibold">Fontes para as recomendações nutricionais</a>
+            {/* Plan Selector & Quiz */}
+            <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setShowAllPlans(true)} className="bg-white dark:bg-[#1C1C1E] p-4 rounded-[24px] shadow-sm border border-gray-100 dark:border-white/5 text-left active:scale-95 transition-transform">
+                    <div className="bg-orange-100 dark:bg-orange-900/30 w-10 h-10 rounded-full flex items-center justify-center text-orange-600 dark:text-orange-400 mb-3">
+                        <EditIcon className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">Plano Atual</p>
+                    <p className="font-bold text-gray-900 dark:text-white text-lg truncate">{plan.id}</p>
+                </button>
+                <button onClick={() => setIsQuizOpen(true)} className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-[24px] shadow-lg shadow-blue-500/20 text-left active:scale-95 transition-transform text-white">
+                    <div className="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center mb-3 backdrop-blur-md">
+                        <span className="text-lg">📝</span>
+                    </div>
+                    <p className="text-xs text-blue-100 font-bold uppercase">Dúvidas?</p>
+                    <p className="font-bold text-white text-lg">Quiz de Jejum</p>
+                </button>
             </div>
+
+            <ScientificSourceFooter />
 
             {isQuizOpen && (
                 <FastingQuiz 

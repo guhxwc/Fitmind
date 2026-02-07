@@ -4,7 +4,8 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon } from '../core/Icons';
+import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
 import { ProFeatureModal } from '../ProFeatureModal';
@@ -243,11 +244,14 @@ export const SummaryTab: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
         </div>
-        <Link to="/progress">
-            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 ring-2 ring-white dark:ring-black shadow-md">
-                {userData.name.charAt(0)}
-            </div>
-        </Link>
+        <div className="flex items-center gap-3">
+            <StreakBadge />
+            <Link to="/progress">
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 ring-2 ring-white dark:ring-black shadow-md">
+                    {userData.name.charAt(0)}
+                </div>
+            </Link>
+        </div>
       </header>
 
       {/* Bento Grid */}
@@ -375,8 +379,8 @@ export const SummaryTab: React.FC = () => {
         className="w-full bg-white dark:bg-gray-900 p-4 rounded-[24px] shadow-soft border border-blue-100 dark:border-blue-900/30 flex items-center justify-between group active:scale-[0.99] transition-all relative overflow-hidden"
       >
         {!userData.isPro && (
-            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-xl font-bold z-10">
-                PRO
+            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-xl font-bold z-10 flex items-center gap-1">
+                <LockIcon className="w-2.5 h-2.5" /> PRO
             </div>
         )}
         <div className="flex items-center gap-4">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon } from '../core/Icons';
+import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 import { SubscriptionPage } from '../SubscriptionPage';
@@ -135,8 +136,9 @@ export const SettingsTab: React.FC = () => {
 
     return (
         <div className="px-5 pb-24 min-h-screen animate-fade-in">
-            <header className="mb-8 mt-4">
+            <header className="mb-8 mt-4 flex justify-between items-start">
                 <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ajustes</h1>
+                <StreakBadge />
             </header>
 
             <div className="mb-8 flex items-center gap-4 bg-ios-card dark:bg-ios-dark-card p-4 rounded-[20px] shadow-sm relative overflow-hidden">

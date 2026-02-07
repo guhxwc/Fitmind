@@ -1,8 +1,10 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import type { ProgressPhoto, UserData } from '../../types';
 import { CameraIcon, TrashIcon, ScaleIcon, CheckCircleIcon, WavesIcon, UserCircleIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
+import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 
@@ -254,9 +256,12 @@ export const ProgressTab: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Progresso</p>
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Saúde</h1>
         </div>
-        <div className="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
-            <button onClick={() => setView('overview')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'overview' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Dados</button>
-            <button onClick={() => setView('photos')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'photos' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Fotos</button>
+        <div className="flex flex-col items-end gap-3">
+            <StreakBadge />
+            <div className="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
+                <button onClick={() => setView('overview')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'overview' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Dados</button>
+                <button onClick={() => setView('photos')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${view === 'photos' ? 'bg-white dark:bg-gray-700 shadow-sm text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Fotos</button>
+            </div>
         </div>
       </header>
 

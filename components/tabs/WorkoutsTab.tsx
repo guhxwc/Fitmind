@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback } from '../../types';
 import { DumbbellIcon } from '../core/Icons';
+import { StreakBadge } from '../core/StreakBadge';
 import { WorkoutQuiz } from './WorkoutQuiz';
 import { EXERCISE_DATABASE } from '../../workoutData';
 import { useAppContext } from '../AppContext';
@@ -417,9 +418,12 @@ export const WorkoutsTab: React.FC = () => {
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 min-h-screen animate-fade-in bg-white dark:bg-black">
-            <header>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Treinos</h1>
-                <p className="text-gray-500 dark:text-gray-400">Seu plano de exercícios</p>
+            <header className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Treinos</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Seu plano de exercícios</p>
+                </div>
+                <StreakBadge />
             </header>
             
             <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">

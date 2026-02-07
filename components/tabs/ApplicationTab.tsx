@@ -2,9 +2,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import type { Weekday, ApplicationEntry, MedicationName } from '../../types';
-import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon } from '../core/Icons';
+import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon, LockIcon } from '../core/Icons';
+import { StreakBadge } from '../core/StreakBadge';
 import { WEEKDAYS, MEDICATIONS } from '../../constants';
 import { useAppContext } from '../AppContext';
+import { ProFeatureModal } from '../ProFeatureModal';
+import { SubscriptionPage } from '../SubscriptionPage';
 
 // --- Sub-componente: Mapa Visual de Aplicação Compacto ---
 const InjectionSiteSelector: React.FC<{
@@ -150,10 +153,14 @@ const EditApplicationModal: React.FC<{
 };
 
 export const ApplicationTab: React.FC = () => {
-  const { userData, applicationHistory, setApplicationHistory, updateStreak } = useAppContext();
+  const { userData, applicationHistory, setApplicationHistory, updateStreak, unlockPro } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ApplicationEntry | null>(null);
+  
+  // Pro Features Logic
+  const [showProModal, setShowProModal] = useState(false);
+  const [showSubPage, setShowSubPage] = useState(false);
   
   if (!userData) return null;
 
@@ -165,6 +172,25 @@ export const ApplicationTab: React.FC = () => {
     setSelectedMed(medName);
     const newMedDoses = MEDICATIONS.find(m => m.name === medName)?.doses || [];
     setSelectedDose(newMedDoses[0] || '');
+  };
+
+  const handleLogClick = () => {
+      if (userData.isPro) {
+          handleLogApplication();
+      } else {
+          setShowProModal(true);
+      }
+  };
+
+  const handleUnlock = () => {
+      setShowProModal(false);
+      setShowSubPage(true);
+  };
+
+  const handleSubscribe = () => {
+      unlockPro();
+      setShowSubPage(false);
+      handleLogApplication();
   };
 
   const handleLogApplication = async () => {
@@ -230,9 +256,12 @@ export const ApplicationTab: React.FC = () => {
 
   return (
     <div className="p-5 space-y-8 animate-fade-in pb-24">
-      <header>
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Aplicação</h1>
-        <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Registre sua dose e local.</p>
+      <header className="flex justify-between items-start">
+        <div>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Aplicação</h1>
+            <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Registre sua dose e local.</p>
+        </div>
+        <StreakBadge />
       </header>
       
       <div className="space-y-8">
@@ -321,10 +350,16 @@ export const ApplicationTab: React.FC = () => {
         </section>
         
         <button 
-            onClick={handleLogApplication}
+            onClick={handleLogClick}
             disabled={loading || isSuccess}
-            className={`w-full py-4 rounded-[20px] font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg active:scale-[0.98] ${isSuccess ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-black dark:bg-white text-white dark:text-black shadow-black/20 dark:shadow-white/10'}`}
+            className={`w-full py-4 rounded-[20px] font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg active:scale-[0.98] relative overflow-hidden group ${isSuccess ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-black dark:bg-white text-white dark:text-black shadow-black/20 dark:shadow-white/10'}`}
             >
+            {!userData.isPro && !isSuccess && (
+                <div className="absolute top-3 right-3 bg-white/20 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                    PRO
+                </div>
+            )}
+            
             {loading ? (
                <span>Salvando...</span>
             ) : isSuccess ? (
@@ -334,7 +369,7 @@ export const ApplicationTab: React.FC = () => {
                 </>
             ) : (
                 <>
-                <SyringeIcon className="w-6 h-6" />
+                {userData.isPro ? <SyringeIcon className="w-6 h-6" /> : <LockIcon className="w-5 h-5"/>}
                 <span>Confirmar Aplicação</span>
                 </>
             )}
@@ -372,6 +407,20 @@ export const ApplicationTab: React.FC = () => {
             onSave={handleUpdateApplication}
             onDelete={handleDeleteApplication}
         />
+      )}
+      
+      {showProModal && (
+          <ProFeatureModal 
+              title="Registro de Doses"
+              onClose={() => setShowProModal(false)}
+              onUnlock={handleUnlock}
+          />
+      )}
+      {showSubPage && (
+          <SubscriptionPage 
+              onClose={() => setShowSubPage(false)}
+              onSubscribe={handleSubscribe}
+          />
       )}
     </div>
   );

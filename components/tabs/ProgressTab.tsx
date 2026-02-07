@@ -178,8 +178,37 @@ export const ProgressTab: React.FC = () => {
   if (!userData) return null;
 
   // Dados Computados
-  const sortedWeight = useMemo(() => [...weightHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [weightHistory]);
+  const sortedWeight = useMemo(() => {
+      let data = [...weightHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Se não houver histórico, cria um ponto com o peso atual (para visualização)
+      if (data.length === 0 && userData?.weight) {
+          data.push({ 
+              id: -1, 
+              user_id: userData.id, 
+              date: new Date().toISOString(), 
+              weight: userData.weight 
+          });
+      }
+
+      // Se houver apenas 1 ponto, duplica para criar uma linha reta (visualização de "início")
+      if (data.length === 1) {
+          const point = data[0];
+          const pastDate = new Date(point.date);
+          pastDate.setDate(pastDate.getDate() - 14); // Simula 14 dias atrás
+          
+          data = [
+              { ...point, id: -2, date: pastDate.toISOString() },
+              point
+          ];
+      }
+      return data;
+  }, [weightHistory, userData]);
+
   const currentWeight = userData.weight || 0;
+  // O peso inicial é o primeiro do array sortedWeight (que agora sempre tem pelo menos 2 itens se userData.weight existir)
+  // Mas para o cálculo de "Perdidos", queremos o peso real histórico mais antigo ou o atual se não houver histórico.
+  // Se o histórico real estiver vazio, sortedWeight tem dados fakes iguais ao atual, então lost = 0. Correto.
   const startWeight = sortedWeight.length > 0 ? sortedWeight[0].weight : currentWeight;
   const lostWeight = startWeight - currentWeight;
   const imc = (currentWeight / ((userData.height / 100) ** 2)).toFixed(1);
@@ -322,7 +351,7 @@ export const ProgressTab: React.FC = () => {
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', backgroundColor: theme === 'dark' ? '#1f2937' : '#fff', color: theme === 'dark' ? '#fff' : '#000' }}
                                 labelFormatter={(label) => formatDate(label as string)}
                             />
-                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" />
+                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" animationDuration={1500} />
                         </AreaChart>
                     </ResponsiveContainer>
                   </div>

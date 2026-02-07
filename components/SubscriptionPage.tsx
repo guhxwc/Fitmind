@@ -107,7 +107,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         <div className="space-y-4">
                             <PlanOption
                                 title="Anual"
-                                price="R$ 32,40 / mês"
+                                price="R$ 32,44 / mês"
                                 subtext="35% OFF comparado ao mensal"
                                 isPopular
                                 savings="Economize 35%"
@@ -116,7 +116,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             />
                             <PlanOption
                                 title="Mensal"
-                                price="R$ 49,90 / mês"
+                                price="R$ 49,00 / mês"
                                 isSelected={selectedPlan === 'monthly'}
                                 onClick={() => setSelectedPlan('monthly')}
                             />
@@ -155,8 +155,8 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             <span>Começar 7 Dias Grátis</span>
                             <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider mt-0.5">
                                 {selectedPlan === 'annual' 
-                                    ? 'Depois R$ 388,80/ano (R$ 32,40/mês)' 
-                                    : 'Depois R$ 49,90/mês'}
+                                    ? 'Depois R$ 389,22/ano (R$ 32,44/mês)' 
+                                    : 'Depois R$ 49,00/mês'}
                             </span>
                         </button>
                         <p className="text-[10px] text-center text-gray-400 dark:text-gray-600 mt-3 px-4 leading-tight">

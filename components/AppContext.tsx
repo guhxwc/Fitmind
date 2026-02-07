@@ -37,7 +37,7 @@ interface AppContextType {
   updateStreak: () => void;
   theme: Theme;
   toggleTheme: () => void;
-  unlockPro: () => void;
+  unlockPro: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -87,12 +87,29 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  // Mock function to enable pro (in a real app, this would verify a receipt)
-  const unlockPro = () => {
+  // Função para ativar o PRO e persistir no banco
+  const unlockPro = async () => {
       if(userData) {
-          const updated = { ...userData, isPro: true, subscriptionStatus: 'trial' };
+          // 1. Atualização Otimista no Cliente
+          const updated = { ...userData, isPro: true, subscriptionStatus: 'active' };
           setUserData(updated as UserData);
-          addToast("FitMind PRO ativado! Aproveite os 7 dias grátis.", "success");
+          
+          addToast("Ativando assinatura...", "info");
+
+          // 2. Persistência no Supabase
+          const { error } = await supabase.from('profiles').update({ 
+              is_pro: true, 
+              subscription_status: 'active' 
+          }).eq('id', userData.id);
+
+          if (error) {
+              console.error("Erro ao salvar status PRO:", error);
+              addToast("Erro ao salvar assinatura. Entre em contato com o suporte.", "error");
+              // Reverte se falhar (opcional)
+              // setUserData({ ...userData, isPro: false });
+          } else {
+              addToast("FitMind PRO ativado! Aproveite os 7 dias grátis.", "success");
+          }
       }
   }
 
@@ -110,8 +127,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,
-      isPro: false, // Default to false, in a real app check DB
-      subscriptionStatus: 'free',
+      isPro: profile.is_pro || false, // Mapeia corretamente do banco (snake_case -> camelCase)
+      subscriptionStatus: profile.subscription_status || 'free',
   });
 
   const fetchData = useCallback(async () => {

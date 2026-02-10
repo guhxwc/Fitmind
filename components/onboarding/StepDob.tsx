@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, Picker } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
 interface StepDobProps {
   onNext: () => void;
@@ -9,31 +10,57 @@ interface StepDobProps {
 }
 
 export const StepDob: React.FC<StepDobProps> = ({ onNext, onBack, onSelect, value }) => {
-  const [dob, setDob] = useState(value);
+  const [day, setDay] = useState(value.day || 1);
+  const [month, setMonth] = useState(value.month || 1);
+  const [year, setYear] = useState(value.year || 2000);
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 100 }, (_, i) => currentYear - 18 - i);
-  
   const handleSelect = () => {
-      onSelect(dob);
+      onSelect({ day, month, year });
       onNext();
   }
 
   return (
     <OnboardingScreen>
       <OnboardingHeader
-        title="Qual sua data de nascimento?"
-        subtitle="Cada fase da vida tem necessidades diferentes."
+        title="Data de Nascimento"
+        subtitle="Para personalizar seu plano de saúde."
         onBack={onBack}
         step={2}
         totalSteps={7}
       />
-      <div className="flex-grow flex items-center justify-center space-x-2">
-        <Picker items={days} onSelect={(day) => setDob(prev => ({ ...prev, day: Number(day) }))} initialValue={dob.day} />
-        <Picker items={months} onSelect={(month) => setDob(prev => ({ ...prev, month: months.indexOf(String(month)) + 1 }))} initialValue={months[dob.month - 1]} />
-        <Picker items={years} onSelect={(year) => setDob(prev => ({ ...prev, year: Number(year) }))} initialValue={dob.year} />
+      <div className="flex-grow flex flex-col justify-center items-center gap-4">
+        <div className="flex gap-2 w-full max-w-sm">
+            <div className="flex-1 bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-gray-100 dark:border-white/5 text-center">
+                <label className="text-xs font-bold text-gray-400 uppercase block mb-1">Dia</label>
+                <input 
+                    type="number" 
+                    value={day} 
+                    onChange={(e) => setDay(Number(e.target.value))}
+                    className="w-full text-2xl font-bold text-center bg-transparent outline-none text-gray-900 dark:text-white"
+                    placeholder="DD"
+                />
+            </div>
+            <div className="flex-1 bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-gray-100 dark:border-white/5 text-center">
+                <label className="text-xs font-bold text-gray-400 uppercase block mb-1">Mês</label>
+                <input 
+                    type="number" 
+                    value={month} 
+                    onChange={(e) => setMonth(Number(e.target.value))}
+                    className="w-full text-2xl font-bold text-center bg-transparent outline-none text-gray-900 dark:text-white"
+                    placeholder="MM"
+                />
+            </div>
+            <div className="flex-[1.5] bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-gray-100 dark:border-white/5 text-center">
+                <label className="text-xs font-bold text-gray-400 uppercase block mb-1">Ano</label>
+                <input 
+                    type="number" 
+                    value={year} 
+                    onChange={(e) => setYear(Number(e.target.value))}
+                    className="w-full text-2xl font-bold text-center bg-transparent outline-none text-gray-900 dark:text-white"
+                    placeholder="AAAA"
+                />
+            </div>
+        </div>
       </div>
       <OnboardingFooter onContinue={handleSelect} />
     </OnboardingScreen>

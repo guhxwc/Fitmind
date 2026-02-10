@@ -11,7 +11,7 @@ interface FastingQuizProps {
 const QuizHeader: React.FC<{onClose: () => void, step: number, totalSteps: number, onBack?: () => void}> = ({ onClose, step, totalSteps, onBack }) => {
     const progress = Math.min(((step + 1) / totalSteps) * 100, 100);
     return (
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-4 flex-shrink-0">
             {step > 0 && onBack ? (
                 <button onClick={onBack} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -31,7 +31,7 @@ const QuizHeader: React.FC<{onClose: () => void, step: number, totalSteps: numbe
 const QuizOption: React.FC<{onClick: () => void, isSelected: boolean, children: React.ReactNode, icon?: string}> = ({ onClick, isSelected, children, icon }) => (
      <button
         onClick={onClick}
-        className={`w-full text-left p-4 my-2 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 ${
+        className={`w-full text-left p-4 my-2 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 active:scale-[0.98] ${
             isSelected 
                 ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' 
                 : 'bg-gray-100 dark:bg-gray-800 border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
@@ -130,7 +130,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
       switch (step) {
           case 0: // Intro
             return (
-                <div className="flex flex-col h-full justify-center">
+                <div className="flex flex-col min-h-full justify-center">
                      <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-inner">
                         <ShieldCheckIcon className="w-12 h-12" />
                     </div>
@@ -148,7 +148,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
 
           case 1: // Risk Check
             return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Histórico Médico</h2>
                     <p className="text-gray-500 dark:text-gray-400 mb-6">Alguma destas condições se aplica a você?</p>
                     <div className="space-y-3">
@@ -170,7 +170,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
 
           case 2: // Sex
              return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Qual seu gênero biológico?</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 -mt-4">Importante pois mulheres têm sensibilidade hormonal diferente ao jejum.</p>
                      <div className="space-y-3">
@@ -186,7 +186,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
         
           case 3: // Experience
              return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Sua experiência com jejum</h2>
                      <div className="space-y-3">
                         <QuizOption onClick={() => handleOptionSelect('experience', 'iniciante')} isSelected={answers.experience === 'iniciante'} icon="🐣">
@@ -204,7 +204,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
 
           case 4: // Goal
              return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Qual seu objetivo principal?</h2>
                     <div className="space-y-3">
                         <QuizOption onClick={() => handleOptionSelect('goal', 'peso')} isSelected={answers.goal === 'peso'} icon="📉">
@@ -225,7 +225,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
 
           case 5: // Hunger / Routine
              return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Onde está sua maior fome?</h2>
                      <div className="space-y-3">
                         <QuizOption onClick={() => handleOptionSelect('hunger', 'manha')} isSelected={answers.hunger === 'manha'} icon="🍳">
@@ -243,7 +243,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
 
           case 6: // Activity Level
              return (
-                <div>
+                <div className="pb-4">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Como são seus treinos?</h2>
                      <div className="space-y-3">
                         <QuizOption onClick={() => handleOptionSelect('active', 'sedentario')} isSelected={answers.active === 'sedentario'} icon="🛋️">
@@ -262,7 +262,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
           case 7: // Result (Mapped to TOTAL_STEPS logic or Risk logic)
             if (riskFactor) {
                 return (
-                    <div className="flex flex-col h-full justify-center items-center text-center">
+                    <div className="flex flex-col min-h-full justify-center items-center text-center">
                          <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mb-6">
                             <span className="text-4xl">⚠️</span>
                         </div>
@@ -278,7 +278,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
             }
 
             return (
-                 <div className="flex flex-col h-full pt-4">
+                 <div className="flex flex-col min-h-full pt-4">
                     <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center mb-2">Recomendação da IA</p>
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-8">Seu Plano Ideal</h2>
                     
@@ -320,7 +320,7 @@ export const FastingQuiz: React.FC<FastingQuizProps> = ({ onComplete, onClose })
             <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md h-[95%] rounded-t-[32px] p-6 flex flex-col animate-slide-up shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 {step > 0 && step < 7 && <QuizHeader onClose={onClose} step={step - 1} totalSteps={6} onBack={prevStep} />}
                 
-                <div className="flex-grow overflow-y-auto hide-scrollbar">
+                <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0">
                     {renderContent()}
                 </div>
             </div>

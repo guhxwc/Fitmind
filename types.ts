@@ -1,8 +1,50 @@
+
 export type MedicationName = 'Mounjaro' | 'Ozempic' | 'Wegovy' | 'Saxenda' | 'Other';
 export type Gender = 'Masculino' | 'Feminino' | 'Outro' | 'Prefiro não dizer';
 export type ActivityLevel = 'Sedentário' | 'Levemente ativo' | 'Moderadamente ativo' | 'Ativo' | 'Muito ativo';
-export type Goal = 'Perder peso' | 'Manter peso' | 'Ganhar massa muscular';
 export type Weekday = 'Segunda-feira' | 'Terça-feira' | 'Quarta-feira' | 'Quinta-feira' | 'Sexta-feira' | 'Sábado' | 'Domingo';
+export type FastingPace = 'lento' | 'normal' | 'rápido';
+
+export type SideEffectName = 'Náusea' | 'Dor de cabeça' | 'Fadiga' | 'Apetite reduzido' | 'Tontura' | 'Constipação' | 'Diarreia' | 'Nenhum';
+export type SideEffectIntensity = 'Leve' | 'Moderado' | 'Severo';
+
+export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled';
+
+export interface UserData {
+  id: string;
+  name: string;
+  gender: Gender;
+  age: number;
+  height: number;
+  weight: number;
+  startWeight: number;
+  targetWeight: number;
+  startWeightDate?: string; // New field
+  activityLevel: ActivityLevel;
+  glpStatus: 'using' | 'starting'; // New field
+  applicationFrequency: string; // New field
+  pace: number; // kg per week preference
+  motivation: string[]; // New field
+  mainSideEffect?: string; // New field
+  medication: {
+    name: MedicationName;
+    dose: string;
+    nextApplication: Weekday;
+  };
+  medicationReminder?: {
+    enabled: boolean;
+    time: string;
+  };
+  goals: {
+    water: number;
+    protein: number;
+    calories: number;
+  };
+  streak: number;
+  lastActivityDate: string | null;
+  isPro?: boolean;
+  subscriptionStatus?: SubscriptionStatus;
+}
 
 export interface Meal {
   id: string;
@@ -15,36 +57,34 @@ export interface Meal {
 export interface WeightEntry {
   id?: number;
   user_id?: string;
-  date: string; // ISO string format for dates
-  weight: number; // in kg
+  date: string;
+  weight: number;
 }
 
 export interface ApplicationEntry {
   id: number;
   user_id: string;
-  date: string; // ISO string
+  date: string;
   medication: MedicationName;
   dose: string;
 }
 
 export interface ProgressPhoto {
-  id: number; // unique id from db
-  date: string; // ISO string format for dates
-  photo_url: string; // URL from Supabase Storage
+  id: number;
+  date: string;
+  photo_url: string;
 }
 
-export type SideEffectName = 'Náusea' | 'Dor de cabeça' | 'Fadiga' | 'Apetite reduzido' | 'Tontura' | 'Constipação';
-export type SideEffectIntensity = 'Leve' | 'Moderado' | 'Severo';
-
 export interface SideEffect {
-  name: SideEffectName;
+  name: SideEffectName | string;
   intensity: SideEffectIntensity;
+  duration?: string;
 }
 
 export interface SideEffectEntry {
   id?: number;
   user_id: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   effects: SideEffect[];
   notes?: string;
 }
@@ -52,7 +92,7 @@ export interface SideEffectEntry {
 export interface DailyNote {
   id?: number;
   user_id: string;
-  date: string; // ISO string YYYY-MM-DD
+  date: string;
   content: string;
 }
 
@@ -62,32 +102,14 @@ export interface Exercise {
   muscleGroups: string[];
   equipment: string;
   level: 'Iniciante' | 'Intermediário' | 'Avançado';
-  setting: 'Casa' | 'Academia';
-}
-
-export interface WorkoutQuizAnswers {
-  location: 'Casa' | 'Academia';
-  daysPerWeek: number;
-  duration: number; // in minutes
-  goal: 'emagrecer' | 'ganhar massa' | 'manter';
-  intensity: 'lento' | 'moderado' | 'agressivo';
-  level: 'Iniciante' | 'Intermediário' | 'Avançado';
-  bodyType: 'ectomorfo' | 'mesomorfo' | 'endomorfo';
-  priorityMuscles: string[];
-  equipment: boolean;
+  setting: 'Academia' | 'Casa';
 }
 
 export interface WorkoutDay {
   day: number;
   focus: string;
-  estimatedTime: number; // in minutes
-  exercises: {
-    exerciseId: number;
-    name: string;
-    sets: string;
-    reps: string;
-    rest: string; // in seconds
-  }[];
+  estimatedTime: number;
+  exercises: any[];
 }
 
 export type WorkoutPlan = WorkoutDay[];
@@ -95,38 +117,9 @@ export type WorkoutPlan = WorkoutDay[];
 export interface WorkoutFeedback {
   id?: number;
   user_id?: string;
-  date: string; // ISO string
+  date: string;
   workoutDayIndex: number;
   rating: 'leve' | 'ideal' | 'pesado';
-}
-
-export interface UserData {
-  id: string; // Comes from supabase.auth.user.id
-  name: string;
-  gender: Gender;
-  age: number;
-  height: number; // in cm
-  weight: number; // in kg
-  targetWeight: number; // in kg
-  activityLevel: ActivityLevel;
-  medication: {
-    name: MedicationName;
-    dose: string;
-    nextApplication: Weekday;
-  };
-  medicationReminder?: {
-    enabled: boolean;
-    time: string; // "HH:mm"
-  };
-  goals: {
-    water: number; // in L
-    protein: number; // in g
-    calories: number; // in kcal
-  };
-  streak: number;
-  lastActivityDate: string | null;
-  isPro?: boolean;
-  subscriptionStatus?: 'free' | 'trial' | 'active' | 'cancelled';
 }
 
 export interface Medication {
@@ -136,7 +129,7 @@ export interface Medication {
 
 export interface DietQuizAnswers {
   appetite: 'pouco' | 'médio' | 'muito';
-  mealsPerDay: 3 | 4 | 5;
+  mealsPerDay: number;
   skipBreakfast: boolean;
   nightHunger: boolean;
   restrictions: string[];
@@ -144,13 +137,16 @@ export interface DietQuizAnswers {
   trains: boolean;
 }
 
-export interface GeneratedDietPlan {
-  meals: {
-    name: 'Café da manhã' | 'Lanche da manhã' | 'Almoço' | 'Lanche da tarde' | 'Jantar' | 'Ceia';
-    description: string;
-    quantity: string;
-    protein: number;
-    calories: number;
-  }[];
-  tip: string;
+export interface WorkoutQuizAnswers {
+  location: 'Academia' | 'Casa';
+  daysPerWeek: number;
+  duration: number;
+  goal: 'emagrecer' | 'ganhar massa' | 'manter';
+  intensity: 'leve' | 'moderado' | 'intenso';
+  level: 'Iniciante' | 'Intermediário' | 'Avançado';
+  bodyType: 'ectomorfo' | 'mesomorfo' | 'endomorfo';
+  priorityMuscles: string[];
+  equipment: boolean;
+  splitPreference: 'abc' | 'abcd' | 'abcde' | 'fullbody' | 'no_preference';
+  injuries: string[];
 }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Gender } from '../../types';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
@@ -22,7 +23,7 @@ export const StepGender: React.FC<StepGenderProps> = ({ onNext, onBack, onSelect
         step={2}
         totalSteps={totalSteps}
       />
-      <div className="flex-grow">
+      <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {genders.map((gender) => (
           <OptionButton key={gender} onClick={() => onSelect(gender)} isSelected={value === gender}>
             {gender}

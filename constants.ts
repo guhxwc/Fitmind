@@ -1,3 +1,4 @@
+
 import type { Medication, UserData } from './types';
 
 export const MEDICATIONS: Medication[] = [
@@ -14,23 +15,24 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
   name: '',
   gender: 'Prefiro não dizer',
   age: 25,
-  height: 175,
-  weight: 70,
-  targetWeight: 65,
+  height: 170,
+  weight: 80,
+  startWeight: 80,
+  targetWeight: 70,
   activityLevel: 'Sedentário',
+  glpStatus: 'using',
+  applicationFrequency: 'Semanalmente',
+  pace: 0.5,
+  motivation: [],
   medication: {
-    name: 'Mounjaro',
-    dose: '2,5 mg',
-    nextApplication: 'Quarta-feira',
-  },
-  medicationReminder: {
-    enabled: false,
-    time: '09:00',
+    name: 'Ozempic',
+    dose: '0,5 mg',
+    nextApplication: 'Domingo',
   },
   goals: {
     water: 2.8,
-    protein: 126,
-    calories: 2000,
+    protein: 120,
+    calories: 1800,
   },
   streak: 0,
   lastActivityDate: null,

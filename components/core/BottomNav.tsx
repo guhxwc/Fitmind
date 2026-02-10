@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon } from './Icons';
@@ -24,7 +25,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon }) => {
           <>
             {/* Icon Container */}
             <div className="relative">
-                {React.cloneElement(icon as React.ReactElement, { 
+                {React.cloneElement(icon as React.ReactElement<any>, { 
                     strokeWidth: isActive ? 2.5 : 2,
                     className: "w-6 h-6"
                 })}

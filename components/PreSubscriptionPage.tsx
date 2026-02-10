@@ -33,7 +33,7 @@ const TimelineItem: React.FC<{
                 ? 'bg-blue-600 border-blue-100 dark:border-blue-900 text-white shadow-lg shadow-blue-500/30' 
                 : 'bg-white dark:bg-gray-800 border-gray-50 dark:border-gray-900 text-blue-500'
         }`}>
-            {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+            {React.cloneElement(icon as React.ReactElement<any>, { className: "w-5 h-5" })}
         </div>
 
         {/* Content */}

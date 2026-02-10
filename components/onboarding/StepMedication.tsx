@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { MedicationName } from '../../types';
 import { MEDICATIONS } from '../../constants';
@@ -21,7 +22,7 @@ export const StepMedication: React.FC<StepMedicationProps> = ({ onNext, onBack, 
         step={5}
         totalSteps={totalSteps}
       />
-      <div className="flex-grow">
+      <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {MEDICATIONS.map(({ name }) => (
           <OptionButton key={name} onClick={() => onSelect(name)} isSelected={value === name}>
             {name}®

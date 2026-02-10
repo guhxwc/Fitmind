@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -218,7 +219,7 @@ export const Auth: React.FC = () => {
                   {token.map((digit, index) => (
                       <input
                           key={index}
-                          ref={el => inputRefs.current[index] = el}
+                          ref={el => { if (el) inputRefs.current[index] = el }}
                           type="tel"
                           maxLength={1}
                           value={digit}

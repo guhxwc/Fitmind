@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Weekday } from '../../types';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
@@ -23,7 +24,7 @@ export const StepCravingDay: React.FC<StepCravingDayProps> = ({ onNext, onBack, 
         step={7}
         totalSteps={totalSteps}
       />
-      <div className="flex-grow">
+      <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {weekdays.map((day) => (
           <OptionButton key={day} onClick={() => onSelect(day)} isSelected={value === day}>
             {day}

@@ -121,7 +121,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       height: profile.height || DEFAULT_USER_DATA.height,
       weight: profile.weight || DEFAULT_USER_DATA.weight,
       targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
+      startWeight: profile.start_weight || DEFAULT_USER_DATA.startWeight,
+      startWeightDate: profile.start_weight_date || undefined,
       activityLevel: profile.activity_level || DEFAULT_USER_DATA.activityLevel,
+      glpStatus: profile.glp_status || DEFAULT_USER_DATA.glpStatus,
+      applicationFrequency: profile.application_frequency || DEFAULT_USER_DATA.applicationFrequency,
+      pace: profile.pace || DEFAULT_USER_DATA.pace,
+      motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
+      mainSideEffect: profile.main_side_effect || undefined,
       medication: profile.medication || DEFAULT_USER_DATA.medication,
       medicationReminder: profile.medication_reminder || DEFAULT_USER_DATA.medicationReminder,
       goals: profile.goals || DEFAULT_USER_DATA.goals,
@@ -154,7 +161,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           planRes,
           workoutHistoryRes,
           applicationHistoryRes,
-          dailyRecordRes
+          dailyRecordRes,
+          dailyNotesRes,
+          sideEffectsRes
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', userId).single(),
             supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
@@ -162,7 +171,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
             supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
-            supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).limit(1).maybeSingle()
+            supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).limit(1).maybeSingle(),
+            supabase.from('daily_notes').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false })
         ]);
 
         if (profileRes.data) {
@@ -174,6 +185,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setWorkoutPlan(planRes.data && planRes.data.length > 0 ? planRes.data[0].plan : null);
         setWorkoutHistory(workoutHistoryRes.data || []);
         setApplicationHistory(applicationHistoryRes.data || []);
+        setDailyNotes(dailyNotesRes.data || []);
+        setSideEffects(sideEffectsRes.data || []);
         
         if (dailyRecordRes.data) {
             dailyRecordIdRef.current = dailyRecordRes.data.id;
@@ -187,8 +200,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setCurrentWater(0);
         }
 
-        setDailyNotes([]);
-        setSideEffects([]);
     } catch (error) {
         console.error("Error fetching data:", error);
     } finally {

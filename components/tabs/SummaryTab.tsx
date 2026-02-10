@@ -23,7 +23,7 @@ const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number;
       <div className="w-full flex justify-between items-center mb-2">
           <span className={`text-xs font-bold uppercase tracking-widest ${accentColor} opacity-90`}>{title}</span>
           <div className={`p-1.5 rounded-full bg-opacity-10 ${accentColor.replace('text-', 'bg-')}`}>
-             {React.cloneElement(icon as React.ReactElement, { className: `w-3.5 h-3.5 ${accentColor}` })}
+             {React.cloneElement(icon as React.ReactElement<any>, { className: `w-3.5 h-3.5 ${accentColor}` })}
           </div>
       </div>
       
@@ -58,6 +58,7 @@ const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number;
 
 const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNode, disabled?: boolean}> = ({onClick, children, disabled = false}) => (
     <button 
+      type="button"
       onClick={!disabled ? onClick : undefined} 
       className={`flex-1 h-11 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl flex items-center justify-center text-gray-900 dark:text-white transition-all active:scale-95 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
       disabled={disabled}
@@ -70,7 +71,7 @@ const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: numbe
     <div className="bg-ios-card dark:bg-ios-dark-card p-4 rounded-[24px] shadow-soft mb-3 flex items-center justify-between border border-gray-100 dark:border-white/5 active:scale-[0.99] transition-transform">
         <div className="flex items-center gap-4 flex-1">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${bgClass} text-white`}>
-                {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
+                {React.cloneElement(icon as React.ReactElement<any>, { className: "w-6 h-6" })}
             </div>
             <div className="flex-1">
                 <div className="flex justify-between items-end mb-1 pr-4">
@@ -293,10 +294,10 @@ export const SummaryTab: React.FC = () => {
              </div>
              <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
                   <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>
-                      <MinusIcon className="w-5 h-5" />
+                      <MinusIcon className="w-5 h-5 flex-shrink-0" />
                   </MiniControlButton>
                   <MiniControlButton onClick={handleAddProtein}>
-                      <PlusIcon className="w-5 h-5" />
+                      <PlusIcon className="w-5 h-5 flex-shrink-0" />
                   </MiniControlButton>
              </div>
           </div>
@@ -316,10 +317,10 @@ export const SummaryTab: React.FC = () => {
              </div>
              <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
                   <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} disabled={currentWater <= 0}>
-                      <MinusIcon className="w-5 h-5" />
+                      <MinusIcon className="w-5 h-5 flex-shrink-0" />
                   </MiniControlButton>
                   <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>
-                      <PlusIcon className="w-5 h-5" />
+                      <PlusIcon className="w-5 h-5 flex-shrink-0" />
                   </MiniControlButton>
              </div>
           </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 const CheckListItem: React.FC<{ text: string; done: boolean }> = ({ text, done }) => (
@@ -9,14 +10,21 @@ const CheckListItem: React.FC<{ text: string; done: boolean }> = ({ text, done }
   </div>
 );
 
-export const StepAnalyzing: React.FC = () => {
+export const StepAnalyzing: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [checklist, setChecklist] = useState([false, false, false, false]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setProgress(prev => Math.min(prev + 1, 100));
-    }, 35);
+      setProgress(prev => {
+          if (prev >= 100) {
+              clearInterval(interval);
+              setTimeout(onComplete, 500);
+              return 100;
+          }
+          return prev + 1;
+      });
+    }, 40);
 
     const timeouts = [
       setTimeout(() => setChecklist(p => [true, ...p.slice(1)]), 500),
@@ -29,10 +37,10 @@ export const StepAnalyzing: React.FC = () => {
       clearInterval(interval);
       timeouts.forEach(clearTimeout);
     };
-  }, []);
+  }, [onComplete]);
 
   return (
-    <div className="flex flex-col h-full items-center justify-center p-6 bg-white dark:bg-black">
+    <div className="flex flex-col h-full items-center justify-center p-6 bg-white dark:bg-black animate-fade-in">
       <div className="relative w-48 h-48 mb-12">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <circle className="text-gray-200 dark:text-gray-700" strokeWidth="8" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" />
@@ -50,11 +58,11 @@ export const StepAnalyzing: React.FC = () => {
             style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 0.1s linear' }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-800 dark:text-gray-200">
+        <div className="absolute inset-0 flex items-center justify-center text-4xl font-extrabold text-gray-800 dark:text-gray-200 tabular-nums">
           {progress}%
         </div>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">Analisando seu perfil...</h1>
+      <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 mb-8 tracking-tight">Analisando seu perfil...</h1>
       <div className="w-full max-w-xs">
         <CheckListItem text="Analisando perfil de saúde" done={checklist[0]} />
         <CheckListItem text="Calculando métricas" done={checklist[1]} />

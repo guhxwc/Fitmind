@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { StarIcon } from './core/Icons';
 
@@ -15,16 +16,24 @@ export const ProUpsellModal: React.FC<ProUpsellModalProps> = ({ onClose, onUnloc
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Você está no caminho certo!</h2>
-                <p className="text-gray-600 dark:text-gray-300 mt-2">
-                    Seu progresso é inspirador. Aprimore ainda mais sua jornada com o FitMind PRO.
+                
+                {/* Headline Focada em Resultado/Velocidade */}
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                    Quer dobrar a sua velocidade?
+                </h2>
+                
+                <p className="text-gray-600 dark:text-gray-300 mt-3 text-sm">
+                    Seu esforço está dando resultado. O FitMind PRO é a ferramenta para transformar esse bom começo em uma vitória definitiva contra a balança.
                 </p>
+                
                 <div className="flex flex-col gap-3 mt-6">
-                    <button onClick={onUnlock} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                    <button onClick={onUnlock} className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
                         <StarIcon className="w-5 h-5"/>
-                        Ver Vantagens do PRO
+                        Desbloquear o Plano PRO
                     </button>
-                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-semibold">Agora não</button>
+                    <button onClick={onClose} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        Agora não
+                    </button>
                 </div>
             </div>
         </div>

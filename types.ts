@@ -19,13 +19,21 @@ export interface UserData {
   weight: number;
   startWeight: number;
   targetWeight: number;
-  startWeightDate?: string; // New field
+  startWeightDate?: string;
   activityLevel: ActivityLevel;
-  glpStatus: 'using' | 'starting'; // New field
-  applicationFrequency: string; // New field
-  pace: number; // kg per week preference
-  motivation: string[]; // New field
-  mainSideEffect?: string; // New field
+  glpStatus: 'using' | 'starting';
+  applicationFrequency: string;
+  pace: number;
+  motivation: string[];
+  mainSideEffect?: string;
+  // Funnel / Marketing Fields
+  journeyDuration?: string;
+  biggestFrustration?: string;
+  futureWorry?: string;
+  oneThingGuaranteed?: string;
+  dreamOutcome?: string;
+  monthlyInvestment?: string;
+  
   medication: {
     name: MedicationName;
     dose: string;
@@ -44,6 +52,14 @@ export interface UserData {
   lastActivityDate: string | null;
   isPro?: boolean;
   subscriptionStatus?: SubscriptionStatus;
+}
+
+export interface Lead {
+  id: string;
+  email: string;
+  profile_type: string; // 'Iniciante Ansioso', 'Veterano Estagnado', etc.
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Meal {

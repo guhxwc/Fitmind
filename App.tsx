@@ -76,15 +76,23 @@ const App: React.FC = () => {
       height: data.height,
       weight: data.weight,
       target_weight: data.targetWeight,
-      start_weight: data.startWeight, // New
-      start_weight_date: data.startWeightDate, // New
+      start_weight: data.startWeight,
+      start_weight_date: data.startWeightDate,
       activity_level: data.activityLevel,
       medication: data.medication,
-      glp_status: data.glpStatus, // New
-      application_frequency: data.applicationFrequency, // New
-      pace: data.pace, // New
-      motivation: data.motivation, // New
-      main_side_effect: data.mainSideEffect, // New
+      glp_status: data.glpStatus,
+      application_frequency: data.applicationFrequency,
+      pace: data.pace,
+      motivation: data.motivation,
+      main_side_effect: data.mainSideEffect,
+      // Marketing/Funnel fields
+      journey_duration: data.journeyDuration,
+      biggest_frustration: data.biggestFrustration,
+      future_worry: data.futureWorry,
+      one_thing_guaranteed: data.oneThingGuaranteed,
+      dream_outcome: data.dreamOutcome,
+      monthly_investment: data.monthlyInvestment,
+      
       goals: {
           water: finalWater,
           protein: finalProtein,

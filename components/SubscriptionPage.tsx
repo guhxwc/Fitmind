@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { CheckCircleIcon, StarIcon, ShieldCheckIcon, LockIcon } from './core/Icons';
+import { CheckCircleIcon, StarIcon, ShieldCheckIcon, LockIcon, CoffeeIcon } from './core/Icons';
 import { PaymentPage } from './PaymentPage';
 import { PreSubscriptionPage } from './PreSubscriptionPage';
 import Portal from './core/Portal';
@@ -25,9 +25,10 @@ const PlanOption: React.FC<{
     subtext?: string;
     isPopular?: boolean;
     savings?: string;
+    extraTag?: string;
     isSelected: boolean;
     onClick: () => void;
-}> = ({ title, price, subtext, isPopular, savings, isSelected, onClick }) => (
+}> = ({ title, price, subtext, isPopular, savings, extraTag, isSelected, onClick }) => (
     <div onClick={onClick} className={`relative p-5 rounded-2xl text-left cursor-pointer transition-all duration-300 ${isSelected ? 'border-2 border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 shadow-sm' : 'border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-200 dark:hover:border-gray-700'}`}>
         {isPopular && (
             <div className="absolute -top-3 right-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg uppercase tracking-wider">
@@ -36,16 +37,17 @@ const PlanOption: React.FC<{
         )}
         <div className="flex justify-between items-center">
             <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <p className={`font-bold text-lg ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{title}</p>
                     {savings && <span className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-md">{savings}</span>}
+                    {extraTag && <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1"><CoffeeIcon className="w-2.5 h-2.5"/> {extraTag}</span>}
                 </div>
                 <div className="flex items-baseline gap-1">
                     <p className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{price}</p>
                 </div>
                 {subtext && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">{subtext}</p>}
             </div>
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
+            <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
                 {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
             </div>
         </div>
@@ -93,13 +95,13 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         <div className="text-center flex flex-col items-center">
                             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-blue-500/30 mb-6 animate-pop-in">
                                 <StarIcon className="w-3 h-3 fill-white" />
-                                Teste Grátis por 7 Dias
+                                Oferta termina em 24h
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-[1.1]">
-                                Escolha seu plano
+                                Seu upgrade para resultados máximos.
                             </h1>
                             <p className="text-gray-500 dark:text-gray-400 mt-3 text-base max-w-xs mx-auto leading-relaxed">
-                                Comece hoje sem pagar nada. Cancele quando quiser.
+                                Transforme seu investimento no medicamento em resultados definitivos.
                             </p>
                         </div>
 
@@ -108,9 +110,10 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             <PlanOption
                                 title="Anual"
                                 price="R$ 32,44 / mês"
-                                subtext="35% OFF comparado ao mensal"
+                                subtext="Cobrado anualmente (R$ 389,22)"
                                 isPopular
                                 savings="Economize 35%"
+                                extraTag="Menos que um café/dia"
                                 isSelected={selectedPlan === 'annual'}
                                 onClick={() => setSelectedPlan('annual')}
                             />
@@ -122,16 +125,30 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             />
                         </div>
 
-                        {/* Benefits List */}
+                        {/* Benefits List (Benefit-Focused) */}
                         <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
-                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Tudo incluso no PRO</h3>
+                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Por que o PRO é indispensável?</h3>
                             <ul className="space-y-4">
-                                <FeatureItem><strong>Registro de Doses:</strong> Controle histórico de aplicações</FeatureItem>
-                                <FeatureItem><strong>CalorieCam:</strong> Nutrição automática por foto</FeatureItem>
-                                <FeatureItem><strong>Personal Trainer IA:</strong> Treinos adaptativos</FeatureItem>
-                                <FeatureItem><strong>Análise Inteligente:</strong> Relatórios de progresso</FeatureItem>
-                                <FeatureItem><strong>Fotos:</strong> Comparativo Antes x Depois</FeatureItem>
+                                <FeatureItem><strong>CalorieCam:</strong> Pare de adivinhar. Saiba em segundos se a refeição acelera ou atrasa sua perda.</FeatureItem>
+                                <FeatureItem><strong>Personal Trainer IA:</strong> Treine com segurança. Exercícios que respeitam sua energia e colaterais.</FeatureItem>
+                                <FeatureItem><strong>Análise Inteligente:</strong> Descubra o que realmente funciona. Dados que mostram o caminho.</FeatureItem>
+                                <FeatureItem><strong>Comparador de Fotos:</strong> Veja a mudança real que a balança muitas vezes esconde.</FeatureItem>
                             </ul>
+                        </div>
+
+                        {/* FAQ / Objection Block */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Dúvidas Comuns</h3>
+                            
+                            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                                <p className="font-bold text-sm mb-1 text-gray-800 dark:text-gray-200">E se eu não gostar?</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Você tem 7 dias para testar tudo. Se não for transformador, cancele com 1 clique.</p>
+                            </div>
+
+                            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                                <p className="font-bold text-sm mb-1 text-gray-800 dark:text-gray-200">É muito caro?</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">O plano anual custa menos que um café por dia. É um investimento para garantir que seu tratamento principal funcione.</p>
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
@@ -152,10 +169,10 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             {/* Shine effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
                             
-                            <span>Começar 7 Dias Grátis</span>
+                            <span>Liberar meus 7 Dias Grátis Agora</span>
                             <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider mt-0.5">
                                 {selectedPlan === 'annual' 
-                                    ? 'Depois R$ 389,22/ano (R$ 32,44/mês)' 
+                                    ? 'Depois R$ 32,44/mês (cobrado anualmente)' 
                                     : 'Depois R$ 49,00/mês'}
                             </span>
                         </button>

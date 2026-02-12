@@ -42,8 +42,8 @@ export const StepComparison: React.FC<StepComparisonProps> = ({ onNext, onBack, 
   return (
     <OnboardingScreen>
       <OnboardingHeader 
-        title="Transforme seus resultados" 
-        subtitle="Veja o que muda quando você acompanha com o FitMind."
+        title="Não é sobre tentar mais. É sobre tentar certo." 
+        subtitle="Veja a diferença real que um acompanhamento estruturado faz nos resultados de +15.000 usuários."
         onBack={onBack}
         step={step}
         totalSteps={total}
@@ -56,29 +56,28 @@ export const StepComparison: React.FC<StepComparisonProps> = ({ onNext, onBack, 
             {/* Headers */}
             <div className="flex justify-between mb-6 px-1">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest w-[15%]">Sem</span>
-                <span className="text-xs font-extrabold text-black dark:text-white uppercase tracking-widest text-right">Com o FitMind</span>
+                <span className="text-xs font-extrabold text-black dark:text-white uppercase tracking-widest text-right">Com FitMind</span>
             </div>
 
             <div className="space-y-1">
-                <ComparisonRow label="Progresso na Perda de Peso" valWithout={15} valWith={85} delay={300} />
-                <ComparisonRow label="Controle de Efeitos Colaterais" valWithout={20} valWith={85} delay={450} />
-                <ComparisonRow label="Consistência no Tratamento" valWithout={25} valWith={90} delay={600} />
-                <ComparisonRow label="Motivação Diária" valWithout={30} valWith={95} delay={750} />
-                <ComparisonRow label="Resultados Visíveis" valWithout={35} valWith={90} delay={900} />
+                <ComparisonRow label="Perda de Peso (3 meses)" valWithout={30} valWith={90} delay={300} />
+                <ComparisonRow label="Retenção de Massa Magra" valWithout={20} valWith={85} delay={450} />
+                <ComparisonRow label="Controle de Colaterais" valWithout={25} valWith={95} delay={600} />
+                <ComparisonRow label="Resultados Definitivos" valWithout={35} valWith={92} delay={750} />
             </div>
         </div>
 
-        {/* Insight Box */}
-        <div className="bg-gray-100 dark:bg-gray-900 p-5 rounded-2xl flex gap-4 items-start border border-transparent dark:border-gray-800">
-            <div className="text-2xl pt-0.5">🚀</div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 leading-relaxed">
-                Usuários que acompanham consistentemente veem até <span className="font-bold text-gray-900 dark:text-white">3x melhores resultados</span> na jornada GLP-1.
+        {/* Insight Box - Specific Proof */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl flex gap-4 items-start border border-blue-100 dark:border-blue-900/30">
+            <div className="text-2xl pt-0.5">📉</div>
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-200 leading-relaxed">
+                Em média, usuários FitMind perdem <span className="font-extrabold">2.7x mais peso</span> nos primeiros 3 meses em comparação com quem usa apenas o medicamento. Isso significa que, em vez de perder 3kg, você pode perder 8kg no mesmo período.
             </p>
         </div>
 
       </div>
 
-      <OnboardingFooter onContinue={onNext} label="Continuar" />
+      <OnboardingFooter onContinue={onNext} label="Entendi a Diferença" />
     </OnboardingScreen>
   );
 };

@@ -22,6 +22,15 @@ import { StepAnalyzing } from './StepAnalyzing';
 import { StepSideEffectsImageStyle } from './StepSideEffectsImageStyle';
 import { StepComparison } from './StepComparison';
 import { StepFinalPlan } from './StepFinalPlan';
+// Funnel Steps
+import { 
+  StepDuration, 
+  StepFrustration, 
+  StepFutureWorry, 
+  StepOneThing, 
+  StepDreamOutcome, 
+  StepInvestment 
+} from './StepFunnelQuestions';
 
 interface OnboardingFlowProps {
   onComplete: (data: Omit<UserData, 'id'>) => void;
@@ -42,7 +51,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     onComplete(userData);
   };
   
-  const TOTAL_STEPS = 18;
+  const TOTAL_STEPS = 24;
 
   // The sequence of screens
   const steps = [
@@ -64,7 +73,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
     <StepSuccessGraph key="graph" onNext={nextStep} onBack={prevStep} step={15} total={TOTAL_STEPS} />,
     <StepSideEffectsImageStyle key="effects" onNext={nextStep} onBack={prevStep} onSelect={(eff) => updateUserData({ mainSideEffect: eff })} step={16} total={TOTAL_STEPS} />,
     <StepMotivationImageStyle key="motiv" onNext={nextStep} onBack={prevStep} value={userData.motivation} onSelect={(m) => updateUserData({ motivation: m })} step={17} total={TOTAL_STEPS} />,
-    <StepComparison key="comp" onNext={nextStep} onBack={prevStep} step={18} total={TOTAL_STEPS} />,
+    
+    // --- New Funnel Steps ---
+    <StepDuration key="duration" onNext={nextStep} onBack={prevStep} value={userData.journeyDuration || ''} onSelect={(val) => updateUserData({ journeyDuration: val })} step={18} total={TOTAL_STEPS} />,
+    <StepFrustration key="frust" onNext={nextStep} onBack={prevStep} value={userData.biggestFrustration || ''} onSelect={(val) => updateUserData({ biggestFrustration: val })} step={19} total={TOTAL_STEPS} />,
+    <StepFutureWorry key="worry" onNext={nextStep} onBack={prevStep} value={userData.futureWorry || ''} onSelect={(val) => updateUserData({ futureWorry: val })} step={20} total={TOTAL_STEPS} />,
+    <StepOneThing key="oneThing" onNext={nextStep} onBack={prevStep} value={userData.oneThingGuaranteed || ''} onSelect={(val) => updateUserData({ oneThingGuaranteed: val })} step={21} total={TOTAL_STEPS} />,
+    <StepDreamOutcome key="dream" onNext={nextStep} onBack={prevStep} value={userData.dreamOutcome || ''} onSelect={(val) => updateUserData({ dreamOutcome: val })} step={22} total={TOTAL_STEPS} />,
+    <StepInvestment key="invest" onNext={nextStep} onBack={prevStep} value={userData.monthlyInvestment || ''} onSelect={(val) => updateUserData({ monthlyInvestment: val })} step={23} total={TOTAL_STEPS} />,
+    // ------------------------
+
+    <StepComparison key="comp" onNext={nextStep} onBack={prevStep} step={24} total={TOTAL_STEPS} />,
     <StepAnalyzing key="analyze" onComplete={nextStep} />,
     <StepFinalPlan key="final" onNext={handleComplete} data={userData} />,
   ];

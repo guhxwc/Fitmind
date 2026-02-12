@@ -24,6 +24,14 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
   applicationFrequency: 'Semanalmente',
   pace: 0.5,
   motivation: [],
+  // Funnel Defaults
+  journeyDuration: '',
+  biggestFrustration: '',
+  futureWorry: '',
+  oneThingGuaranteed: '',
+  dreamOutcome: '',
+  monthlyInvestment: '',
+  
   medication: {
     name: 'Ozempic',
     dose: '0,5 mg',

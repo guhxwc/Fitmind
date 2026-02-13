@@ -8,6 +8,7 @@ import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
 import type { UserData } from './types';
 import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
+import { DEFAULT_USER_DATA } from './constants';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -21,17 +22,54 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
+  const [userProfile, setUserProfile] = useState<Omit<UserData, 'id'> | null>(null);
+  const [planReviewed, setPlanReviewed] = useState(false);
   const navigate = useNavigate();
+
+  const mapProfileToUserData = (profile: any): Omit<UserData, 'id'> => ({
+      name: profile.name || DEFAULT_USER_DATA.name,
+      gender: profile.gender || DEFAULT_USER_DATA.gender,
+      age: profile.age || DEFAULT_USER_DATA.age,
+      height: profile.height || DEFAULT_USER_DATA.height,
+      weight: profile.weight || DEFAULT_USER_DATA.weight,
+      targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
+      startWeight: profile.start_weight || DEFAULT_USER_DATA.startWeight,
+      startWeightDate: profile.start_weight_date,
+      activityLevel: profile.activity_level || DEFAULT_USER_DATA.activityLevel,
+      glpStatus: profile.glp_status || DEFAULT_USER_DATA.glpStatus,
+      applicationFrequency: profile.application_frequency || DEFAULT_USER_DATA.applicationFrequency,
+      pace: profile.pace || DEFAULT_USER_DATA.pace,
+      motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
+      mainSideEffect: profile.main_side_effect,
+      journeyDuration: profile.journey_duration,
+      biggestFrustration: profile.biggest_frustration,
+      futureWorry: profile.future_worry,
+      oneThingGuaranteed: profile.one_thing_guaranteed,
+      dreamOutcome: profile.dream_outcome,
+      monthlyInvestment: profile.monthly_investment,
+      medication: profile.medication || DEFAULT_USER_DATA.medication,
+      medicationReminder: profile.medication_reminder,
+      goals: profile.goals || DEFAULT_USER_DATA.goals,
+      streak: profile.streak || 0,
+      lastActivityDate: profile.last_activity_date,
+      isPro: profile.is_pro || false,
+      subscriptionStatus: profile.subscription_status,
+  });
 
   const checkUserProfile = async (user: Session['user']) => {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('weight')
+      .select('*')
       .eq('id', user.id)
       .single();
     
     const exists = !!(profile && profile.weight);
     setProfileExists(exists);
+    
+    if (profile) {
+        setUserProfile(mapProfileToUserData(profile));
+    }
+    
     return exists;
   }
 
@@ -53,6 +91,7 @@ const App: React.FC = () => {
         checkUserProfile(newSession.user);
       } else {
         setProfileExists(null);
+        setUserProfile(null);
       }
     });
 
@@ -108,9 +147,17 @@ const App: React.FC = () => {
       console.error("Error upserting profile:", error);
     } else {
       setProfileExists(true);
+      setPlanReviewed(true);
+      // Update local profile state to reflect changes immediately
+      setUserProfile(prev => ({ ...prev, ...data, ...profilePayload } as any));
       navigate('/');
     }
   };
+
+  const handleReturnFlowComplete = () => {
+      setPlanReviewed(true);
+      navigate('/');
+  }
 
   if (loading) {
     return <div className="h-screen flex items-center justify-center text-gray-800 dark:text-gray-200">FitMind...</div>;
@@ -120,13 +167,30 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg relative">
       <Routes>
         <Route path="/auth" element={session ? <Navigate to="/" /> : <Auth />} />
+        
+        {/* New Logic for Non-Pro Return Flow */}
         <Route 
           path="/onboarding"
-          element={!session ? <Navigate to="/auth" /> : (profileExists ? <Navigate to="/" /> : <OnboardingFlow onComplete={handleOnboardingComplete} />)}
+          element={
+            !session ? <Navigate to="/auth" /> : 
+            (profileExists && userProfile && !userProfile.isPro && !planReviewed) ? (
+                <OnboardingFlow 
+                    onComplete={handleReturnFlowComplete} 
+                    initialData={userProfile}
+                    initialStep={26} // Index of StepFinalPlan
+                />
+            ) :
+            (profileExists ? <Navigate to="/" /> : <OnboardingFlow onComplete={handleOnboardingComplete} />)
+          }
         />
+        
         <Route 
           path="/*"
-          element={!session ? <Navigate to="/auth" /> : (profileExists === false ? <Navigate to="/onboarding" /> : <MainApp />)} 
+          element={
+            !session ? <Navigate to="/auth" /> : 
+            (!profileExists ? <Navigate to="/onboarding" /> : 
+            (userProfile && !userProfile.isPro && !planReviewed ? <Navigate to="/onboarding" /> : <MainApp />))
+          } 
         />
       </Routes>
     </div>

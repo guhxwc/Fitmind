@@ -19,7 +19,7 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({ onNext }) => {
         </div>
         
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4 max-w-md mx-auto leading-tight">
-            Você Merece Resultados Reais com Seu GLP-1
+            Você sente que seu GLP-1 poderia render mais?
         </h1>
         <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
             Mais de 15.000 pessoas estão maximizando seus resultados e minimizando efeitos colaterais. Você é o próximo.

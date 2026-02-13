@@ -87,16 +87,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  // Função para ativar o PRO e persistir no banco
   const unlockPro = async () => {
       if(userData) {
-          // 1. Atualização Otimista no Cliente
-          const updated = { ...userData, isPro: true, subscriptionStatus: 'active' };
-          setUserData(updated as UserData);
-          
+          const updated = { ...userData, isPro: true, subscriptionStatus: 'active' as const };
+          setUserData(updated);
           addToast("Ativando assinatura...", "info");
-
-          // 2. Persistência no Supabase
           const { error } = await supabase.from('profiles').update({ 
               is_pro: true, 
               subscription_status: 'active' 
@@ -105,8 +100,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           if (error) {
               console.error("Erro ao salvar status PRO:", error);
               addToast("Erro ao salvar assinatura. Entre em contato com o suporte.", "error");
-              // Reverte se falhar (opcional)
-              // setUserData({ ...userData, isPro: false });
           } else {
               addToast("FitMind PRO ativado! Aproveite os 7 dias grátis.", "success");
           }
@@ -134,8 +127,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,
-      isPro: profile.is_pro || false, // Mapeia corretamente do banco (snake_case -> camelCase)
+      isPro: profile.is_pro || false,
       subscriptionStatus: profile.subscription_status || 'free',
+      journeyDuration: profile.journey_duration,
+      biggestFrustration: profile.biggest_frustration,
+      futureWorry: profile.future_worry,
+      monthlyInvestment: profile.monthly_investment,
   });
 
   const fetchData = useCallback(async () => {
@@ -243,157 +240,138 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
 
           const payload = {
-            user_id: userData.id,
-            date: todayStr,
-            meals: meals,
-            quick_add_protein_grams: quickAddProtein,
-            water_liters: currentWater,
+              user_id: userData.id,
+              date: todayStr,
+              meals: meals,
+              quick_add_protein_grams: quickAddProtein,
+              water_liters: currentWater
           };
 
-          let resultData = null;
-          let resultError = null;
-
           if (targetId) {
-              const { data, error } = await supabase
-                .from('daily_records')
-                .update(payload)
-                .eq('id', targetId)
-                .select()
-                .single();
-              
-              resultData = data;
-              resultError = error;
+              await supabase.from('daily_records').update(payload).eq('id', targetId);
           } else {
-              const { data, error } = await supabase
-                .from('daily_records')
-                .insert(payload)
-                .select()
-                .single();
-                
-              resultData = data;
-              resultError = error;
-
-              if (error && error.code === '23505') {
-                   const { data: existingRetry } = await supabase
-                        .from('daily_records')
-                        .select('id')
-                        .eq('user_id', userData.id)
-                        .eq('date', todayStr)
-                        .maybeSingle();
-                    
-                   if (existingRetry) {
-                       dailyRecordIdRef.current = existingRetry.id;
-                       const { data: retryData, error: retryError } = await supabase
-                           .from('daily_records')
-                           .update(payload)
-                           .eq('id', existingRetry.id)
-                           .select()
-                           .single();
-                       
-                       resultData = retryData;
-                       resultError = retryError;
-                   }
+              const { data: newRecord } = await supabase.from('daily_records').insert(payload).select().single();
+              if (newRecord) {
+                  dailyRecordIdRef.current = newRecord.id;
               }
           }
-
-          if (resultData) {
-              dailyRecordIdRef.current = resultData.id;
-          }
-          
-          if (resultError) {
-              console.error("Error saving daily record:", resultError);
-              addToast("Erro ao salvar dados. Verifique sua conexão.", "error");
-          }
-
-      } catch (err) {
-          console.error("Exception saving data:", err);
+      } catch (error) {
+          console.error("Error saving daily record:", error);
       }
-    }, 1000);
+    }, 2000); 
 
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [meals, quickAddProtein, currentWater, userData, loading, addToast]);
+  }, [meals, quickAddProtein, currentWater, userData, loading]);
 
-  const updateStreak = useCallback(async () => {
-    if (!userData) return;
-
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-
-    const lastActivityStr = userData.lastActivityDate;
-
-    if (lastActivityStr === todayStr) {
-        return;
-    }
-    
-    let newStreak = userData.streak || 0;
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    if (lastActivityStr === yesterdayStr) {
-        newStreak++;
-    } else {
-        newStreak = 1;
-    }
-    
-    const updatedUserData = { ...userData, streak: newStreak, lastActivityDate: todayStr };
-    setUserData(updatedUserData);
-
-    const { error } = await supabase
-        .from('profiles')
-        .update({ streak: newStreak, last_activity_date: todayStr })
-        .eq('id', userData.id);
-        
-    if (error) {
-        console.error("Failed to update streak in DB:", error);
-        setUserData(userData); // Revert on failure
-    }
-  }, [userData, setUserData]);
-
-  const value = {
-    session,
-    userData,
-    setUserData,
-    weightHistory,
-    setWeightHistory,
-    progressPhotos,
-    setProgressPhotos,
-    workoutPlan,
-    setWorkoutPlan,
-    workoutHistory,
-    setWorkoutHistory,
-    applicationHistory,
-    setApplicationHistory,
-    dailyNotes,
-    setDailyNotes,
-    sideEffects,
-    setSideEffects,
-    meals,
-    setMeals,
-    quickAddProtein,
-    setQuickAddProtein,
-    currentWater,
-    setCurrentWater,
-    loading,
-    fetchData,
-    updateStreak,
-    theme,
-    toggleTheme,
-    unlockPro,
+  const updateStreak = async () => {
+      if (!userData) return;
+      
+      const today = new Date();
+      const lastActivity = userData.lastActivityDate ? new Date(userData.lastActivityDate) : null;
+      
+      let newStreak = userData.streak;
+      
+      if (!lastActivity) {
+          newStreak = 1;
+      } else {
+          const diffTime = Math.abs(today.getTime() - lastActivity.getTime());
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 0) {
+              return; 
+          } else if (diffDays === 1) {
+              newStreak += 1;
+          } else {
+              newStreak = 1;
+          }
+      }
+      
+      const updatedUser = { ...userData, streak: newStreak, lastActivityDate: today.toISOString() };
+      setUserData(updatedUser);
+      
+      await supabase.from('profiles').update({ 
+          streak: newStreak, 
+          last_activity_date: today.toISOString() 
+      }).eq('id', userData.id);
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={{
+      session,
+      userData,
+      setUserData,
+      weightHistory,
+      setWeightHistory,
+      progressPhotos,
+      setProgressPhotos,
+      workoutPlan,
+      setWorkoutPlan,
+      workoutHistory,
+      setWorkoutHistory,
+      applicationHistory,
+      setApplicationHistory,
+      dailyNotes,
+      setDailyNotes,
+      sideEffects,
+      setSideEffects,
+      meals,
+      setMeals,
+      quickAddProtein,
+      setQuickAddProtein,
+      currentWater,
+      setCurrentWater,
+      loading,
+      fetchData,
+      updateStreak,
+      theme,
+      toggleTheme,
+      unlockPro
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
+// Safe hook that returns a default/dummy context if used outside provider (e.g. Onboarding)
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppContextProvider');
+    // Return a dummy object to prevent crashes in Onboarding components that might call this
+    return {
+        session: null,
+        userData: null,
+        setUserData: () => {},
+        weightHistory: [],
+        setWeightHistory: () => {},
+        progressPhotos: [],
+        setProgressPhotos: () => {},
+        workoutPlan: null,
+        setWorkoutPlan: () => {},
+        workoutHistory: [],
+        setWorkoutHistory: () => {},
+        applicationHistory: [],
+        setApplicationHistory: () => {},
+        dailyNotes: [],
+        setDailyNotes: () => {},
+        sideEffects: [],
+        setSideEffects: () => {},
+        meals: [],
+        setMeals: () => {},
+        quickAddProtein: 0,
+        setQuickAddProtein: () => {},
+        currentWater: 0,
+        setCurrentWater: () => {},
+        loading: false,
+        fetchData: async () => {},
+        updateStreak: () => {},
+        theme: 'light',
+        toggleTheme: () => {},
+        unlockPro: async () => {},
+    } as unknown as AppContextType;
   }
   return context;
 };

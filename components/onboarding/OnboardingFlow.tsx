@@ -23,6 +23,7 @@ import { StepSideEffectsImageStyle } from './StepSideEffectsImageStyle';
 import { StepComparison } from './StepComparison';
 import { StepFinalPlan } from './StepFinalPlan';
 import { useToast } from '../ToastProvider';
+import { SubscriptionPage } from '../SubscriptionPage';
 // Funnel Steps
 import { 
   StepDuration, 
@@ -35,21 +36,28 @@ import {
 
 interface OnboardingFlowProps {
   onComplete: (data: Omit<UserData, 'id'>) => void;
+  initialData?: Omit<UserData, 'id'>;
+  initialStep?: number;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
-  const [step, setStep] = useState(0);
-  const [userData, setUserData] = useState<Omit<UserData, 'id'>>(DEFAULT_USER_DATA);
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, initialData, initialStep }) => {
+  // Initialize step from props if available, else localStorage, else 0
+  const [step, setStep] = useState(() => {
+    if (initialStep !== undefined) return initialStep;
+    const savedStep = localStorage.getItem('onboarding_step');
+    return savedStep ? parseInt(savedStep, 10) : 0;
+  });
+
+  const [userData, setUserData] = useState<Omit<UserData, 'id'>>(initialData || DEFAULT_USER_DATA);
+  const [showSubscription, setShowSubscription] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
-      // Micro-Rewards Logic
-      if (step === 6) {
-          addToast("Você está 30% mais perto do seu plano personalizado!", "success", { duration: 3000 });
-      } else if (step === 12) {
-          addToast("Quase lá! Você está 67% completo.", "success", { duration: 3000 });
+      // Save step to localStorage whenever it changes, unless we are in the forced return flow (initialStep used)
+      if (initialStep === undefined) {
+        localStorage.setItem('onboarding_step', step.toString());
       }
-  }, [step, addToast]);
+  }, [step, initialStep]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => Math.max(0, prev - 1));
@@ -59,7 +67,28 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   };
 
   const handleComplete = () => {
+    // Clear saved step on completion
+    localStorage.removeItem('onboarding_step');
     onComplete(userData);
+  };
+
+  const handleFinalStepNext = () => {
+      setShowSubscription(true);
+  };
+
+  const handleSubscriptionClose = () => {
+      setShowSubscription(false);
+      handleComplete();
+  };
+
+  const handleSubscriptionSuccess = (plan: 'annual' | 'monthly') => {
+      const finalData = { 
+          ...userData, 
+          isPro: true, 
+          subscriptionStatus: 'active' as const 
+      };
+      localStorage.removeItem('onboarding_step');
+      onComplete(finalData);
   };
   
   const TOTAL_STEPS = 24;
@@ -115,8 +144,28 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
 
     <StepComparison key="comp" onNext={nextStep} onBack={prevStep} step={24} total={TOTAL_STEPS} />,
     <StepAnalyzing key="analyze" onComplete={nextStep} />,
-    <StepFinalPlan key="final" onNext={handleComplete} data={userData} />,
+    <StepFinalPlan 
+        key="final" 
+        onNext={handleFinalStepNext} 
+        onBack={() => {
+            // Prevent going back if forced to this step
+            if (initialStep !== undefined) return;
+            setStep(prev => prev - 2); // Skip StepAnalyzing
+        }} 
+        data={userData} 
+    />,
   ];
 
-  return <div className="h-screen overflow-hidden bg-white dark:bg-black">{steps[step]}</div>;
+  return (
+    <div className="h-screen overflow-hidden bg-white dark:bg-black">
+        {steps[step]}
+        {showSubscription && (
+            <SubscriptionPage 
+                onClose={handleSubscriptionClose} 
+                onSubscribe={handleSubscriptionSuccess}
+                customUserData={userData} 
+            />
+        )}
+    </div>
+  );
 };

@@ -2,10 +2,12 @@
 import React, { useMemo } from 'react';
 import { CheckCircleIcon, ShieldCheckIcon, CoffeeIcon, ScienceIcon, CameraIcon, FlameIcon, BarChartIcon, LockIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
+import type { UserData } from '../types';
 
 interface PreSubscriptionPageProps {
     onContinue: () => void;
     onClose: () => void;
+    customUserData?: Partial<UserData>; // Add this prop
 }
 
 // --- Componentes Visuais Auxiliares ---
@@ -40,20 +42,6 @@ const TimelineItem: React.FC<{
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
                 {description}
             </p>
-        </div>
-    </div>
-);
-
-const PainAmplificationCard: React.FC<{ title: string; text: string }> = ({ title, text }) => (
-    <div className="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 p-5 rounded-r-xl my-6 animate-fade-in">
-        <div className="flex items-start gap-3">
-            <div className="text-2xl pt-1">⚠️</div>
-            <div>
-                <h3 className="text-red-800 dark:text-red-300 font-bold text-base mb-1">{title}</h3>
-                <p className="text-red-700/80 dark:text-red-200/80 text-sm leading-relaxed font-medium">
-                    {text}
-                </p>
-            </div>
         </div>
     </div>
 );
@@ -133,51 +121,46 @@ const ObjectionHandler: React.FC = () => (
     </div>
 );
 
-export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onContinue, onClose }) => {
-    const { userData } = useAppContext();
+export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onContinue, onClose, customUserData }) => {
+    const { userData: contextUserData } = useAppContext();
+    
+    // Prefer passed prop (from onboarding), fallback to context (from app)
+    const userData = customUserData || contextUserData;
 
     // Lógica Central de Personalização (Mapa do Dinheiro)
     const copy = useMemo(() => {
-        if (!userData) return { headline: '', subheadline: '', painTitle: '', painText: '' };
+        if (!userData) return { headline: '', subheadline: '' };
 
         const { journeyDuration, biggestFrustration, monthlyInvestment, futureWorry, medication } = userData;
-        const name = userData.name.split(' ')[0]; // Primeiro nome
+        const name = userData.name ? userData.name.split(' ')[0] : 'Visitante'; // Primeiro nome
         
         // Default (Iniciante Ansioso)
         let content = {
-            headline: `${name}, esta é a sua jornada para sair da incerteza e chegar na sua meta.`,
-            subheadline: "Você investiu no tratamento. Agora, veja o plano para garantir que cada centavo e cada dose contem.",
-            painTitle: "A Incerteza Solitária",
-            painText: "Náuseas, dúvidas e medo de errar. O começo não precisa ser assim. Existe um caminho seguro e guiado."
+            headline: `${name}, você não precisa fazer isso sozinho.`,
+            subheadline: "Veja o plano passo a passo para usar seu GLP-1 com segurança e ter os resultados que você espera."
         };
 
         // Perfil 1: O Investidor Frustrado (> R$ 1000)
         if (monthlyInvestment && (monthlyInvestment.includes('1.000') || monthlyInvestment.includes('2.000'))) {
             content = {
-                headline: `Você investe alto no ${medication.name}. E se estiver jogando metade desse dinheiro fora?`,
-                subheadline: "O medicamento tira sua fome, mas não muda seu metabolismo. Sem a estratégia certa, você está apenas 'alugando' o emagrecimento.",
-                painTitle: "O Ciclo do Desperdício",
-                painText: "A pior sensação é gastar uma fortuna todo mês e ver resultados medíocres. Não deixe que seu investimento se transforme em frustração."
+                headline: `${name}, seu investimento de R$ 1.000/mês precisa dar retorno.`,
+                subheadline: "Veja o plano para garantir que cada centavo e cada dose do seu tratamento contem para o resultado final."
             };
         }
 
         // Perfil 2: O Veterano Estagnado (> 6 meses)
         if (journeyDuration && (journeyDuration.includes('Mais de 6 meses') || journeyDuration.includes('3-6 meses')) && biggestFrustration?.includes('lentos')) {
             content = {
-                headline: `Você fez tudo certo, mas a balança parou. Por que o efeito platô acontece?`,
-                subheadline: "Seu corpo é inteligente: ele se adaptou ao remédio. Aumentar a dose não é a única saída (e é a mais cara).",
-                painTitle: "A Armadilha da Adaptação",
-                painText: "Insistir na mesma estratégia esperando resultados diferentes só trará desânimo. Você precisa de um 'choque metabólico' estratégico."
+                headline: `${name}, sabemos que você já tentou de tudo.`,
+                subheadline: "Veja por que 15.000 pessoas que estavam estagnadas como você finalmente destravaram seus resultados."
             };
         }
 
         // Perfil 3: O Preocupado com o Futuro (Efeito Rebote)
         if (futureWorry && (futureWorry.includes('Ganhar o peso') || futureWorry.includes('manter'))) {
             content = {
-                headline: "O seu maior medo é ver todo o peso voltar quando o tratamento acabar?",
-                subheadline: "Estatísticas mostram que 2/3 dos usuários recuperam o peso em 1 ano. A culpa não é sua, é da falta de um sistema de saída.",
-                painTitle: "O Fantasma do Efeito Rebote",
-                painText: "Perder peso perdendo músculo é a receita perfeita para engordar tudo de novo (e mais rápido). Construa um corpo blindado."
+                headline: `${name}, e se você recuperar todo o peso quando parar o remédio?`,
+                subheadline: "Resultados temporários não bastam. Veja o plano para garantir que sua transformação seja permanente."
             };
         }
 
@@ -220,12 +203,12 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                         </p>
                     </div>
 
-                    {/* Timeline Emocional (O Ponto de Partida) */}
+                    {/* Timeline Emocional */}
                     <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.15s' }}>
                         <TimelineItem 
                             step="0. Ponto Zero"
-                            title="Hoje: A Frustração"
-                            description="Você está investindo R$ 1.000+ em remédio todo mês, mas sem orientação, os resultados são lentos e os efeitos colaterais são intensos. A dúvida persiste: 'Será que estou fazendo tudo certo?'"
+                            title="Hoje: A Incerteza"
+                            description="Você começou o tratamento com a esperança de mudar, mas agora a incerteza te assombra. Náuseas, dúvidas sobre o que comer, medo de errar..."
                             color="bg-red-500"
                             isActive
                         />
@@ -243,12 +226,6 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                             isLast
                         />
                     </div>
-
-                    {/* SEÇÃO 2: AMPLIFICAÇÃO DA DOR (VISCERAL) */}
-                    <PainAmplificationCard 
-                        title={copy.painTitle}
-                        text={copy.painText}
-                    />
 
                     <div className="w-full h-px bg-gray-100 dark:bg-gray-800 my-8"></div>
 

@@ -4,10 +4,12 @@ import { CheckCircleIcon, StarIcon, ShieldCheckIcon, LockIcon, CoffeeIcon } from
 import { PaymentPage } from './PaymentPage';
 import { PreSubscriptionPage } from './PreSubscriptionPage';
 import Portal from './core/Portal';
+import type { UserData } from '../types';
 
 interface SubscriptionPageProps {
   onClose: () => void;
   onSubscribe: (plan: 'annual' | 'monthly') => void;
+  customUserData?: Partial<UserData>; // Add this prop
 }
 
 const FeatureItem: React.FC<{ title: string; desc: string }> = ({ title, desc }) => (
@@ -58,7 +60,7 @@ const PlanOption: React.FC<{
 );
 
 
-export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onSubscribe }) => {
+export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onSubscribe, customUserData }) => {
   const [showShowcase, setShowShowcase] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -70,6 +72,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
             <PreSubscriptionPage 
                 onClose={onClose} 
                 onContinue={() => setShowShowcase(false)} 
+                customUserData={customUserData}
             />
         ) : showCheckout ? (
             <PaymentPage 

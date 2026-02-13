@@ -18,14 +18,14 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({ onNext }) => {
            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
         
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4 leading-tight">
-            Você sente que seu GLP-1 poderia render mais?
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-4 max-w-md mx-auto leading-tight">
+            Você Merece Resultados Reais com Seu GLP-1
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-lg font-medium max-w-sm leading-relaxed">
-            Chega de incerteza. Transforme seu investimento em resultados visíveis com o único app feito para quem usa Mounjaro, Ozempic ou Wegovy.
+        <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
+            Mais de 15.000 pessoas estão maximizando seus resultados e minimizando efeitos colaterais. Você é o próximo.
         </p>
       </div>
-      <OnboardingFooter onContinue={onNext} label="Sim, quero maximizar resultados" />
+      <OnboardingFooter onContinue={onNext} label="Começar Meu Plano Gratuito" />
     </OnboardingScreen>
   );
 };

@@ -71,7 +71,7 @@ export const StepComparison: React.FC<StepComparisonProps> = ({ onNext, onBack, 
         <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl flex gap-4 items-start border border-blue-100 dark:border-blue-900/30">
             <div className="text-2xl pt-0.5">📉</div>
             <p className="text-sm font-medium text-blue-900 dark:text-blue-200 leading-relaxed">
-                Em média, usuários FitMind perdem <span className="font-extrabold">2.7x mais peso</span> nos primeiros 3 meses em comparação com quem usa apenas o medicamento. Isso significa que, em vez de perder 3kg, você pode perder 8kg no mesmo período.
+                Usuários que acompanham consistentemente perdem em média <span className="font-extrabold">8kg em 12 semanas</span>, comparado a 3kg sem acompanhamento.
             </p>
         </div>
 

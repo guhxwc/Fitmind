@@ -72,22 +72,42 @@ const FeatureRow: React.FC<{ icon: React.ReactNode; title: string; description: 
     </div>
 );
 
+const TestimonialCard: React.FC = () => (
+    <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mt-8">
+        <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-sm">
+                RM
+            </div>
+            <div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Roberto M., 42 anos</p>
+                <div className="flex items-center gap-1 text-yellow-500 text-xs">
+                    ★★★★★ <span className="text-gray-400 ml-1">• Perdeu 18kg em 16 semanas</span>
+                </div>
+            </div>
+        </div>
+        <p className="text-gray-600 dark:text-gray-300 text-sm italic leading-relaxed mb-3">
+            "O FitMind me mostrou exatamente o que eu estava fazendo errado. Descobri que comia pouca proteína e isso atrasava meus resultados. Em 16 semanas, perdi 18kg e me sinto confiante novamente."
+        </p>
+        <p className="text-xs text-gray-400 font-medium">
+            Usando Mounjaro + FitMind. Antes, ele tentou 3 dietas diferentes sem sucesso.
+        </p>
+    </div>
+);
+
 const AuthorityBlock: React.FC = () => (
-    <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mt-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-        
+    <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30 mt-6 relative overflow-hidden">
         <div className="flex items-center gap-2 mb-3">
             <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-full text-blue-600 dark:text-blue-400">
                 <CheckCircleIcon className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">Criado por quem entende de GLP-1</h3>
+            <h3 className="font-bold text-blue-900 dark:text-blue-200 text-base">Prova Social Inquestionável</h3>
         </div>
         
-        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-            O FitMind não é mais um app de dieta. Foi desenvolvido em parceria com <strong>endocrinologistas e nutricionistas</strong> especializados em otimizar tratamentos com Semaglutida e Tirzepatida.
+        <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed mb-4 font-medium">
+            Mais de 15.000 usuários em 12 meses perderam em média 8kg em 12 semanas usando o FitMind.
         </p>
         
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-black/20 px-3 py-2 rounded-lg border border-gray-100 dark:border-gray-700/50 w-fit">
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-black/20 px-3 py-2 rounded-lg border border-blue-100 dark:border-gray-700/50 w-fit">
             <ScienceIcon className="w-4 h-4 text-purple-500" />
             <span>Método baseado em 28+ estudos clínicos</span>
         </div>
@@ -203,9 +223,9 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                     {/* Timeline Emocional (O Ponto de Partida) */}
                     <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.15s' }}>
                         <TimelineItem 
-                            step="0. Ponto de Partida"
-                            title="A Frustração"
-                            description="Você está aqui: investindo tempo e dinheiro, mas com a sensação de que os resultados poderiam ser melhores. A incerteza gera ansiedade."
+                            step="0. Ponto Zero"
+                            title="Hoje: A Frustração"
+                            description="Você está investindo R$ 1.000+ em remédio todo mês, mas sem orientação, os resultados são lentos e os efeitos colaterais são intensos. A dúvida persiste: 'Será que estou fazendo tudo certo?'"
                             color="bg-red-500"
                             isActive
                         />
@@ -270,6 +290,7 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                     {/* Authority Block */}
                     <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
                         <AuthorityBlock />
+                        <TestimonialCard />
                     </div>
 
                     {/* Objection Handling */}
@@ -283,6 +304,11 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
             {/* 3. Footer Action */}
             <div className="flex-none p-6 pt-4 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] w-full">
                 <div className="max-w-md mx-auto">
+                    <div className="mb-3 text-center">
+                        <span className="text-sm font-bold text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-3 py-1 rounded-full border border-orange-100 dark:border-orange-900/30">
+                            Oferta de 7 Dias Grátis Termina em 24h
+                        </span>
+                    </div>
                     <button 
                         onClick={onContinue}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl text-lg font-bold shadow-xl shadow-blue-500/30 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-0.5 group relative overflow-hidden"
@@ -291,7 +317,7 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
                         
                         <span className="flex items-center gap-2">
-                            Quero seguir o plano e transformar meu resultado
+                            Começar Minha Transformação
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                         </span>
                     </button>

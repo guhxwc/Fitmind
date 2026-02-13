@@ -10,12 +10,15 @@ interface SubscriptionPageProps {
   onSubscribe: (plan: 'annual' | 'monthly') => void;
 }
 
-const FeatureItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const FeatureItem: React.FC<{ title: string; desc: string }> = ({ title, desc }) => (
   <li className="flex items-start space-x-3">
     <div className="mt-0.5 bg-blue-100 dark:bg-blue-900/30 rounded-full p-0.5">
         <CheckCircleIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
     </div>
-    <span className="text-gray-700 dark:text-gray-300 text-sm font-medium leading-tight">{children}</span>
+    <div>
+        <span className="text-gray-900 dark:text-white text-sm font-bold block mb-0.5">{title}</span>
+        <span className="text-gray-600 dark:text-gray-400 text-xs font-medium leading-tight">{desc}</span>
+    </div>
   </li>
 );
 
@@ -97,11 +100,11 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                                 <StarIcon className="w-3 h-3 fill-white" />
                                 Oferta termina em 24h
                             </div>
-                            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-[1.1]">
-                                Seu upgrade para resultados máximos.
+                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white text-center mb-4 tracking-tight leading-[1.1]">
+                                O Único App Feito Para Quem Usa GLP-1
                             </h1>
-                            <p className="text-gray-500 dark:text-gray-400 mt-3 text-base max-w-xs mx-auto leading-relaxed">
-                                Transforme seu investimento no medicamento em resultados definitivos.
+                            <p className="text-gray-600 dark:text-gray-300 text-center max-w-xs mx-auto mb-2 text-sm leading-relaxed font-medium">
+                                Você já gasta R$ 1.000+ por mês no medicamento. Por menos de R$ 50, você garante que esse investimento não seja desperdiçado.
                             </p>
                         </div>
 
@@ -129,10 +132,11 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
                             <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Por que o PRO é indispensável?</h3>
                             <ul className="space-y-4">
-                                <FeatureItem><strong>CalorieCam:</strong> Pare de adivinhar. Saiba em segundos se a refeição acelera ou atrasa sua perda.</FeatureItem>
-                                <FeatureItem><strong>Personal Trainer IA:</strong> Treine com segurança. Exercícios que respeitam sua energia e colaterais.</FeatureItem>
-                                <FeatureItem><strong>Análise Inteligente:</strong> Descubra o que realmente funciona. Dados que mostram o caminho.</FeatureItem>
-                                <FeatureItem><strong>Comparador de Fotos:</strong> Veja a mudança real que a balança muitas vezes esconde.</FeatureItem>
+                                <FeatureItem title="CalorieCam" desc="Saiba em segundos se a refeição acelera ou atrasa sua perda de peso" />
+                                <FeatureItem title="Personal Trainer IA" desc="Treinos que se adaptam à sua energia e aos efeitos colaterais do dia" />
+                                <FeatureItem title="Análise Inteligente" desc="Descubra quais hábitos realmente impactam seu progresso (e quais são perda de tempo)" />
+                                <FeatureItem title="Protocolo Anti-Rebote" desc="Garanta que o peso não volta quando você parar o medicamento" />
+                                <FeatureItem title="Fotos Antes x Depois" desc="Veja sua transformação visual e celebre cada conquista" />
                             </ul>
                         </div>
 
@@ -169,15 +173,15 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             {/* Shine effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
                             
-                            <span>Liberar meus 7 Dias Grátis Agora</span>
+                            <span>Começar 7 Dias Grátis</span>
                             <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider mt-0.5">
                                 {selectedPlan === 'annual' 
                                     ? 'Depois R$ 32,44/mês (cobrado anualmente)' 
                                     : 'Depois R$ 49,00/mês'}
                             </span>
                         </button>
-                        <p className="text-[10px] text-center text-gray-400 dark:text-gray-600 mt-3 px-4 leading-tight">
-                            Teste sem riscos. Cancele antes do fim dos 7 dias para não ser cobrado.
+                        <p className="text-center mt-2">
+                            <span className='text-xs font-bold text-orange-600 dark:text-orange-400'>Apenas 47 vagas restantes este mês</span>
                         </p>
                     </div>
                 </div>

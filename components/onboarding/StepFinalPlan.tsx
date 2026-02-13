@@ -1,16 +1,16 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { OnboardingScreen, OnboardingFooter } from './OnboardingComponents';
 import type { UserData } from '../../types';
 import { 
     ShieldCheckIcon, 
-    CalendarIcon, 
     SyringeIcon, 
     WaterDropIcon, 
     FlameIcon, 
     PersonStandingIcon, 
     BarChartIcon, 
-    BookOpenIcon 
+    BookOpenIcon,
+    ScaleIcon
 } from '../core/Icons';
 
 interface StepFinalPlanProps {
@@ -20,7 +20,7 @@ interface StepFinalPlanProps {
 
 export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, data }) => {
   const currentWeight = data.weight;
-  const startWeight = data.startWeight || currentWeight; // Fallback se não definido
+  const startWeight = data.startWeight || currentWeight; 
   const targetWeight = data.targetWeight;
   
   // Calculations
@@ -41,34 +41,46 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, data }) =>
   const heightM = data.height / 100;
   const bmi = currentWeight / (heightM * heightM);
   const targetBMI = targetWeight / (heightM * heightM);
-  
-  const getBmiLabel = (val: number) => {
-      if (val < 18.5) return "Abaixo do peso";
-      if (val < 24.9) return "Saudável";
-      if (val < 29.9) return "Sobrepeso";
-      return "Obesidade";
-  }
 
-  // Timeline Progress Calculation
-  // Se startWeight for igual ou menor que currentWeight (ex: ganho ou início), progresso é 0
-  const totalLossNeeded = startWeight - targetWeight;
-  const currentLoss = startWeight - currentWeight;
-  
-  let progressPercentage = 0;
-  if (totalLossNeeded > 0) {
-      progressPercentage = Math.min(Math.max((currentLoss / totalLossNeeded) * 100, 0), 100);
-  }
+  // Animation triggers
+  const [animateChart, setAnimateChart] = useState(false);
+  useEffect(() => {
+      setTimeout(() => setAnimateChart(true), 100);
+  }, []);
 
   return (
     <OnboardingScreen>
+      <style>{`
+        @keyframes drawPath {
+            from { stroke-dashoffset: 1000; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes fadeInChart {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .chart-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawPath 2.5s ease-out forwards;
+        }
+        .chart-area {
+            opacity: 0;
+            animation: fadeInChart 1.5s ease forwards 0.5s;
+        }
+        .data-point {
+            opacity: 0;
+            animation: fadeInChart 0.5s ease forwards;
+        }
+      `}</style>
+
       <div className="flex-none pt-safe-top px-6 pb-4 z-20 bg-white dark:bg-black">
-          {/* Header Redesigned as Requested */}
           <div className="mb-6 mt-2">
               <h1 className="text-[28px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
                 Seu Plano Personalizado
               </h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 leading-relaxed">
-                Aqui está seu plano de sucesso.
+                Baseado em 28 estudos clínicos e no perfil de 15.000 usuários. Este é o caminho para sua transformação.
               </p>
               
               <div className="flex flex-wrap gap-2 mt-3">
@@ -84,46 +96,81 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, data }) =>
           </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto hide-scrollbar px-6 pb-4 space-y-5">
+      <div className="flex-grow overflow-y-auto hide-scrollbar px-6 pb-4 space-y-6">
           
-          {/* 1. Timeline Section (Fixed) */}
-          <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-white/5">
-              <div className="flex items-center gap-2 mb-5">
-                  <div className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white">
-                    <CalendarIcon className="w-4 h-4" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase tracking-wide">Cronograma Estimado</h3>
-              </div>
+          {/* iOS 18 Style Weight Tracker Card */}
+          <div className="relative w-full bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-2xl border border-white/60 dark:border-white/10 rounded-[36px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-700 animate-slide-up">
               
-              <div className="relative pt-6 pb-2 px-1">
-                  {/* Base Line */}
-                  <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full"></div>
-                  
-                  {/* Progress Fill */}
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 bg-black dark:bg-white rounded-full transition-all duration-1000"
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-
-                  <div className="relative flex justify-between w-full">
-                      {/* Start Point */}
-                      <div className="flex flex-col items-center">
-                          <div className={`w-4 h-4 rounded-full border-[3px] z-10 bg-white dark:bg-black ${progressPercentage > 0 ? 'border-black dark:border-white' : 'border-gray-300 dark:border-gray-600'}`}></div>
-                          <div className="mt-3 text-center">
-                              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Início</span>
-                              <span className="block text-sm font-bold text-gray-900 dark:text-white">{startWeight.toFixed(0)}kg</span>
-                          </div>
+              {/* Header */}
+              <div className="flex justify-between items-start mb-8">
+                  <div>
+                      <div className="text-[13px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-2">
+                          <ScaleIcon className="w-4 h-4 text-blue-500" />
+                          Peso Atual
                       </div>
-
-                      {/* Goal Point */}
-                      <div className="flex flex-col items-center">
-                          <div className="w-4 h-4 rounded-full border-[3px] border-black dark:border-white bg-black dark:bg-white z-10 shadow-lg ring-4 ring-white dark:ring-[#1C1C1E]"></div>
-                          <div className="mt-3 text-center">
-                              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Meta ({targetDate})</span>
-                              <span className="block text-sm font-bold text-gray-900 dark:text-white">{targetWeight.toFixed(0)}kg</span>
-                          </div>
+                      <div className="flex items-baseline gap-1">
+                          <span className="text-[42px] font-bold tracking-tighter text-gray-900 dark:text-white leading-none">{startWeight.toFixed(1).replace('.', ',')}</span>
+                          <span className="text-lg font-semibold text-gray-400 dark:text-gray-500">kg</span>
                       </div>
                   </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100/50 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-400 text-[13px] font-bold">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                      <span>Meta: {targetWeight}kg</span>
+                  </div>
+              </div>
+
+              {/* SVG Chart */}
+              <div className="relative h-[180px] w-full mb-6">
+                  {animateChart && (
+                      <svg className="w-full h-full overflow-visible" viewBox="0 0 400 180" preserveAspectRatio="none">
+                          <defs>
+                              <linearGradient id="gradientWeight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="#007AFF" stopOpacity="0.2" />
+                                  <stop offset="100%" stopColor="#007AFF" stopOpacity="0" />
+                              </linearGradient>
+                          </defs>
+                          
+                          {/* Area Fill - Inverted for Weight Loss (High Start -> Low End) */}
+                          <path 
+                            className="chart-area" 
+                            d="M0,40 C120,40 200,140 400,140 L400,180 L0,180 Z" 
+                            fill="url(#gradientWeight)"
+                          />
+                          
+                          {/* Line Path */}
+                          <path 
+                            className="chart-path" 
+                            d="M0,40 C120,40 200,140 400,140" 
+                            fill="none" 
+                            stroke="#007AFF" 
+                            strokeWidth="4" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                            filter="drop-shadow(0 4px 8px rgba(0, 122, 255, 0.3))"
+                          />
+                          
+                          {/* Points */}
+                          <circle className="data-point" cx="0" cy="40" r="6" fill="#fff" stroke="#007AFF" strokeWidth="3" style={{ animationDelay: '0.8s' }} />
+                          <circle className="data-point" cx="200" cy="90" r="5" fill="#fff" stroke="#007AFF" strokeWidth="3" style={{ animationDelay: '1s' }} />
+                          <circle className="data-point" cx="400" cy="140" r="6" fill="#007AFF" stroke="#fff" strokeWidth="3" style={{ animationDelay: '1.2s' }} />
+                      </svg>
+                  )}
+              </div>
+
+              {/* X Axis Labels */}
+              <div className="flex justify-between px-2 mb-6">
+                  <span className="text-[12px] font-bold text-gray-900 dark:text-white">Hoje</span>
+                  <span className="text-[12px] font-medium text-gray-400">Progresso</span>
+                  <span className="text-[12px] font-bold text-gray-400">Meta</span>
+              </div>
+
+              {/* Period Selector (Visual Only) */}
+              <div className="flex bg-gray-100 dark:bg-black/20 p-1 rounded-xl">
+                  {['D', 'S', 'M', '6M', 'A'].map((p, i) => (
+                      <div key={p} className={`flex-1 py-1.5 text-center text-[11px] font-bold rounded-lg cursor-default ${i === 2 ? 'bg-white dark:bg-gray-700 text-black dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}>
+                          {p}
+                      </div>
+                  ))}
               </div>
           </div>
 

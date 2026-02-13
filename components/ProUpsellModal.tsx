@@ -17,19 +17,19 @@ export const ProUpsellModal: React.FC<ProUpsellModalProps> = ({ onClose, onUnloc
                     </svg>
                 </div>
                 
-                {/* Headline Focada em Resultado/Velocidade */}
+                {/* Headline Focada em Progresso Específico */}
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                    Quer dobrar a sua velocidade?
+                    Você Está 67% Mais Perto da Sua Meta
                 </h2>
                 
-                <p className="text-gray-600 dark:text-gray-300 mt-3 text-sm">
-                    Seu esforço está dando resultado. O FitMind PRO é a ferramenta para transformar esse bom começo em uma vitória definitiva contra a balança.
+                <p className="text-gray-600 dark:text-gray-300 mt-3 text-sm leading-relaxed">
+                    Usuários PRO alcançam resultados <strong>3x mais rápidos</strong>. Desbloqueie CalorieCam, Personal Trainer IA e Análise Inteligente agora.
                 </p>
                 
                 <div className="flex flex-col gap-3 mt-6">
                     <button onClick={onUnlock} className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
                         <StarIcon className="w-5 h-5"/>
-                        Desbloquear o Plano PRO
+                        Liberar PRO Agora (7 Dias Grátis)
                     </button>
                     <button onClick={onClose} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                         Agora não

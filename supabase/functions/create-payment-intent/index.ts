@@ -2,7 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@12.0.0?target=deno"
 
-// Declare Deno for TypeScript environment compatibility
 declare const Deno: {
   env: {
     get(key: string): string | undefined;
@@ -25,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { priceId, email, userId, hasTrial } = await req.json()
+    const { priceId, email, userId, returnUrl } = await req.json()
 
     // 1. Criar ou recuperar cliente Stripe
     const customers = await stripe.customers.list({ email: email, limit: 1 });
@@ -36,45 +35,34 @@ serve(async (req) => {
         customerId = customer.id;
     }
 
-    // Configuração da assinatura
-    const subscriptionConfig: any = {
-        customer: customerId,
-        items: [{ price: priceId }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
-    };
-
-    // 2. Aplicar Trial apenas se solicitado (hasTrial é true ou undefined - default)
-    // Se hasTrial for explicitamente false, removemos o trial_period_days para cobrança imediata.
-    if (hasTrial !== false) {
-        subscriptionConfig.trial_period_days = 7;
-    }
-
-    const subscription = await stripe.subscriptions.create(subscriptionConfig);
-
-    // 3. Determinar o Client Secret para o Frontend
-    let clientSecret = "";
-    let type = "payment";
-
-    // Em assinaturas com Trial, geralmente o Stripe gera um SetupIntent (validação de cartão sem cobrança).
-    // Em cobrança imediata, gera um PaymentIntent dentro do latest_invoice.
-    if (subscription.pending_setup_intent) {
-        // @ts-ignore
-        clientSecret = subscription.pending_setup_intent.client_secret;
-        type = "setup";
-    } else if (subscription.latest_invoice && typeof subscription.latest_invoice !== 'string' && subscription.latest_invoice.payment_intent) {
-        // @ts-ignore
-        clientSecret = subscription.latest_invoice.payment_intent.client_secret;
-        type = "payment";
-    }
+    // 2. Criar Sessão de Checkout (Stripe Hosted Page)
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
+      cancel_url: `${returnUrl}?payment_canceled=true`,
+      subscription_data: {
+        metadata: {
+            supabase_uid: userId
+        }
+      },
+      // Permite códigos promocionais no checkout
+      allow_promotion_codes: true,
+    });
 
     return new Response(
-      JSON.stringify({ subscriptionId: subscription.id, clientSecret, type }),
+      JSON.stringify({ sessionId: session.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error) {
+    console.error(error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

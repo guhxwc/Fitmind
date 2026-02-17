@@ -1,15 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircleIcon, StarIcon, ShieldCheckIcon, LockIcon, CoffeeIcon } from './core/Icons';
 import { PaymentPage } from './PaymentPage';
 import { PreSubscriptionPage } from './PreSubscriptionPage';
 import Portal from './core/Portal';
 import type { UserData } from '../types';
+import { useAppContext } from './AppContext';
 
 interface SubscriptionPageProps {
   onClose: () => void;
   onSubscribe: (plan: 'annual' | 'monthly') => void;
-  customUserData?: Partial<UserData>; // Add this prop
+  customUserData?: Partial<UserData>;
 }
 
 const FeatureItem: React.FC<{ title: string; desc: string }> = ({ title, desc }) => (
@@ -64,15 +65,26 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
   const [showShowcase, setShowShowcase] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [showCheckout, setShowCheckout] = useState(false);
-  const [hasTrial, setHasTrial] = useState(false); // Default to FALSE (Pagar Agora)
+  const { fetchData } = useAppContext();
+
+  // Escutar retorno do Stripe via URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_success') === 'true') {
+        localStorage.setItem('trigger_pro_tour', 'true');
+        fetchData().then(() => {
+            // Limpa os parâmetros da URL sem recarregar
+            window.history.replaceState({}, document.title, window.location.pathname);
+            onSubscribe(selectedPlan);
+        });
+    }
+  }, []);
 
   const handleSuccess = () => {
-      // Set flag to trigger Pro Tour on return to Summary
       localStorage.setItem('trigger_pro_tour', 'true');
       onSubscribe(selectedPlan);
   };
 
-  // Use Portal to break out of any parent container limitations
   return (
     <Portal>
         {showShowcase ? (
@@ -84,13 +96,11 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
         ) : showCheckout ? (
             <PaymentPage 
                 plan={selectedPlan}
-                initialHasTrial={hasTrial}
                 onClose={() => setShowCheckout(false)}
                 onPaymentSuccess={handleSuccess}
             />
         ) : (
             <div className="fixed inset-0 bg-white dark:bg-black z-[70] animate-fade-in flex flex-col h-[100dvh]">
-                {/* Top Actions */}
                 <div className="flex items-center justify-between p-4 flex-none border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-20">
                     <button onClick={() => setShowShowcase(true)} className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1 px-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -130,7 +140,6 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         />
                     </div>
 
-                    {/* Features List */}
                     <div className="mt-8 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
                         <h3 className="font-bold text-gray-900 dark:text-white mb-4 text-sm uppercase tracking-wide">O que está incluído:</h3>
                         <ul className="space-y-4">
@@ -147,7 +156,6 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                     </div>
                 </div>
 
-                {/* Sticky Footer */}
                 <div className="fixed bottom-0 left-0 right-0 p-6 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                     <button 
                         onClick={() => setShowCheckout(true)}

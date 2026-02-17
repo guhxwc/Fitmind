@@ -70,7 +70,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (storedTheme === 'light' || storedTheme === 'dark') {
       return storedTheme;
     }
-    return 'light'; // Default to light theme
+    return 'light'; 
   });
 
    useEffect(() => {
@@ -91,7 +91,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if(userData) {
           const updated = { ...userData, isPro: true, subscriptionStatus: 'active' as const };
           setUserData(updated);
-          addToast("Ativando assinatura...", "info");
+          addToast("Ativando benefícios PRO...", "info");
+          
           const { error } = await supabase.from('profiles').update({ 
               is_pro: true, 
               subscription_status: 'active' 
@@ -99,9 +100,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
           if (error) {
               console.error("Erro ao salvar status PRO:", error);
-              addToast("Erro ao salvar assinatura. Entre em contato com o suporte.", "error");
+              addToast("Erro ao sincronizar assinatura.", "error");
           } else {
-              addToast("FitMind PRO ativado! Aproveite os 7 dias grátis.", "success");
+              addToast("FitMind PRO desbloqueado!", "success");
           }
       }
   }
@@ -111,7 +112,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       name: profile.name || DEFAULT_USER_DATA.name,
       gender: profile.gender || DEFAULT_USER_DATA.gender,
       age: profile.age || DEFAULT_USER_DATA.age,
-      birthDate: profile.birth_date, // Added mapping
+      birthDate: profile.birth_date,
       height: profile.height || DEFAULT_USER_DATA.height,
       weight: profile.weight || DEFAULT_USER_DATA.weight,
       targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
@@ -208,6 +209,36 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }, 50); 
     }
   }, []);
+
+  // Escuta mudanças em tempo real no perfil (útil para Webhooks do Stripe)
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const profileSubscription = supabase
+      .channel('profile_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('Realtime profile update detected:', payload.new);
+          setUserData(formatProfileToUserData(payload.new));
+          if (payload.new.is_pro && !userData?.isPro) {
+            addToast("Sua assinatura PRO foi ativada!", "success");
+            localStorage.setItem('trigger_pro_tour', 'true');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileSubscription);
+    };
+  }, [session, userData]);
 
   useEffect(() => {
     fetchData();
@@ -338,11 +369,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
 };
 
-// Safe hook that returns a default/dummy context if used outside provider (e.g. Onboarding)
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    // Return a dummy object to prevent crashes in Onboarding components that might call this
     return {
         session: null,
         userData: null,

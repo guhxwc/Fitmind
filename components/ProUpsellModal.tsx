@@ -29,7 +29,7 @@ export const ProUpsellModal: React.FC<ProUpsellModalProps> = ({ onClose, onUnloc
                 <div className="flex flex-col gap-3 mt-6">
                     <button onClick={onUnlock} className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
                         <StarIcon className="w-5 h-5"/>
-                        Liberar PRO Agora (7 Dias Grátis)
+                        Liberar PRO Agora
                     </button>
                     <button onClick={onClose} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                         Agora não

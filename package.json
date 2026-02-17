@@ -15,7 +15,8 @@
     "@google/genai": "^1.29.1",
     "@supabase/supabase-js": "^2.45.0",
     "react-dom": "^19.2.0",
-    "firebase": "^12.9.0"
+    "firebase": "^12.9.0",
+    "@stripe/stripe-js": "^2.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

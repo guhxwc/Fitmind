@@ -1,15 +1,18 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
-import type { ProgressPhoto, UserData } from '../../types';
-import { CameraIcon, TrashIcon, ScaleIcon, CheckCircleIcon, WavesIcon, UserCircleIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import type { ProgressPhoto, UserData, SideEffectName, SideEffectEntry } from '../../types';
+import { CameraIcon, TrashIcon, ScaleIcon, CheckCircleIcon, WavesIcon, UserCircleIcon, PlusIcon, ArrowPathIcon, ShieldCheckIcon, ChevronRightIcon, XMarkIcon, HelpCircleIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
+import Portal from '../core/Portal';
+import { RegisterWeightModal } from '../RegisterWeightModal';
 
 // --- Utilitários de Formatação e Cálculo ---
 const formatDate = (isoString: string) => new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+const formatFullDate = (isoString: string) => new Date(isoString).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
 
 const calculateTMB = (user: UserData) => {
     // Fórmula de Mifflin-St Jeor (Padrão Ouro para TMB)
@@ -27,6 +30,35 @@ const getIMCStatus = (imc: number) => {
     return { label: 'Obesidade Grau III', color: 'text-red-700' };
 };
 
+// --- Configuração de Efeitos (Ícones e Cores) ---
+const EFFECT_CONFIG: Record<string, { icon: string, color: string, bg: string }> = {
+    'Náusea': { icon: '🤢', color: 'bg-green-500', bg: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' },
+    'Dor de cabeça': { icon: '🤕', color: 'bg-red-500', bg: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
+    'Fadiga': { icon: '😴', color: 'bg-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' },
+    'Apetite reduzido': { icon: '🤐', color: 'bg-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' },
+    'Tontura': { icon: '😵‍💫', color: 'bg-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+    'Constipação': { icon: '🧻', color: 'bg-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' },
+    'Diarreia': { icon: '🌊', color: 'bg-cyan-500', bg: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400' },
+    'default': { icon: '📝', color: 'bg-gray-500', bg: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' }
+};
+
+const INTENSITY_COLORS: Record<string, string> = {
+    'Leve': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+    'Moderado': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+    'Severo': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+};
+
+const EFFECT_TIPS: Record<string, string> = {
+    'Náusea': 'Chá de gengibre ou mascar um pedaço pequeno de gengibre ajuda muito. Evite deitar logo após comer e fracione as refeições.',
+    'Dor de cabeça': 'Na maioria dos casos com GLP-1, é desidratação. Tome 500ml de água agora. Se não passar em 1h, considere um analgésico comum.',
+    'Fadiga': 'Seu corpo está se adaptando metabolicamente. Não force treinos pesados hoje. Priorize dormir 30min mais cedo.',
+    'Apetite reduzido': 'É o efeito esperado. Foque em comer proteínas (ovos, frango, iogurte) primeiro para não perder massa muscular.',
+    'Tontura': 'Pode ser queda de pressão ou açúcar (hipoglicemia). Coma uma fruta ou uma pitada de sal agora e levante-se devagar.',
+    'Constipação': 'Aumente a água para 3L hoje. Caminhar ajuda o movimento intestinal. Fibras como psyllium ou mamão são essenciais.',
+    'Diarreia': 'Hidrate-se com soro caseiro ou água de coco. Evite alimentos gordurosos e laticínios. Banana e arroz branco ajudam.',
+    'Nenhum': 'Ótimo! Continue mantendo sua hidratação e alimentação equilibrada.'
+};
+
 // --- Subcomponentes Visuais ---
 
 const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string | number, subtext?: string, color?: string }> = ({ icon, label, value, subtext, color = "bg-white dark:bg-gray-900" }) => (
@@ -42,29 +74,143 @@ const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string |
     </div>
 );
 
-const RegisterWeightModal: React.FC<{onClose: () => void, onSave: (weight: number) => void}> = ({ onClose, onSave }) => {
-    const [weight, setWeight] = useState('');
+const SymptomRow: React.FC<{ name: string, count: number, maxCount: number, onClick: () => void }> = ({ name, count, maxCount, onClick }) => {
+    const config = EFFECT_CONFIG[name] || EFFECT_CONFIG['default'];
+    const percentage = Math.max((count / maxCount) * 100, 5); // Mínimo de 5% para visibilidade
+
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 rounded-[32px] p-6 w-full max-w-sm shadow-2xl animate-pop-in" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Registrar Peso</h2>
-                <div className="relative my-8">
-                    <input
-                        type="number"
-                        value={weight}
-                        onChange={(e) => setWeight(e.target.value)}
-                        className="w-full h-24 px-4 text-center text-5xl font-bold bg-gray-100 dark:bg-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                        placeholder="0.0"
-                        autoFocus
-                    />
-                    <span className="absolute bottom-4 right-6 text-xl font-bold text-gray-400 dark:text-gray-500 pointer-events-none">kg</span>
+        <button onClick={onClick} className="flex items-center gap-3 py-2 w-full group active:scale-[0.99] transition-transform">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${config.bg}`}>
+                {config.icon}
+            </div>
+            <div className="flex-grow min-w-0 text-left">
+                <div className="flex justify-between items-end mb-1.5">
+                    <span className="font-bold text-gray-900 dark:text-white text-sm truncate pr-2 flex items-center gap-1">
+                        {name}
+                        <ChevronRightIcon className="w-3 h-3 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </span>
+                    <span className="font-semibold text-gray-500 dark:text-gray-400 text-xs">{count}x</span>
                 </div>
-                <div className="flex gap-3">
-                    <button onClick={onClose} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-2xl font-bold text-lg">Cancelar</button>
-                    <button onClick={() => onSave(parseFloat(weight))} disabled={!weight} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg disabled:opacity-50 shadow-lg">Salvar</button>
+                <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div 
+                        className={`h-full rounded-full ${config.color} transition-all duration-1000 ease-out`} 
+                        style={{ width: `${percentage}%` }}
+                    ></div>
                 </div>
             </div>
-        </div>
+        </button>
+    );
+}
+
+const SymptomHistoryModal: React.FC<{ 
+    symptomName: string; 
+    entries: SideEffectEntry[]; 
+    onClose: () => void 
+}> = ({ symptomName, entries, onClose }) => {
+    const [showAdvice, setShowAdvice] = useState(false);
+    const config = EFFECT_CONFIG[symptomName] || EFFECT_CONFIG['default'];
+    const advice = EFFECT_TIPS[symptomName] || EFFECT_TIPS['default'];
+
+    // Filter and flat map to get specific occurrences of this symptom
+    const history = useMemo(() => {
+        return entries
+            .filter(entry => entry.effects.some(e => e.name === symptomName))
+            .map(entry => {
+                const effect = entry.effects.find(e => e.name === symptomName);
+                return {
+                    date: entry.date,
+                    intensity: effect?.intensity || 'Leve',
+                    duration: effect?.duration,
+                    notes: entry.notes
+                };
+            })
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [entries, symptomName]);
+
+    return (
+        <Portal>
+            <div className="fixed inset-0 bg-black/60 z-[70] flex items-end justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
+                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md h-[80vh] rounded-t-[32px] sm:rounded-[32px] flex flex-col animate-slide-up shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-[#1C1C1E] z-10 rounded-t-[32px]">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm ${config.bg}`}>
+                                {config.icon}
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white leading-tight">{symptomName}</h2>
+                                <button 
+                                    onClick={() => setShowAdvice(!showAdvice)}
+                                    className="flex items-center gap-1.5 mt-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full transition-colors active:scale-95"
+                                >
+                                    <HelpCircleIcon className="w-3.5 h-3.5" />
+                                    O que fazer?
+                                </button>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-500 hover:text-black dark:hover:text-white transition-colors">
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* List */}
+                    <div className="flex-grow overflow-y-auto p-6 space-y-4">
+                        
+                        {/* Advice Card */}
+                        {showAdvice && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-2xl mb-4 animate-pop-in">
+                                <div className="flex items-start gap-3">
+                                    <ShieldCheckIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <h3 className="text-sm font-bold text-blue-900 dark:text-blue-200 mb-1">Dica de Especialista</h3>
+                                        <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                                            {advice}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider mb-2">
+                            Histórico ({history.length})
+                        </p>
+
+                        {history.map((item, idx) => (
+                            <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                        {formatFullDate(item.date)}
+                                    </span>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider ${INTENSITY_COLORS[item.intensity] || 'bg-gray-100 text-gray-600'}`}>
+                                        {item.intensity}
+                                    </span>
+                                </div>
+                                
+                                {item.duration && (
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-black/20 px-2 py-0.5 rounded-md border border-gray-200 dark:border-gray-700/50">
+                                            ⏱ {item.duration}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {item.notes && (
+                                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-black/20 p-3 rounded-xl italic leading-relaxed border border-gray-100 dark:border-gray-800/50">
+                                        "{item.notes}"
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        
+                        {history.length === 0 && (
+                            <div className="text-center py-10 text-gray-400 dark:text-gray-600">
+                                <p>Nenhum registro detalhado encontrado.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </Portal>
     );
 };
 
@@ -173,6 +319,7 @@ export const ProgressTab: React.FC = () => {
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<ProgressPhoto | null>(null);
+  const [viewingSymptom, setViewingSymptom] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   if (!userData) return null;
@@ -206,15 +353,12 @@ export const ProgressTab: React.FC = () => {
   }, [weightHistory, userData]);
 
   const currentWeight = userData.weight || 0;
-  // O peso inicial é o primeiro do array sortedWeight (que agora sempre tem pelo menos 2 itens se userData.weight existir)
-  // Mas para o cálculo de "Perdidos", queremos o peso real histórico mais antigo ou o atual se não houver histórico.
-  // Se o histórico real estiver vazio, sortedWeight tem dados fakes iguais ao atual, então lost = 0. Correto.
   const startWeight = sortedWeight.length > 0 ? sortedWeight[0].weight : currentWeight;
   const lostWeight = startWeight - currentWeight;
   const imc = (currentWeight / ((userData.height / 100) ** 2)).toFixed(1);
   const tmb = calculateTMB(userData);
   
-  // Dados de Colaterais para Gráfico
+  // Dados de Colaterais para Lista Visual (Top 5)
   const sideEffectStats = useMemo(() => {
       const counts: Record<string, number> = {};
       sideEffects.forEach(entry => {
@@ -222,10 +366,17 @@ export const ProgressTab: React.FC = () => {
               counts[e.name] = (counts[e.name] || 0) + 1;
           });
       });
-      return Object.entries(counts)
+      
+      const sorted = Object.entries(counts)
         .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 4); // Top 4
+        .sort((a, b) => b.count - a.count);
+        
+      const maxCount = sorted.length > 0 ? sorted[0].count : 0;
+      
+      return {
+          items: sorted.slice(0, 5),
+          maxCount: maxCount
+      };
   }, [sideEffects]);
 
   const handleAddWeight = async (newWeight: number) => {
@@ -357,26 +508,40 @@ export const ProgressTab: React.FC = () => {
                   </div>
               </section>
 
-              {/* Efeitos Colaterais */}
-              {sideEffectStats.length > 0 && (
-                <section className="bg-white dark:bg-gray-900 p-6 rounded-[24px] shadow-soft border border-gray-100 dark:border-gray-800">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Efeitos Colaterais Frequentes</h3>
-                    <div className="h-48 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={sideEffectStats} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={100} />
-                                <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }} />
-                                <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={24}>
-                                    {sideEffectStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#f87171', '#fb923c', '#fbbf24', '#60a5fa'][index % 4]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </section>
-              )}
+              {/* Lista Visual de Efeitos Colaterais (REDESIGNED) */}
+              <section className="bg-white dark:bg-gray-900 p-6 rounded-[24px] shadow-soft border border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-end mb-5">
+                      <div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Sintomas Recentes</h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Toque para ver o histórico</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 p-1.5 rounded-lg">
+                          <ShieldCheckIcon className="w-5 h-5"/>
+                      </div>
+                  </div>
+                  
+                  {sideEffectStats.items.length > 0 ? (
+                      <div className="space-y-4">
+                          {sideEffectStats.items.map((item, index) => (
+                              <SymptomRow 
+                                  key={index} 
+                                  name={item.name} 
+                                  count={item.count} 
+                                  maxCount={sideEffectStats.maxCount}
+                                  onClick={() => setViewingSymptom(item.name)}
+                              />
+                          ))}
+                      </div>
+                  ) : (
+                      <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                              ✨
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Nenhum sintoma relatado</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Continue acompanhando para monitorar sua saúde.</p>
+                      </div>
+                  )}
+              </section>
           </div>
       ) : (
           <div className="space-y-6">
@@ -420,6 +585,14 @@ export const ProgressTab: React.FC = () => {
       {isWeightModalOpen && <RegisterWeightModal onSave={handleAddWeight} onClose={() => setIsWeightModalOpen(false)} />}
       {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={handleDeletePhoto} />}
       {isComparisonModalOpen && <PhotoComparisonModal photos={progressPhotos} onClose={() => setIsComparisonModalOpen(false)} />}
+      
+      {viewingSymptom && (
+          <SymptomHistoryModal 
+              symptomName={viewingSymptom} 
+              entries={sideEffects} 
+              onClose={() => setViewingSymptom(null)} 
+          />
+      )}
     </div>
   );
 };

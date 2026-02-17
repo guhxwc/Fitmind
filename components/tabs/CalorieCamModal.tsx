@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Meal } from '../../types';
@@ -63,7 +64,7 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
       const prompt = "Analise a imagem desta refeição. Identifique os alimentos, estime o total de calorias (kcal) e o total de proteína (em gramas). Seja realista. Se a imagem não contiver comida, retorne valores nulos.";
       
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { inlineData: { mimeType: file.type, data: base64Data } },

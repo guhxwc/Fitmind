@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton, smoothScrollToBottom } from './OnboardingComponents';
 
 interface StepSideEffectsProps {
   onNext: () => void;
@@ -38,7 +38,7 @@ export const StepSideEffectsImageStyle: React.FC<StepSideEffectsProps> = ({ onNe
             <OptionButton 
                 key={opt.label}
                 isSelected={selected === opt.label}
-                onClick={() => { setSelected(opt.label); onSelect(opt.label); }}
+                onClick={() => { setSelected(opt.label); onSelect(opt.label); smoothScrollToBottom(); }}
             >
                 <div className="flex items-center gap-4">
                     <span className="text-2xl filter drop-shadow-sm">{opt.icon}</span>

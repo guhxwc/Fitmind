@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton, smoothScrollToBottom } from './OnboardingComponents';
 
 interface CommonStepProps {
   onNext: () => void;
@@ -31,7 +31,7 @@ export const StepDuration: React.FC<CommonStepProps> = ({ onNext, onBack, value,
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}
@@ -62,7 +62,7 @@ export const StepFrustration: React.FC<CommonStepProps> = ({ onNext, onBack, val
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}
@@ -92,7 +92,7 @@ export const StepFutureWorry: React.FC<CommonStepProps> = ({ onNext, onBack, val
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}
@@ -122,7 +122,7 @@ export const StepOneThing: React.FC<CommonStepProps> = ({ onNext, onBack, value,
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}
@@ -152,7 +152,7 @@ export const StepDreamOutcome: React.FC<CommonStepProps> = ({ onNext, onBack, va
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}
@@ -182,7 +182,7 @@ export const StepInvestment: React.FC<CommonStepProps> = ({ onNext, onBack, valu
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {options.map(opt => (
-          <OptionButton key={opt} isSelected={value === opt} onClick={() => onSelect(opt)}>
+          <OptionButton key={opt} isSelected={value === opt} onClick={() => { onSelect(opt); smoothScrollToBottom(); }}>
             {opt}
           </OptionButton>
         ))}

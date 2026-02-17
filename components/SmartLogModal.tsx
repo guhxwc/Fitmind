@@ -57,7 +57,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -67,7 +67,6 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
 
       const result = JSON.parse(response.text);
       
-      // 1. Add Meals
       if (result.meals && result.meals.length > 0) {
           const newMeals = result.meals.map((m: any) => ({
               ...m,
@@ -77,16 +76,13 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
           setMeals(prev => [...prev, ...newMeals]);
       }
 
-      // 2. Update Water
       if (result.water_liters && result.water_liters > 0) {
           setCurrentWater(prev => parseFloat((prev + result.water_liters).toFixed(1)));
       }
 
-      // 3. Update Weight
       if (result.weight_kg && result.weight_kg > 0) {
           setUserData(prev => prev ? ({ ...prev, weight: result.weight_kg }) : null);
           
-          // Persist Weight
           const { data: weightData } = await supabase.from('weight_history').insert({ 
               user_id: userData.id, 
               date: new Date().toISOString(), 
@@ -97,7 +93,6 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
              setWeightHistory(prev => [...prev, weightData[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
           }
           
-          // Update Profile
           await supabase.from('profiles').update({ weight: result.weight_kg }).eq('id', userData.id);
       }
 

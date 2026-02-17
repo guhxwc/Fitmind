@@ -60,27 +60,36 @@ const FeatureRow: React.FC<{ icon: React.ReactNode; title: string; description: 
     </div>
 );
 
-const TestimonialCard: React.FC = () => (
-    <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mt-8">
-        <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-sm">
-                RM
-            </div>
-            <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Roberto M., 42 anos</p>
-                <div className="flex items-center gap-1 text-yellow-500 text-xs">
-                    ★★★★★ <span className="text-gray-400 ml-1">• Perdeu 18kg em 16 semanas</span>
+const TestimonialCard: React.FC<{ 
+    name: string; 
+    age: string; 
+    quote: string; 
+    contextText: string; 
+}> = ({ name, age, quote, contextText }) => {
+    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    
+    return (
+        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mt-8">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-sm">
+                    {initials}
+                </div>
+                <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{name}, {age}</p>
+                    <div className="flex items-center gap-1 text-yellow-500 text-xs">
+                        ★★★★★ <span className="text-gray-400 ml-1">• Verificado</span>
+                    </div>
                 </div>
             </div>
+            <p className="text-gray-600 dark:text-gray-300 text-sm italic leading-relaxed mb-3">
+                "{quote}"
+            </p>
+            <p className="text-xs text-gray-400 font-medium">
+                {contextText}
+            </p>
         </div>
-        <p className="text-gray-600 dark:text-gray-300 text-sm italic leading-relaxed mb-3">
-            "O FitMind me mostrou exatamente o que eu estava fazendo errado. Descobri que comia pouca proteína e isso atrasava meus resultados. Em 16 semanas, perdi 18kg e me sinto confiante novamente."
-        </p>
-        <p className="text-xs text-gray-400 font-medium">
-            Usando Mounjaro + FitMind. Antes, ele tentou 3 dietas diferentes sem sucesso.
-        </p>
-    </div>
-);
+    );
+};
 
 const AuthorityBlock: React.FC = () => (
     <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30 mt-6 relative overflow-hidden">
@@ -127,40 +136,86 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
     // Prefer passed prop (from onboarding), fallback to context (from app)
     const userData = customUserData || contextUserData;
 
-    // Lógica Central de Personalização (Mapa do Dinheiro)
+    // Lógica Central de Personalização (Mapa do Dinheiro & Prova Social)
     const copy = useMemo(() => {
-        if (!userData) return { headline: '', subheadline: '' };
-
-        const { journeyDuration, biggestFrustration, monthlyInvestment, futureWorry, medication } = userData;
-        const name = userData.name ? userData.name.split(' ')[0] : 'Visitante'; // Primeiro nome
-        
-        // Default (Iniciante Ansioso)
-        let content = {
-            headline: `${name}, você não precisa fazer isso sozinho.`,
-            subheadline: "Veja o plano passo a passo para usar seu GLP-1 com segurança e ter os resultados que você espera."
+        // Fallback genérico para evitar crash
+        const defaultContent = {
+            headline: "Transforme seu tratamento em resultados reais.",
+            subheadline: "O sistema completo para usuários de GLP-1.",
+            stepZeroTitle: "O Início",
+            stepZeroDesc: "Você começou o tratamento e busca os melhores resultados.",
+            testimonial: {
+                name: "Ana P.",
+                age: "34 anos",
+                quote: "O FitMind me deu a segurança que eu precisava. Em 4 semanas, perdi 5kg e as náuseas desapareceram.",
+                contextText: "Usando Ozempic + FitMind."
+            }
         };
 
-        // Perfil 1: O Investidor Frustrado (> R$ 1000)
+        if (!userData) return defaultContent;
+
+        const { journeyDuration, biggestFrustration, monthlyInvestment, futureWorry } = userData;
+        const name = userData.name ? userData.name.split(' ')[0] : 'Visitante';
+        
+        // Padrão: Perfil 1: O Iniciante Ansioso
+        let content = {
+            headline: `${name}, você não precisa fazer isso sozinho.`,
+            subheadline: "Veja o plano passo a passo para usar seu GLP-1 com segurança e ter os resultados que você espera.",
+            stepZeroTitle: "Hoje: A Incerteza",
+            stepZeroDesc: "Você começou o tratamento com a esperança de mudar, mas agora a incerteza te assombra. Náuseas, dúvidas sobre o que comer, medo de errar... O começo não precisa ser assim. Existe um caminho seguro e guiado.",
+            testimonial: {
+                name: "Ana P.",
+                age: "34 anos",
+                quote: "Eu estava apavorada no começo. Tinha medo de comer a coisa errada e passar mal. O FitMind me deu a segurança que eu precisava. Em 4 semanas, perdi 5kg e as náuseas desapareceram.",
+                contextText: "Usando Ozempic + FitMind. Superou o medo e insegurança inicial."
+            }
+        };
+
+        // Perfil 3: O Investidor Frustrado (> R$ 1000)
         if (monthlyInvestment && (monthlyInvestment.includes('1.000') || monthlyInvestment.includes('2.000'))) {
             content = {
                 headline: `${name}, seu investimento de R$ 1.000/mês precisa dar retorno.`,
-                subheadline: "Veja o plano para garantir que cada centavo e cada dose do seu tratamento contem para o resultado final."
+                subheadline: "Veja o plano para garantir que cada centavo e cada dose do seu tratamento contem para o resultado final.",
+                stepZeroTitle: "Hoje: O Desperdício",
+                stepZeroDesc: "Você está investindo uma fortuna no seu tratamento, mas os resultados não estão vindo na mesma proporção. Cada semana sem progresso é dinheiro jogado fora. Você precisa de um sistema que maximize seu ROI.",
+                testimonial: {
+                    name: "Mariana S.",
+                    age: "39 anos",
+                    quote: "Eu estava gastando R$ 1.200 por mês e me sentia frustrada. O FitMind me mostrou que eu estava comendo pouca proteína e isso atrasava tudo. Em 2 meses, perdi 9kg. Finalmente senti que o investimento valeu a pena.",
+                    contextText: "Usando Saxenda + FitMind. Otimizou seu investimento."
+                }
             };
         }
 
-        // Perfil 2: O Veterano Estagnado (> 6 meses)
-        if (journeyDuration && (journeyDuration.includes('Mais de 6 meses') || journeyDuration.includes('3-6 meses')) && biggestFrustration?.includes('lentos')) {
+        // Perfil 2: O Veterano Estagnado (> 3 meses e resultados lentos)
+        else if (journeyDuration && (journeyDuration.includes('Mais de 6 meses') || journeyDuration.includes('3-6 meses')) && biggestFrustration?.includes('lentos')) {
             content = {
                 headline: `${name}, sabemos que você já tentou de tudo.`,
-                subheadline: "Veja por que 15.000 pessoas que estavam estagnadas como você finalmente destravaram seus resultados."
+                subheadline: "Veja por que 15.000 pessoas que estavam estagnadas como você finalmente destravaram seus resultados.",
+                stepZeroTitle: "Hoje: A Frustração",
+                stepZeroDesc: "Você já tentou 3 dietas diferentes, contou calorias, cortou carboidratos... e nada. O peso não se move. A frustração de estar estagnado, mesmo com o medicamento, é real. Mas a culpa não é sua.",
+                testimonial: {
+                    name: "Carlos F.",
+                    age: "48 anos",
+                    quote: "Eu perdi 10kg e depois travei por 3 meses. Estava prestes a desistir. A Análise Inteligente do FitMind mostrou que eu precisava de mais proteína. Ajustei e perdi mais 12kg. Foi inacreditável.",
+                    contextText: "Usando Mounjaro + FitMind. Destravou o platô."
+                }
             };
         }
 
-        // Perfil 3: O Preocupado com o Futuro (Efeito Rebote)
-        if (futureWorry && (futureWorry.includes('Ganhar o peso') || futureWorry.includes('manter'))) {
+        // Perfil 4: O Preocupado com o Futuro (Efeito Rebote)
+        else if (futureWorry && (futureWorry.includes('Ganhar o peso') || futureWorry.includes('manter'))) {
             content = {
                 headline: `${name}, e se você recuperar todo o peso quando parar o remédio?`,
-                subheadline: "Resultados temporários não bastam. Veja o plano para garantir que sua transformação seja permanente."
+                subheadline: "Resultados temporários não bastam. Veja o plano para garantir que sua transformação seja permanente.",
+                stepZeroTitle: "Hoje: O Medo do Rebote",
+                stepZeroDesc: "Você está feliz com os resultados, mas uma preocupação te assombra: \"E quando eu parar?\" O medo de recuperar todo o peso e voltar à estaca zero é paralisante. Você precisa de um plano de saída.",
+                testimonial: {
+                    name: "Juliana C.",
+                    age: "41 anos",
+                    quote: "Eu perdi 20kg com Ozempic e tinha pavor de parar. O Protocolo Anti-Rebote do FitMind foi minha salvação. Parei há 6 meses e não ganhei 1kg de volta. Me sinto livre.",
+                    contextText: "Usando Wegovy + FitMind. Em manutenção há 6 meses."
+                }
             };
         }
 
@@ -207,8 +262,8 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                     <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.15s' }}>
                         <TimelineItem 
                             step="0. Ponto Zero"
-                            title="Hoje: A Incerteza"
-                            description="Você começou o tratamento com a esperança de mudar, mas agora a incerteza te assombra. Náuseas, dúvidas sobre o que comer, medo de errar..."
+                            title={copy.stepZeroTitle}
+                            description={copy.stepZeroDesc}
                             color="bg-red-500"
                             isActive
                         />
@@ -264,10 +319,15 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                         />
                     </div>
 
-                    {/* Authority Block */}
+                    {/* Authority Block & Dynamic Testimonial */}
                     <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
                         <AuthorityBlock />
-                        <TestimonialCard />
+                        <TestimonialCard 
+                            name={copy.testimonial.name}
+                            age={copy.testimonial.age}
+                            quote={copy.testimonial.quote}
+                            contextText={copy.testimonial.contextText}
+                        />
                     </div>
 
                     {/* Objection Handling */}

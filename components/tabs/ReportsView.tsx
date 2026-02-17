@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { useAppContext } from '../AppContext';
@@ -72,8 +73,11 @@ export const ReportsView: React.FC<ReportsViewProps> = () => {
             
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-pro',
+                model: 'gemini-3-pro-preview',
                 contents: prompt,
+                config: {
+                    thinkingConfig: { thinkingBudget: 2000 }
+                }
             });
 
             setReport(response.text);
@@ -86,7 +90,6 @@ export const ReportsView: React.FC<ReportsViewProps> = () => {
         }
     };
     
-    // Simple markdown to HTML renderer
     const renderMarkdown = (text: string) => {
         const html = text
             .replace(/### (.*$)/gim, '<h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">$1</h3>')

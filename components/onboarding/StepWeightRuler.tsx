@@ -75,7 +75,7 @@ export const StepWeightRuler: React.FC<StepWeightRulerProps> = ({ title, onNext,
             </div>
             
             {isGoal && diff !== 0 && (
-                <div className={`mt-4 px-4 py-1.5 rounded-full text-sm font-bold bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-white/10 shadow-sm ${diff < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <div className={`mt-4 px-4 py-1.5 rounded-full text-sm font-bold bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-white/10 shadow-sm ${diff < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                     {diff > 0 ? `+${diff}` : diff} kg
                 </div>
             )}

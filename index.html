@@ -1,10 +1,18 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>FitMind</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Intro.js Styles and Script -->
+    <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+    <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -52,12 +60,27 @@
       }
     </script>
     <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden; /* Prevent scrolling of root */
+        position: fixed; /* Prevent bouncy scroll on iOS */
+      }
+      
       body {
         font-family: 'Inter', sans-serif;
         -webkit-tap-highlight-color: transparent;
         background-color: #F2F2F7;
-        overscroll-behavior-y: none; /* Prevent bounce on pull-to-refresh feel outside app */
+        overscroll-behavior-y: none;
       }
+      
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto; /* Internal scrolling handled here */
+        -webkit-overflow-scrolling: touch;
+      }
+
       .dark body {
         background-color: #000000;
       }
@@ -114,6 +137,147 @@
       .dark .glass {
         background: rgba(28, 28, 30, 0.75);
       }
+
+      /* --- INTRO.JS CUSTOM THEME (iOS Style) --- */
+      .introjs-overlay {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      
+      .introjs-helperLayer {
+        background-color: transparent !important;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 0 1000vw rgba(0,0,0,0.2) !important; /* Soft focus ring */
+        border-radius: 16px;
+      }
+
+      .introjs-tooltip {
+        background-color: #FFFFFF;
+        color: #1C1C1E;
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        border: none;
+        font-family: 'Inter', sans-serif;
+        max-width: 320px;
+      }
+
+      .dark .introjs-tooltip {
+        background-color: #1C1C1E;
+        color: #FFFFFF;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .introjs-tooltip-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+        color: #000;
+      }
+      .dark .introjs-tooltip-title {
+        color: #FFF;
+      }
+
+      .introjs-tooltip-text {
+        font-size: 15px;
+        line-height: 1.5;
+        color: #636366; /* iOS Gray */
+        font-weight: 500;
+      }
+      .dark .introjs-tooltip-text {
+        color: #AEAEB2;
+      }
+
+      .introjs-tooltipbuttons {
+        border-top: none;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Buttons */
+      .introjs-button {
+        border-radius: 99px !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        padding: 10px 20px !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+        transition: transform 0.2s !important;
+        border: none !important;
+      }
+      
+      .introjs-button:active {
+        transform: scale(0.96);
+      }
+
+      /* Next / Done Button */
+      .introjs-nextbutton, .introjs-donebutton {
+        background-color: #000 !important;
+        color: #FFF !important;
+      }
+      .dark .introjs-nextbutton, .dark .introjs-donebutton {
+        background-color: #FFF !important;
+        color: #000 !important;
+      }
+
+      /* Prev Button */
+      .introjs-prevbutton {
+        background-color: #F2F2F7 !important;
+        color: #000 !important;
+      }
+      .dark .introjs-prevbutton {
+        background-color: #2C2C2E !important;
+        color: #FFF !important;
+      }
+      .introjs-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      /* Skip Button */
+      .introjs-skipbutton {
+        color: #8E8E93 !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        text-decoration: none;
+      }
+      .introjs-skipbutton:hover {
+        color: #000 !important;
+      }
+      .dark .introjs-skipbutton:hover {
+        color: #FFF !important;
+      }
+
+      /* Bullets */
+      .introjs-bullets ul li a {
+        background: #D1D1D6;
+        width: 8px;
+        height: 8px;
+      }
+      .introjs-bullets ul li a.active {
+        background: #007AFF;
+        width: 20px;
+        border-radius: 4px;
+      }
+      .introjs-arrow {
+        border-bottom-color: #FFF !important;
+      }
+      .dark .introjs-arrow {
+        border-bottom-color: #1C1C1E !important;
+      }
+      .introjs-arrow.top {
+        border-top-color: #FFF !important;
+      }
+      .dark .introjs-arrow.top {
+        border-top-color: #1C1C1E !important;
+      }
     </style>
   <script type="importmap">
 {
@@ -124,9 +288,12 @@
     "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.45.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+    "firebase/messaging": "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "firebase/": "https://esm.sh/firebase@^12.9.0/"
   }
 }
 </script>

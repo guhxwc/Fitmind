@@ -2,7 +2,7 @@
 import React from 'react';
 import type { MedicationName } from '../../types';
 import { MEDICATIONS } from '../../constants';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton, smoothScrollToBottom } from './OnboardingComponents';
 
 interface StepDoseProps {
   onNext: () => void;
@@ -28,7 +28,7 @@ export const StepDose: React.FC<StepDoseProps> = ({ onNext, onBack, onSelect, me
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {doses.map((dose) => (
-          <OptionButton key={dose} onClick={() => onSelect(dose)} isSelected={value === dose}>
+          <OptionButton key={dose} onClick={() => { onSelect(dose); smoothScrollToBottom(); }} isSelected={value === dose}>
             {dose}
           </OptionButton>
         ))}

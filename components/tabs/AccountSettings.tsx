@@ -1,233 +1,256 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
+import { ChevronRightIcon, CameraIcon, XMarkIcon } from '../core/Icons';
+import Portal from '../core/Portal';
 
-const Spinner: React.FC<{className?: string}> = ({ className }) => (
-    <svg className={`animate-spin h-5 w-5 ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
+// --- UI Components ---
+
+const ListGroup: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
+    <div className="mb-6">
+        {title && (
+            <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide ml-1">
+                {title}
+            </h3>
+        )}
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-[18px] overflow-hidden shadow-sm border border-gray-200/50 dark:border-gray-800">
+            {children}
+        </div>
+    </div>
 );
 
+const ListItem: React.FC<{ 
+    label: string; 
+    value: string; 
+    onClick?: () => void; 
+    isLast?: boolean;
+}> = ({ label, value, onClick, isLast }) => (
+    <button 
+        onClick={onClick}
+        disabled={!onClick}
+        className={`w-full flex items-center justify-between pl-4 pr-4 py-3.5 bg-white dark:bg-[#1C1C1E] active:bg-gray-50 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+    >
+        <span className="text-[17px] text-gray-900 dark:text-white font-medium">{label}</span>
+        <div className="flex items-center gap-2">
+            <span className="text-[17px] text-gray-500 dark:text-gray-400">{value}</span>
+            {onClick && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 opacity-70" />}
+        </div>
+    </button>
+);
 
-// The confirmation modal for deleting account
-const DeleteAccountModal: React.FC<{
-    userEmail: string;
+// --- Modal Component ---
+
+interface EditAttributeModalProps {
+    title: string;
+    initialValue: string | number;
+    type: 'text' | 'number' | 'date' | 'select';
+    options?: string[];
     onClose: () => void;
-    onConfirm: () => Promise<void>;
-}> = ({ userEmail, onClose, onConfirm }) => {
-    const [confirmationEmail, setConfirmationEmail] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
-    const isMatch = confirmationEmail === userEmail;
+    onSave: (value: any) => Promise<void>;
+    unit?: string;
+}
 
-    const handleDelete = async () => {
-        if (!isMatch) return;
-        setIsDeleting(true);
-        await onConfirm();
-        // isDeleting will be true until the user is logged out.
+const EditAttributeModal: React.FC<EditAttributeModalProps> = ({ title, initialValue, type, options, onClose, onSave, unit }) => {
+    const [value, setValue] = useState(initialValue);
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        setLoading(true);
+        await onSave(value);
+        setLoading(false);
+        onClose();
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-2xl font-bold text-red-600">Excluir Conta</h2>
-                <p className="text-gray-600 dark:text-gray-300 mt-2">Esta ação é <strong>permanente</strong> e não pode ser desfeita. Todos os seus dados, incluindo progresso, fotos e planos, serão apagados para sempre.</p>
-                <p className="text-gray-600 dark:text-gray-300 mt-4">Para confirmar, digite seu email: <strong className="font-mono">{userEmail}</strong></p>
-                
-                <input
-                    type="email"
-                    value={confirmationEmail}
-                    onChange={(e) => setConfirmationEmail(e.target.value)}
-                    className="mt-2 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+        <Portal>
+            <div className="fixed inset-0 bg-black/30 z-[90] flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-sm rounded-[24px] p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+                        <button onClick={onClose} className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                            <XMarkIcon className="w-5 h-5"/>
+                        </button>
+                    </div>
+                    
+                    <div className="mb-8">
+                        {type === 'select' ? (
+                            <div className="space-y-2">
+                                {options?.map(opt => (
+                                    <button
+                                        key={opt}
+                                        onClick={() => setValue(opt)}
+                                        className={`w-full p-3.5 rounded-xl font-medium text-left transition-all text-[17px] flex justify-between items-center ${
+                                            value === opt 
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white'
+                                        }`}
+                                    >
+                                        {opt}
+                                        {value === opt && <span className="text-blue-500">✓</span>}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    type={type}
+                                    value={value}
+                                    onChange={(e) => setValue(e.target.value)}
+                                    className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-4 text-2xl font-bold text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                                    autoFocus
+                                />
+                                {unit && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">{unit}</span>}
+                            </div>
+                        )}
+                    </div>
 
-                <div className="mt-6 flex flex-col gap-3">
-                    <button onClick={handleDelete} disabled={!isMatch || isDeleting} className="w-full flex justify-center py-3 px-4 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300">
-                        {isDeleting ? <Spinner className="text-white"/> : 'Excluir minha conta permanentemente'}
-                    </button>
-                    <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-3 rounded-xl font-semibold">
-                        Cancelar
+                    <button 
+                        onClick={handleSave} 
+                        disabled={loading} 
+                        className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold text-[17px] active:scale-[0.98] transition-transform disabled:opacity-70"
+                    >
+                        {loading ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                 </div>
             </div>
-        </div>
+        </Portal>
     );
 };
 
+// --- Main Page ---
 
-// The main component
 export const AccountSettings: React.FC = () => {
     const { userData, session, fetchData } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     
-    const [name, setName] = useState(userData?.name || '');
-    const [password, setPassword] = useState('');
-    
-    const [nameLoading, setNameLoading] = useState(false);
-    const [passwordLoading, setPasswordLoading] = useState(false);
-    const [resetLoading, setResetLoading] = useState(false);
-    
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    // Edit Modal State
+    const [editModal, setEditModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        type: 'text' | 'number' | 'date' | 'select';
+        key: string;
+        value: any;
+        options?: string[];
+        unit?: string;
+    }>({ isOpen: false, title: '', type: 'text', key: '', value: '' });
 
-    if (!userData || !session) {
-        return <div className="p-6 text-gray-800 dark:text-gray-200">Carregando...</div>;
+    if (!userData || !session) return null;
+
+    const handleOpenEdit = (title: string, key: string, value: any, type: 'text' | 'number' | 'date' | 'select', options?: string[], unit?: string) => {
+        setEditModal({ isOpen: true, title, key, value, type, options, unit });
+    };
+
+    const handleSaveAttribute = async (newValue: any) => {
+        const key = editModal.key;
+        let updateData: any = {};
+
+        // Parse numbers if needed
+        if (editModal.type === 'number') {
+            updateData[key] = parseFloat(newValue);
+        } else {
+            updateData[key] = newValue;
+        }
+
+        const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
+        
+        if (error) {
+            addToast('Erro ao atualizar.', 'error');
+        } else {
+            await fetchData();
+            addToast('Perfil atualizado.', 'success');
+        }
+    };
+
+    const formatDate = (dateStr?: string) => {
+        if (!dateStr) return 'Definir';
+        const [year, month, day] = dateStr.split('-');
+        return `${day}/${month}/${year}`;
     }
 
-    const handleUpdateName = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setNameLoading(true);
-        const { error } = await supabase.from('profiles').update({ name }).eq('id', userData.id);
-        if (error) {
-            addToast('Falha ao atualizar o nome.', 'error');
-        } else {
-            await fetchData(); // Refresh context data
-            addToast('Nome atualizado com sucesso!', 'success');
-        }
-        setNameLoading(false);
-    };
-
-    const handleUpdatePassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (password.length < 6) {
-            addToast('A senha deve ter no mínimo 6 caracteres.', 'error');
-            return;
-        }
-        setPasswordLoading(true);
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) {
-            addToast('Falha ao atualizar a senha.', 'error');
-        } else {
-            setPassword('');
-            addToast('Senha atualizada com sucesso!', 'success');
-        }
-        setPasswordLoading(false);
-    };
-
-    const handleSendResetLink = async () => {
-        setResetLoading(true);
-        const { error } = await supabase.auth.resetPasswordForEmail(session.user.email!);
-        if (error) {
-            addToast('Falha ao enviar o link.', 'error');
-        } else {
-            addToast('Link de recuperação enviado para seu email.', 'success');
-        }
-        setResetLoading(false);
-    };
-    
-    const handleDeleteAccount = async () => {
-        try {
-            const userId = userData.id;
-            // cascade delete is setup in supabase, so only deleting from profiles is needed.
-            // but to be safe, we can delete from all tables.
-            await supabase.from('applications').delete().eq('user_id', userId);
-            await supabase.from('weight_history').delete().eq('user_id', userId);
-            await supabase.from('progress_photos').delete().eq('user_id', userId);
-            await supabase.from('workout_plans').delete().eq('user_id', userId);
-            await supabase.from('workout_history').delete().eq('user_id', userId);
-            await supabase.from('daily_notes').delete().eq('user_id', userId);
-            await supabase.from('side_effects').delete().eq('user_id', userId);
-            await supabase.from('profiles').delete().eq('id', userId);
-
-            // Supabase edge function will delete stripe customer on profile delete.
-            
-            await supabase.auth.signOut();
-            navigate('/auth', { replace: true });
-
-        } catch (error: any) {
-            setShowDeleteModal(false);
-            addToast(`Falha ao excluir a conta: ${error.message}`, 'error');
-        }
-    };
-
-
     return (
-        <div className="p-4 sm:p-6 bg-gray-100 dark:bg-black min-h-screen font-sans">
-            <header className="flex items-center gap-4 mb-8">
-                <button onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 p-2 -ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Conta</h1>
-            </header>
-
-            <div className="space-y-8">
-                {/* Personal Info Group */}
-                <div>
-                    <h2 className="px-4 pb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Informações Pessoais</h2>
-                    <form onSubmit={handleUpdateName} className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between p-3 sm:p-4">
-                            <label htmlFor="name" className="text-base text-gray-800 dark:text-gray-200">Nome</label>
-                            <div className="flex items-center gap-2 sm:gap-4">
-                                <input
-                                id="name"
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-32 sm:w-48 text-right text-base text-gray-600 dark:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-                                />
-                                <button type="submit" disabled={nameLoading || name === userData.name} className="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full font-semibold text-sm disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 enabled:hover:bg-gray-300 dark:enabled:hover:bg-gray-600 transition-colors">
-                                    {nameLoading ? <Spinner className="text-gray-600 dark:text-gray-300"/> : 'Salvar'}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                {/* Security Group */}
-                <div>
-                    <h2 className="px-4 pb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Segurança</h2>
-                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
-                        <form onSubmit={handleUpdatePassword} className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
-                            <label htmlFor="password" className="text-base text-gray-800 dark:text-gray-200">Nova Senha</label>
-                            <div className="flex items-center gap-2 sm:gap-4">
-                                <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Mínimo 6 caracteres"
-                                className="w-32 sm:w-48 text-right text-base text-gray-600 dark:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0 p-0 placeholder:text-sm"
-                                />
-                                <button type="submit" disabled={passwordLoading || password.length < 6} className="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full font-semibold text-sm disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 dark:disabled:text-gray-500 enabled:hover:bg-gray-300 dark:enabled:hover:bg-gray-600 transition-colors">
-                                {passwordLoading ? <Spinner className="text-gray-600 dark:text-gray-300"/> : 'Mudar'}
-                                </button>
-                            </div>
-                        </form>
-                        
-                        <div className="p-2">
-                             <button onClick={handleSendResetLink} disabled={resetLoading} className="w-full p-2 text-center text-base text-blue-600 dark:text-blue-400 font-medium disabled:opacity-50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                                {resetLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
-                            </button>
-                        </div>
-                    </div>
-                    <p className="px-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
-                       Se você esqueceu sua senha, podemos enviar um link para redefini-la.
-                    </p>
-                </div>
-
-                {/* Danger Zone Group */}
-                <div>
-                    <h2 className="px-4 pb-2 text-xs font-semibold text-red-500 uppercase tracking-wider">Zona de Perigo</h2>
-                    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm">
-                         <div className="p-2">
-                            <button onClick={() => setShowDeleteModal(true)} className="w-full p-2 text-center text-base text-red-600 dark:text-red-500 font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-                                Excluir Conta
-                            </button>
-                        </div>
-                    </div>
-                     <p className="px-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Esta ação é irreversível e todos os seus dados serão perdidos.
-                    </p>
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black font-sans pb-24 animate-fade-in">
+            {/* Navbar Style Header */}
+            <div className="sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800">
+                <div className="px-4 h-14 flex items-center justify-between max-w-md mx-auto">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-blue-500 hover:text-blue-600 font-medium text-[17px] flex items-center gap-1">
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5"><path d="M11.67 1.86998L9.9 0.0999756L0 9.99998L9.9 19.9L11.67 18.13L3.54 9.99998L11.67 1.86998Z" fill="currentColor"/></svg>
+                        Ajustes
+                    </button>
+                    <h1 className="font-semibold text-[17px] text-gray-900 dark:text-white">Minha Conta</h1>
+                    <div className="w-16"></div>
                 </div>
             </div>
-            
-            {showDeleteModal && (
-                <DeleteAccountModal 
-                    userEmail={session.user.email!}
-                    onClose={() => setShowDeleteModal(false)}
-                    onConfirm={handleDeleteAccount}
+
+            <div className="max-w-md mx-auto px-4 pt-8">
+                
+                {/* Profile Header */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="relative group cursor-pointer" onClick={() => handleOpenEdit('Editar Nome', 'name', userData.name, 'text')}>
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center text-4xl font-bold text-gray-500 dark:text-gray-300 shadow-md">
+                            {userData.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="absolute bottom-0 right-0 bg-blue-500 p-1.5 rounded-full border-2 border-[#F2F2F7] dark:border-black text-white shadow-sm">
+                            <CameraIcon className="w-3.5 h-3.5" />
+                        </div>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-4 tracking-tight">{userData.name}</h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{session.user.email}</p>
+                </div>
+
+                {/* Personal Info Group */}
+                <ListGroup title="Informações Pessoais">
+                    <ListItem 
+                        label="Nome" 
+                        value={userData.name} 
+                        onClick={() => handleOpenEdit('Editar Nome', 'name', userData.name, 'text')} 
+                    />
+                    <ListItem 
+                        label="Gênero" 
+                        value={userData.gender} 
+                        onClick={() => handleOpenEdit('Gênero', 'gender', userData.gender, 'select', ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])} 
+                    />
+                    <ListItem 
+                        label="Data de Nascimento" 
+                        value={formatDate(userData.birthDate)} 
+                        onClick={() => handleOpenEdit('Data de Nascimento', 'birth_date', userData.birthDate || '', 'date')} 
+                        isLast
+                    />
+                </ListGroup>
+
+                {/* Body Metrics Group */}
+                <ListGroup title="Medidas Corporais">
+                    <ListItem 
+                        label="Altura" 
+                        value={`${userData.height} cm`} 
+                        onClick={() => handleOpenEdit('Atualizar Altura', 'height', userData.height, 'number', undefined, 'cm')} 
+                    />
+                    <ListItem 
+                        label="Peso Inicial" 
+                        value={`${userData.startWeight} kg`} 
+                        onClick={() => handleOpenEdit('Peso Inicial', 'start_weight', userData.startWeight, 'number', undefined, 'kg')} 
+                        isLast
+                    />
+                </ListGroup>
+
+                <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6 px-6 leading-relaxed">
+                    Esses dados são usados para calcular seu metabolismo basal, IMC e necessidades de água. Mantenha-os atualizados para melhores resultados.
+                </p>
+
+            </div>
+
+            {editModal.isOpen && (
+                <EditAttributeModal
+                    title={editModal.title}
+                    initialValue={editModal.value}
+                    type={editModal.type}
+                    options={editModal.options}
+                    unit={editModal.unit}
+                    onClose={() => setEditModal(prev => ({ ...prev, isOpen: false }))}
+                    onSave={handleSaveAttribute}
                 />
             )}
         </div>

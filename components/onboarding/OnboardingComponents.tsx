@@ -1,13 +1,26 @@
 
 import React from 'react';
 
+// Utility function to scroll to the bottom of the root container
+export const smoothScrollToBottom = () => {
+    setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root) {
+            root.scrollTo({
+                top: root.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, 100);
+};
+
 interface OnboardingScreenProps {
   children: React.ReactNode;
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ children }) => {
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-white font-sans overflow-hidden transition-colors duration-300">
+    <div className="flex flex-col min-h-full h-full bg-[#F2F2F7] dark:bg-black text-gray-900 dark:text-white font-sans overflow-x-hidden transition-colors duration-300">
         <div className="flex flex-col h-full w-full max-w-md mx-auto relative px-6">
             {children}
         </div>

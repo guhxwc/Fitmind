@@ -1,33 +1,46 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
 import { ProFeatureModal } from '../ProFeatureModal';
 import { SubscriptionPage } from '../SubscriptionPage';
-import type { Meal } from '../../types';
+import { SideEffectModal } from './SideEffectModal';
+import type { Meal, SideEffect, SideEffectEntry } from '../../types';
+import { TourGuide } from '../core/TourGuide';
 
-const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number; goal: number; unit: string; color: string; accentColor: string }> = ({ icon, title, value, goal, unit, color, accentColor }) => {
+const DonutCard: React.FC<{ 
+    icon: React.ReactNode; 
+    title: string; 
+    value: number; 
+    goal: number; 
+    unit: string; 
+    color: string; 
+    accentColor: string;
+    children?: React.ReactNode;
+}> = ({ icon, title, value, goal, unit, color, accentColor, children }) => {
   const data = [
     { name: 'completed', value: value, color: color },
-    { name: 'remaining', value: Math.max(0, goal - value), color: 'rgba(229, 229, 234, 0.5)' }, // lighter gray for track 
+    { name: 'remaining', value: Math.max(0, goal - value), color: 'rgba(229, 229, 234, 0.5)' }, 
   ];
   
   return (
-    <div className="bg-ios-card dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft flex flex-col items-center justify-between h-full relative overflow-hidden transition-transform active:scale-[0.98] duration-200">
-      <div className="w-full flex justify-between items-center mb-2">
+    <div className="bg-ios-card dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft flex flex-col justify-between h-full relative overflow-hidden transition-transform active:scale-[0.98] duration-200">
+      {/* Header */}
+      <div className="w-full flex justify-between items-center mb-2 z-10">
           <span className={`text-xs font-bold uppercase tracking-widest ${accentColor} opacity-90`}>{title}</span>
           <div className={`p-1.5 rounded-full bg-opacity-10 ${accentColor.replace('text-', 'bg-')}`}>
              {React.cloneElement(icon as React.ReactElement<any>, { className: `w-3.5 h-3.5 ${accentColor}` })}
           </div>
       </div>
       
-      <div className="relative h-32 w-32 flex-grow flex items-center justify-center">
+      {/* Chart Area - Flexible height to fill space between header and buttons */}
+      <div className="relative flex-grow min-h-[110px] flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie 
@@ -52,6 +65,13 @@ const DonutCard: React.FC<{ icon: React.ReactNode; title: string; value: number;
             <span className="text-[10px] text-gray-400 font-semibold uppercase mt-0.5">de {goal}</span>
         </div>
       </div>
+
+      {/* Buttons / Footer */}
+      {children && (
+          <div className="mt-2 z-10 pt-2">
+              {children}
+          </div>
+      )}
     </div>
   );
 };
@@ -60,7 +80,7 @@ const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNod
     <button 
       type="button"
       onClick={!disabled ? onClick : undefined} 
-      className={`flex-1 h-11 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl flex items-center justify-center text-gray-900 dark:text-white transition-all active:scale-95 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
+      className={`flex-1 h-10 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl flex items-center justify-center text-gray-900 dark:text-white transition-all active:scale-95 shadow-sm ${disabled ? 'opacity-30 cursor-not-allowed' : '' }`}
       disabled={disabled}
     >
       {children}
@@ -138,7 +158,7 @@ const WeightCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-ios-card dark:bg-ios-dark-card p-6 rounded-[24px] shadow-soft flex flex-col items-center text-center">
+        <div id="tour-weight-card" className="bg-ios-card dark:bg-ios-dark-card p-6 rounded-[24px] shadow-soft flex flex-col items-center text-center">
              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 w-full text-left">Controle de Peso</h3>
              <div className="flex items-center justify-between w-full mb-6">
                  <button onClick={() => handleWeightUpdate(-0.1)} className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-90 transition-transform">
@@ -165,11 +185,59 @@ const WeightCard: React.FC = () => {
     )
 }
 
+const QuickActionRow: React.FC<{ 
+    icon: React.ReactNode; 
+    label: string; 
+    onClick: () => void;
+    colorClass?: string;
+    id?: string;
+}> = ({ icon, label, onClick, colorClass = "text-black dark:text-white", id }) => (
+    <button 
+        id={id}
+        onClick={onClick}
+        className="w-full bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl flex items-center justify-between shadow-sm border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-transform"
+    >
+        <div className="flex items-center gap-4">
+            <div className={colorClass}>
+                {icon}
+            </div>
+            <span className="text-base font-bold text-gray-900 dark:text-white">{label}</span>
+        </div>
+        <ChevronRightIcon className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+    </button>
+);
+
+const DailyRecordItem: React.FC<{
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    time: string;
+    bgClass: string;
+}> = ({ icon, title, subtitle, time, bgClass }) => (
+    <div className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${bgClass}`}>
+            {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+                <h4 className="text-base font-bold text-gray-900 dark:text-white leading-tight">{title}</h4>
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2">{time}</span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium truncate mt-0.5">
+                {subtitle}
+            </p>
+        </div>
+    </div>
+);
+
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro } = useAppContext();
+  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory } = useAppContext();
+  const navigate = useNavigate();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
+  const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
   
   // Pro Features Logic
   const [showProModal, setShowProModal] = useState(false);
@@ -218,6 +286,24 @@ export const SummaryTab: React.FC = () => {
     setIsMealModalOpen(false);
   };
 
+  const handleSaveSideEffects = async (entry: { effects: SideEffect[]; notes?: string; }) => {
+    if (!userData) return;
+    const dateToUse = new Date().toISOString().split('T')[0];
+    const existingEntry = sideEffects.find(se => se.date === dateToUse);
+    const payload = { id: existingEntry?.id, user_id: userData.id, date: dateToUse, effects: entry.effects, notes: entry.notes };
+    
+    const { data, error } = await supabase.from('side_effects').upsert(payload).select().single();
+    if (data) {
+        setSideEffects(prev => {
+            const idx = prev.findIndex(item => item.id === data.id);
+            if (idx >= 0) { const newArr = [...prev]; newArr[idx] = data; return newArr; }
+            return [data, ...prev];
+        });
+        setIsSideEffectModalOpen(false);
+    }
+    if (error) console.error("Error saving side effects:", error);
+  };
+
   const getMealStats = (startTime: number, endTime: number) => {
       const filteredMeals = meals.filter(m => {
           const hour = parseInt(m.time.split(':')[0], 10);
@@ -237,8 +323,60 @@ export const SummaryTab: React.FC = () => {
   const dinnerGoal = Math.round(dailyGoal * 0.30);
   const snackGoal = Math.round(dailyGoal * 0.15);
 
+  // Aggregate Today's History
+  const todayStr = new Date().toISOString().split('T')[0];
+  const formatTime = (dateStr: string) => {
+      if(dateStr.length === 5) return dateStr; // HH:MM
+      return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+  const formatDateForDisplay = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  const dailyRecords = useMemo(() => {
+      const recs = [
+          ...applicationHistory.filter(a => a.date.startsWith(todayStr)).map(a => ({
+              id: `app-${a.id}`,
+              type: 'application',
+              title: `${a.medication}®`,
+              subtitle: `${a.dose}`,
+              time: formatDateForDisplay(a.date),
+              timestamp: new Date(a.date).getTime()
+          })),
+          ...weightHistory.filter(w => w.date.startsWith(todayStr)).map(w => ({
+              id: `weight-${w.id}`,
+              type: 'weight',
+              title: 'Registro de Peso',
+              subtitle: `${w.weight.toFixed(1)} kg`,
+              time: formatDateForDisplay(w.date),
+              timestamp: new Date(w.date).getTime()
+          })),
+          ...sideEffects.filter(s => s.date === todayStr).map(s => ({
+              id: `effect-${s.id}`,
+              type: 'effect',
+              title: 'Efeitos Colaterais',
+              subtitle: s.effects.map(e => e.name).join(', '),
+              time: 'Hoje', // Usually side effects are date-based only in this app structure
+              timestamp: new Date().getTime() // Place at 'now'
+          })),
+          ...workoutHistory.filter(w => w.date.startsWith(todayStr)).map(w => ({
+              id: `workout-${w.id}`,
+              type: 'workout',
+              title: 'Treino Realizado',
+              subtitle: `Intensidade: ${w.rating}`,
+              time: formatDateForDisplay(w.date),
+              timestamp: new Date(w.date).getTime()
+          }))
+      ];
+      return recs.sort((a, b) => b.timestamp - a.timestamp);
+  }, [applicationHistory, weightHistory, sideEffects, workoutHistory, todayStr]);
+
   return (
     <div className="px-5 space-y-6 animate-fade-in relative pb-24">
+      {/* Tour Guide Logic Included Here */}
+      <TourGuide />
+
       {/* Header */}
       <header className="flex justify-between items-end pt-4">
         <div>
@@ -246,7 +384,9 @@ export const SummaryTab: React.FC = () => {
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
         </div>
         <div className="flex items-center gap-3">
-            <StreakBadge />
+            <div id="tour-streak">
+                <StreakBadge />
+            </div>
             <Link to="/progress">
                 <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-600 dark:text-gray-300 ring-2 ring-white dark:ring-black shadow-md">
                     {userData.name.charAt(0)}
@@ -257,8 +397,8 @@ export const SummaryTab: React.FC = () => {
 
       {/* Bento Grid */}
       <div className="grid grid-cols-2 gap-4">
-          {/* Medication Card - Full Width - REDESIGNED */}
-          <Link to="/applications" className="col-span-2 bg-white dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft border border-gray-100 dark:border-white/5 flex items-center justify-between relative overflow-hidden group active:scale-[0.99] transition-all">
+          {/* Medication Card */}
+          <Link to="/applications" id="tour-medication" className="col-span-2 bg-white dark:bg-ios-dark-card p-5 rounded-[24px] shadow-soft border border-gray-100 dark:border-white/5 flex items-center justify-between relative overflow-hidden group active:scale-[0.99] transition-all">
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
                     <span className="relative flex h-2 w-2">
@@ -279,10 +419,11 @@ export const SummaryTab: React.FC = () => {
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
           </Link>
 
-          {/* Protein Card */}
-          <div className="flex flex-col gap-3">
-             <div className="flex-grow">
-                <DonutCard 
+          {/* Nutrition Area - Wrapper for tour */}
+          <div id="tour-nutrition" className="col-span-2 grid grid-cols-2 gap-4 h-full">
+              {/* Protein Card */}
+              <div className="h-full">
+                 <DonutCard 
                     icon={<FlameIcon />} 
                     title="Proteína" 
                     value={totalProtein} 
@@ -290,22 +431,21 @@ export const SummaryTab: React.FC = () => {
                     unit="g" 
                     color="#FF9500" 
                     accentColor="text-orange-500"
-                />
-             </div>
-             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
-                  <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>
-                      <MinusIcon className="w-5 h-5 flex-shrink-0" />
-                  </MiniControlButton>
-                  <MiniControlButton onClick={handleAddProtein}>
-                      <PlusIcon className="w-5 h-5 flex-shrink-0" />
-                  </MiniControlButton>
-             </div>
-          </div>
-        
-          {/* Water Card */}
-          <div className="flex flex-col gap-3">
-             <div className="flex-grow">
-                <DonutCard 
+                 >
+                    <div className="flex gap-2">
+                        <MiniControlButton onClick={handleRemoveProtein} disabled={quickAddProtein <= 0}>
+                            <MinusIcon className="w-5 h-5" />
+                        </MiniControlButton>
+                        <MiniControlButton onClick={handleAddProtein}>
+                            <PlusIcon className="w-5 h-5" />
+                        </MiniControlButton>
+                    </div>
+                 </DonutCard>
+              </div>
+            
+              {/* Water Card */}
+              <div className="h-full">
+                 <DonutCard 
                     icon={<WaterDropIcon />} 
                     title="Hidratação" 
                     value={currentWater} 
@@ -313,16 +453,17 @@ export const SummaryTab: React.FC = () => {
                     unit="L" 
                     color="#007AFF" 
                     accentColor="text-blue-500"
-                />
-             </div>
-             <div className="flex justify-between gap-2 bg-ios-card dark:bg-ios-dark-card p-2 rounded-[20px] shadow-soft">
-                  <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} disabled={currentWater <= 0}>
-                      <MinusIcon className="w-5 h-5 flex-shrink-0" />
-                  </MiniControlButton>
-                  <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>
-                      <PlusIcon className="w-5 h-5 flex-shrink-0" />
-                  </MiniControlButton>
-             </div>
+                 >
+                    <div className="flex gap-2">
+                        <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} disabled={currentWater <= 0}>
+                            <MinusIcon className="w-5 h-5" />
+                        </MiniControlButton>
+                        <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>
+                            <PlusIcon className="w-5 h-5" />
+                        </MiniControlButton>
+                    </div>
+                 </DonutCard>
+              </div>
           </div>
 
           {/* Weight Control */}
@@ -331,9 +472,40 @@ export const SummaryTab: React.FC = () => {
           </div>
       </div>
       
-      {/* Meals List - REDESIGNED */}
-      <section>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 px-1">Refeições</h2>
+      {/* AI Smart Action Button */}
+      <button
+        id="tour-smartlog"
+        onClick={handleSmartLogClick}
+        className="w-full bg-white dark:bg-gray-900 p-4 rounded-[24px] shadow-soft border border-blue-100 dark:border-blue-900/30 flex items-center justify-between group active:scale-[0.99] transition-all relative overflow-hidden"
+      >
+        {!userData.isPro && (
+            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-xl font-bold z-10 flex items-center gap-1">
+                <LockIcon className="w-2.5 h-2.5" /> PRO
+            </div>
+        )}
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center shadow-sm">
+                <SparklesIcon className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+            </div>
+            <div className="text-left">
+                <h3 className="text-gray-900 dark:text-white font-bold text-base leading-tight">Registro Inteligente</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-0.5">Descreva o que comeu para a IA</p>
+            </div>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-full group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
+            <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+        </div>
+      </button>
+
+      {/* Meals Section (Renamed from Daily History) */}
+      <section className="pt-2">
+          <div className="flex items-center justify-between mb-4 px-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <UtensilsIcon className="w-5 h-5 text-gray-400" />
+                  Refeições
+              </h3>
+          </div>
+          
           <div className="space-y-3">
               <MealCard 
                 icon={<CoffeeIcon />} 
@@ -374,29 +546,79 @@ export const SummaryTab: React.FC = () => {
           </div>
       </section>
 
-      {/* AI Smart Action Button */}
-      <button
-        onClick={handleSmartLogClick}
-        className="w-full bg-white dark:bg-gray-900 p-4 rounded-[24px] shadow-soft border border-blue-100 dark:border-blue-900/30 flex items-center justify-between group active:scale-[0.99] transition-all relative overflow-hidden"
-      >
-        {!userData.isPro && (
-            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-xl font-bold z-10 flex items-center gap-1">
-                <LockIcon className="w-2.5 h-2.5" /> PRO
-            </div>
-        )}
-        <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center shadow-sm">
-                <SparklesIcon className="w-6 h-6 text-blue-500 dark:text-blue-400" />
-            </div>
-            <div className="text-left">
-                <h3 className="text-gray-900 dark:text-white font-bold text-base leading-tight">Registro Inteligente</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-0.5">Descreva o que comeu para a IA</p>
-            </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-full group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors">
-            <ChevronRightIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-        </div>
-      </button>
+      {/* Quick Actions List */}
+      <div className="space-y-3 pt-4">
+          <QuickActionRow 
+              icon={<UtensilsIcon className="w-5 h-5" />} 
+              label="Registrar Refeição" 
+              onClick={() => setIsMealModalOpen(true)}
+              colorClass="text-black dark:text-white"
+          />
+          <QuickActionRow 
+              icon={<FlameIcon className="w-5 h-5" />} 
+              label="Registrar Atividade" 
+              onClick={() => navigate('/workouts')}
+              colorClass="text-black dark:text-white"
+          />
+          <QuickActionRow 
+              id="tour-side-effects-btn"
+              icon={<WavesIcon className="w-5 h-5" />} 
+              label="Registrar Efeito Colateral" 
+              onClick={() => setIsSideEffectModalOpen(true)}
+              colorClass="text-black dark:text-white" 
+          />
+          <QuickActionRow 
+              icon={<SettingsIcon className="w-5 h-5" />} 
+              label="Configurações de Metas" 
+              onClick={() => navigate('/settings')}
+              colorClass="text-black dark:text-white"
+          />
+      </div>
+
+      {/* NEW: Registro do Dia Section (Bottom of Page) */}
+      <section id="tour-daily-history" className="bg-white dark:bg-ios-dark-card rounded-[24px] p-5 shadow-soft mt-6 mb-4 border border-gray-100 dark:border-white/5 transition-all duration-300">
+          <div className={`flex justify-between items-center ${showHistory ? 'mb-4' : ''}`}>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <ListIcon className="w-5 h-5" />
+                  Registro do dia ({dailyRecords.length})
+              </h3>
+              <button 
+                onClick={() => setShowHistory(!showHistory)} 
+                className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                  {showHistory ? 'Ver menos' : 'Ver mais'}
+              </button>
+          </div>
+          
+          {showHistory && (
+              <div className="space-y-3 animate-fade-in">
+                  {dailyRecords.length > 0 ? (
+                      dailyRecords.map(record => (
+                          <DailyRecordItem 
+                              key={record.id}
+                              icon={
+                                  record.type === 'application' ? <SyringeIcon className="w-5 h-5"/> :
+                                  record.type === 'weight' ? <ScaleIcon className="w-5 h-5"/> :
+                                  record.type === 'workout' ? <DumbbellIcon className="w-5 h-5"/> :
+                                  <WavesIcon className="w-5 h-5"/>
+                              }
+                              title={record.title}
+                              subtitle={record.subtitle}
+                              time={record.time}
+                              bgClass={
+                                  record.type === 'application' ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' :
+                                  record.type === 'weight' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' :
+                                  record.type === 'workout' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' :
+                                  'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                              }
+                          />
+                      ))
+                  ) : (
+                      <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-4">Nenhum registro extra hoje.</p>
+                  )}
+              </div>
+          )}
+      </section>
 
       {isMealModalOpen && (
         <ManualMealModal
@@ -408,6 +630,15 @@ export const SummaryTab: React.FC = () => {
 
       {isSmartLogOpen && (
           <SmartLogModal onClose={() => setIsSmartLogOpen(false)} />
+      )}
+      
+      {isSideEffectModalOpen && (
+          <SideEffectModal 
+            date={new Date()} 
+            initialEntry={sideEffects.find(se => se.date === new Date().toISOString().split('T')[0])}
+            onClose={() => setIsSideEffectModalOpen(false)} 
+            onSave={handleSaveSideEffects} 
+          />
       )}
       
       {showProModal && (

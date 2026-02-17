@@ -46,14 +46,13 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
         Você é um Chef de Cozinha especializado em nutrição para usuários de medicamentos GLP-1 (como Ozempic/Mounjaro).
         O usuário tem estes ingredientes: "${ingredients}".
         
-        Crie UMA receita deliciosa, saudável e rica em proteínas usando principalmente esses ingredientes (você pode assumir que eles têm básicos como azeite, sal, alho).
+        Crie UMA receita deliciosa, saudável e rica em proteínas usando principalmente esses ingredientes.
         A receita deve ser fácil de digerir.
         Retorne a resposta estritamente em JSON.
-        Para a imagem, não retorne nada, eu usarei uma imagem genérica.
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -62,16 +61,14 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
       });
 
       const recipe = JSON.parse(response.text) as Recipe;
-      
-      // Adicionar uma imagem genérica baseada na categoria se não vier (o prompt diz pra não vir, mas garantindo)
-      recipe.image = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'; // Placeholder padrão bonito
+      recipe.image = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop';
       
       onSelectRecipe(recipe);
-      onClose(); // O componente pai vai abrir o modal de detalhes da receita
+      onClose();
 
     } catch (e) {
       console.error("Error generating recipe:", e);
-      setError("Não consegui criar uma receita com esses ingredientes. Tente ser mais específico ou adicione mais itens.");
+      setError("Não consegui criar uma receita com esses ingredientes. Tente ser mais específico.");
     } finally {
       setIsGenerating(false);
     }

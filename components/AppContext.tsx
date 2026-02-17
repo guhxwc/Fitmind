@@ -111,6 +111,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       name: profile.name || DEFAULT_USER_DATA.name,
       gender: profile.gender || DEFAULT_USER_DATA.gender,
       age: profile.age || DEFAULT_USER_DATA.age,
+      birthDate: profile.birth_date, // Added mapping
       height: profile.height || DEFAULT_USER_DATA.height,
       weight: profile.weight || DEFAULT_USER_DATA.weight,
       targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
@@ -124,6 +125,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       mainSideEffect: profile.main_side_effect || undefined,
       medication: profile.medication || DEFAULT_USER_DATA.medication,
       medicationReminder: profile.medication_reminder || DEFAULT_USER_DATA.medicationReminder,
+      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,

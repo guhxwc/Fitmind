@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OnboardingScreen, OnboardingHeader, OnboardingFooter } from './OnboardingComponents';
 
@@ -7,9 +8,10 @@ interface StepNameProps {
   onSelect: (name: string) => void;
   value: string;
   totalSteps: number;
+  step: number;
 }
 
-export const StepName: React.FC<StepNameProps> = ({ onNext, onBack, onSelect, value, totalSteps }) => {
+export const StepName: React.FC<StepNameProps> = ({ onNext, onBack, onSelect, value, totalSteps, step }) => {
   const [name, setName] = useState(value);
 
   const handleContinue = () => {
@@ -23,7 +25,7 @@ export const StepName: React.FC<StepNameProps> = ({ onNext, onBack, onSelect, va
         title="Como podemos te chamar?"
         subtitle="Seu nome nos ajuda a personalizar sua experiência."
         onBack={onBack}
-        step={1}
+        step={step}
         totalSteps={totalSteps}
       />
       <div className="flex-grow flex flex-col items-center justify-center">

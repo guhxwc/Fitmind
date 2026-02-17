@@ -25,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { priceId, email, userId } = await req.json()
+    const { priceId, email, userId, hasTrial } = await req.json()
 
     // 1. Criar ou recuperar cliente Stripe
     const customers = await stripe.customers.list({ email: email, limit: 1 });
@@ -36,23 +36,29 @@ serve(async (req) => {
         customerId = customer.id;
     }
 
-    // 2. Criar Assinatura (Subscription)
-    // O parametro trial_period_days força o período de teste de 7 dias
-    const subscription = await stripe.subscriptions.create({
+    // Configuração da assinatura
+    const subscriptionConfig: any = {
         customer: customerId,
         items: [{ price: priceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
-        trial_period_days: 7, 
-    });
+    };
+
+    // 2. Aplicar Trial apenas se solicitado (hasTrial é true ou undefined - default)
+    // Se hasTrial for explicitamente false, removemos o trial_period_days para cobrança imediata.
+    if (hasTrial !== false) {
+        subscriptionConfig.trial_period_days = 7;
+    }
+
+    const subscription = await stripe.subscriptions.create(subscriptionConfig);
 
     // 3. Determinar o Client Secret para o Frontend
     let clientSecret = "";
     let type = "payment";
 
-    // Em assinaturas com Trial, geralmente o Stripe gera um SetupIntent (validação de cartão sem cobrança)
-    // ou um PaymentIntent de valor zero se configurado.
+    // Em assinaturas com Trial, geralmente o Stripe gera um SetupIntent (validação de cartão sem cobrança).
+    // Em cobrança imediata, gera um PaymentIntent dentro do latest_invoice.
     if (subscription.pending_setup_intent) {
         // @ts-ignore
         clientSecret = subscription.pending_setup_intent.client_secret;

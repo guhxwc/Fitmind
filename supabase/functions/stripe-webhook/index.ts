@@ -26,8 +26,8 @@ const cryptoProvider = Stripe.createSubtleCryptoProvider();
 serve(async (req) => {
   const signature = req.headers.get('Stripe-Signature')
   const body = await req.text()
-  // Esta variável precisa ser configurada no painel do Supabase com o segredo do webhook (whsec_...)
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SIGNING_SECRET')
+  // Alterado de STRIPE_WEBHOOK_SIGNING_SECRET para STRIPE_WEBHOOK_SECRET conforme solicitação do usuário
+  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
   let event
   try {
@@ -87,12 +87,10 @@ serve(async (req) => {
         }
     }
     
-    // Tratamento de Pagamento com Falha (Opcional: lógica extra como enviar email)
+    // Tratamento de Pagamento com Falha
     if (event.type === 'invoice.payment_failed') {
         const invoice = event.data.object;
         const customerId = invoice.customer;
-        // A lógica de subscription.updated já deve ter mudado o status para past_due,
-        // mas aqui você poderia adicionar lógicas específicas.
         console.log(`Payment failed for customer ${customerId}`)
     }
 

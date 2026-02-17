@@ -10,11 +10,23 @@ export type SideEffectIntensity = 'Leve' | 'Moderado' | 'Severo';
 
 export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled';
 
+export interface NotificationSchedule {
+    enabled: boolean;
+    medicationTime: string;
+    breakfastTime: string;
+    lunchTime: string;
+    snackTime: string;
+    dinnerTime: string;
+    hydrationInterval: number; // in hours, 0 to disable
+    checkinTime: string; // for wellness/side effects
+}
+
 export interface UserData {
   id: string;
   name: string;
   gender: Gender;
   age: number;
+  birthDate?: string; 
   height: number;
   weight: number;
   startWeight: number;
@@ -38,15 +50,27 @@ export interface UserData {
     name: MedicationName;
     dose: string;
     nextApplication: Weekday;
+    defaultSite?: string; 
   };
+  
+  // New comprehensive notification settings
+  notifications: NotificationSchedule;
+
+  // Legacy field support (optional, can be deprecated)
   medicationReminder?: {
     enabled: boolean;
     time: string;
   };
+
   goals: {
     water: number;
     protein: number;
     calories: number;
+    fiber?: number; 
+    carbs?: number; 
+    fats?: number; 
+    steps?: number; 
+    exerciseMinutes?: number; 
   };
   streak: number;
   lastActivityDate: string | null;
@@ -57,7 +81,7 @@ export interface UserData {
 export interface Lead {
   id: string;
   email: string;
-  profile_type: string; // 'Iniciante Ansioso', 'Veterano Estagnado', etc.
+  profile_type: string; 
   created_at: string;
   updated_at: string;
 }

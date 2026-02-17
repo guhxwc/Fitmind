@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton, smoothScrollToBottom } from './OnboardingComponents';
 
 interface StepFrequencyProps {
   onNext: () => void;
@@ -28,7 +28,7 @@ export const StepFrequency: React.FC<StepFrequencyProps> = ({ onNext, onBack, on
           <OptionButton 
             key={opt}
             isSelected={value === opt} 
-            onClick={() => onSelect(opt)}
+            onClick={() => { onSelect(opt); smoothScrollToBottom(); }}
           >
             {opt}
           </OptionButton>

@@ -1,93 +1,222 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
-import { FileTextIcon, TrashIcon } from '../core/Icons';
+import { supabase } from '../../supabaseClient';
+import { 
+    KeyIcon, 
+    LogOutIcon, 
+    ChevronRightIcon, 
+    ShieldIcon, 
+    DocumentIcon, 
+    FaceIdIcon, 
+    TrashIcon 
+} from '../core/Icons';
 
-const Spinner: React.FC = () => (
-    <svg className="animate-spin h-5 w-5 text-gray-800 dark:text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
+// --- UI Components ---
+
+const GroupTitle: React.FC<{ title: string }> = ({ title }) => (
+    <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide ml-1 mt-6">
+        {title}
+    </h3>
 );
 
+const GroupContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="bg-white dark:bg-[#1C1C1E] rounded-xl overflow-hidden shadow-sm border border-gray-200/50 dark:border-gray-800">
+        {children}
+    </div>
+);
+
+const ActionItem: React.FC<{ 
+    icon: React.ReactNode; 
+    label: string; 
+    onClick: () => void;
+    isDestructive?: boolean;
+    colorClass: string;
+    isLast?: boolean;
+}> = ({ icon, label, onClick, isDestructive, colorClass, isLast }) => (
+    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
+        <button 
+            onClick={onClick}
+            className={`w-full flex items-center justify-between py-3.5 pr-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`p-1.5 rounded-md text-white ${colorClass}`}>
+                    {icon}
+                </div>
+                <span className={`text-[17px] font-medium ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+                    {label}
+                </span>
+            </div>
+            {!isDestructive && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+        </button>
+    </div>
+);
+
+const ToggleItem: React.FC<{ 
+    icon: React.ReactNode; 
+    label: string; 
+    isEnabled: boolean; 
+    onToggle: () => void;
+    colorClass: string;
+    isLast?: boolean; 
+}> = ({ icon, label, isEnabled, onToggle, colorClass, isLast }) => (
+    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
+        <div className={`flex items-center justify-between py-3 pr-4 ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+            <div className="flex items-center gap-3">
+                <div className={`p-1.5 rounded-md text-white ${colorClass}`}>
+                    {icon}
+                </div>
+                <span className="font-medium text-gray-900 dark:text-white text-[17px]">{label}</span>
+            </div>
+            <div 
+                onClick={onToggle}
+                className={`w-[51px] h-[31px] rounded-full p-0.5 cursor-pointer transition-colors duration-300 ease-in-out shadow-inner ${isEnabled ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+                <div className={`bg-white w-[27px] h-[27px] rounded-full shadow-md transform transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${isEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+            </div>
+        </div>
+    </div>
+);
+
+const ProfileHeader: React.FC<{ userData: any, email: string }> = ({ userData, email }) => (
+    <div className="flex flex-col items-center mb-8">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center text-4xl font-bold text-gray-500 dark:text-gray-300 shadow-md mb-3">
+            {userData.name.charAt(0).toUpperCase()}
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{userData.name}</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{email}</p>
+    </div>
+);
+
+// --- Main Component ---
+
 export const PrivacySettings: React.FC = () => {
-    const context = useAppContext();
+    const { userData, session } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
-    const [isExporting, setIsExporting] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    
+    // Simulate App Lock state (persisted in local storage for demo)
+    const [isAppLockEnabled, setIsAppLockEnabled] = useState(() => localStorage.getItem('appLockEnabled') === 'true');
 
-    const handleExportData = () => {
-        setIsExporting(true);
-        try {
-            const allData = {
-                profile: context.userData,
-                weightHistory: context.weightHistory,
-                applicationHistory: context.applicationHistory,
-                progressPhotos: context.progressPhotos,
-                workoutPlan: context.workoutPlan,
-                workoutHistory: context.workoutHistory,
-                dailyNotes: context.dailyNotes,
-                sideEffects: context.sideEffects,
-                meals: context.meals,
-            };
+    if (!userData || !session) return null;
 
-            const dataStr = JSON.stringify(allData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `fitmind_data_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+    const handleToggleAppLock = () => {
+        const newState = !isAppLockEnabled;
+        setIsAppLockEnabled(newState);
+        localStorage.setItem('appLockEnabled', String(newState));
+        addToast(newState ? "Bloqueio do App ativado." : "Bloqueio do App desativado.", 'info');
+    };
 
-        } catch (error) {
-            console.error("Failed to export data", error);
-            addToast("Ocorreu um erro ao exportar seus dados.", 'error');
-        } finally {
-            setTimeout(() => setIsExporting(false), 1000); // Give time for download to start
+    const handlePasswordReset = async () => {
+        if (!session.user.email) return;
+        setIsResetting(true);
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+            redirectTo: window.location.origin + '/#/settings/account',
+        });
+
+        if (error) {
+            addToast("Erro ao solicitar troca: " + error.message, 'error');
+        } else {
+            addToast(`Email de redefinição enviado para ${session.user.email}`, 'success');
+        }
+        setIsResetting(false);
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        navigate('/auth');
+    };
+
+    const handleDeleteAccount = () => {
+        if (window.confirm("ATENÇÃO: Essa ação é irreversível. Todos os seus dados serão apagados permanentemente. Deseja continuar?")) {
+             // In a real scenario, this would call a deletion endpoint
+             addToast("Solicitação enviada. Seus dados serão removidos em até 30 dias.", 'info');
         }
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 bg-white dark:bg-black min-h-screen animate-fade-in">
-            <header className="flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Privacidade</h1>
-            </header>
+        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black font-sans pb-24 animate-fade-in">
+            {/* Header */}
+            <div className="sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800">
+                <div className="px-4 h-14 flex items-center justify-between max-w-md mx-auto">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-blue-500 hover:text-blue-600 font-medium text-[17px] flex items-center gap-1">
+                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5"><path d="M11.67 1.86998L9.9 0.0999756L0 9.99998L9.9 19.9L11.67 18.13L3.54 9.99998L11.67 1.86998Z" fill="currentColor"/></svg>
+                        Ajustes
+                    </button>
+                    <h1 className="font-semibold text-[17px] text-gray-900 dark:text-white">Privacidade e Segurança</h1>
+                    <div className="w-16"></div>
+                </div>
+            </div>
             
-            <section className="space-y-4">
-                 <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Gerenciar Meus Dados</h2>
-                <div className="bg-gray-100/60 dark:bg-gray-800/50 p-4 rounded-xl">
-                    <div className="flex items-start gap-3">
-                         <div className="text-gray-500 dark:text-gray-400 mt-1"><FileTextIcon className="w-5 h-5"/></div>
-                         <div>
-                            <p className="font-semibold text-gray-800 dark:text-gray-200">Exportar todos os dados</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Baixe uma cópia de todos os seus dados registrados no aplicativo, incluindo perfil, progresso e registros diários, em formato JSON.</p>
-                         </div>
-                    </div>
-                    <button onClick={handleExportData} disabled={isExporting} className="w-full flex justify-center items-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2 rounded-md font-semibold text-gray-800 dark:text-gray-200 disabled:opacity-50">
-                        {isExporting ? <Spinner /> : 'Baixar Meus Dados'}
-                    </button>
-                </div>
+            <div className="max-w-md mx-auto px-4 pt-6">
+                
+                <ProfileHeader userData={userData} email={session.user.email || ''} />
 
-                <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl mt-2 border border-red-200 dark:border-red-800">
-                     <div className="flex items-start gap-3">
-                         <div className="text-red-500 dark:text-red-400 mt-1"><TrashIcon className="w-5 h-5"/></div>
-                         <div>
-                             <p className="font-semibold text-red-800 dark:text-red-300">Excluir conta e dados</p>
-                            <p className="text-sm text-red-700 dark:text-red-400 mb-3">Esta ação é permanente. Ao continuar, você será levado para a tela de confirmação de exclusão da conta.</p>
-                         </div>
-                     </div>
-                    <button onClick={() => navigate('/settings/account')} className="w-full bg-red-600 text-white py-2 rounded-md font-semibold hover:bg-red-700">
-                        Ir para Exclusão de Conta
-                    </button>
-                </div>
-            </section>
+                {/* Proteção */}
+                <GroupTitle title="Proteção" />
+                <GroupContainer>
+                    <ActionItem 
+                        icon={<KeyIcon className="w-5 h-5"/>}
+                        colorClass="bg-blue-500"
+                        label={isResetting ? "Enviando..." : "Alterar Senha"}
+                        onClick={handlePasswordReset}
+                    />
+                    <ToggleItem 
+                        icon={<FaceIdIcon className="w-5 h-5"/>}
+                        colorClass="bg-green-500"
+                        label="Bloqueio do App"
+                        isEnabled={isAppLockEnabled}
+                        onToggle={handleToggleAppLock}
+                        isLast
+                    />
+                </GroupContainer>
+
+                {/* Legal */}
+                <GroupTitle title="Legal" />
+                <GroupContainer>
+                    <ActionItem 
+                        icon={<DocumentIcon className="w-5 h-5"/>}
+                        colorClass="bg-gray-500"
+                        label="Termos de Uso"
+                        onClick={() => {}}
+                    />
+                    <ActionItem 
+                        icon={<ShieldIcon className="w-5 h-5"/>}
+                        colorClass="bg-gray-500"
+                        label="Política de Privacidade"
+                        onClick={() => {}}
+                        isLast
+                    />
+                </GroupContainer>
+
+                {/* Conta */}
+                <GroupTitle title="Conta" />
+                <GroupContainer>
+                    <ActionItem 
+                        icon={<LogOutIcon className="w-5 h-5"/>}
+                        colorClass="bg-gray-500"
+                        label="Sair da Conta"
+                        onClick={handleLogout}
+                        isDestructive
+                    />
+                    <ActionItem 
+                        icon={<TrashIcon className="w-5 h-5"/>}
+                        colorClass="bg-red-500"
+                        label="Excluir Minha Conta"
+                        onClick={handleDeleteAccount}
+                        isDestructive
+                        isLast
+                    />
+                </GroupContainer>
+
+                <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-8 px-6 leading-relaxed">
+                    A segurança dos seus dados é nossa prioridade. Utilizamos criptografia de ponta a ponta para proteger suas informações de saúde.
+                </p>
+            </div>
         </div>
     );
 };

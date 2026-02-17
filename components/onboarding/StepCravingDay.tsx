@@ -1,7 +1,7 @@
 
 import React from 'react';
 import type { Weekday } from '../../types';
-import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton } from './OnboardingComponents';
+import { OnboardingScreen, OnboardingHeader, OnboardingFooter, OptionButton, smoothScrollToBottom } from './OnboardingComponents';
 import { WEEKDAYS } from '../../constants';
 
 interface StepCravingDayProps {
@@ -26,7 +26,7 @@ export const StepCravingDay: React.FC<StepCravingDayProps> = ({ onNext, onBack, 
       />
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {weekdays.map((day) => (
-          <OptionButton key={day} onClick={() => onSelect(day)} isSelected={value === day}>
+          <OptionButton key={day} onClick={() => { onSelect(day); smoothScrollToBottom(); }} isSelected={value === day}>
             {day}
           </OptionButton>
         ))}

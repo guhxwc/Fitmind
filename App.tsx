@@ -9,6 +9,7 @@ import { Auth } from './components/Auth';
 import type { UserData } from './types';
 import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
 import { DEFAULT_USER_DATA } from './constants';
+import { InitialSettings } from './components/tabs/InitialSettings';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -30,6 +31,7 @@ const App: React.FC = () => {
       name: profile.name || DEFAULT_USER_DATA.name,
       gender: profile.gender || DEFAULT_USER_DATA.gender,
       age: profile.age || DEFAULT_USER_DATA.age,
+      birthDate: profile.birth_date,
       height: profile.height || DEFAULT_USER_DATA.height,
       weight: profile.weight || DEFAULT_USER_DATA.weight,
       targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
@@ -49,6 +51,7 @@ const App: React.FC = () => {
       monthlyInvestment: profile.monthly_investment,
       medication: profile.medication || DEFAULT_USER_DATA.medication,
       medicationReminder: profile.medication_reminder,
+      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date,
@@ -131,6 +134,7 @@ const App: React.FC = () => {
       one_thing_guaranteed: data.oneThingGuaranteed,
       dream_outcome: data.dreamOutcome,
       monthly_investment: data.monthlyInvestment,
+      notifications: data.notifications || DEFAULT_USER_DATA.notifications,
       
       goals: {
           water: finalWater,
@@ -168,6 +172,11 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/auth" element={session ? <Navigate to="/" /> : <Auth />} />
         
+        <Route 
+          path="/settings/initial-setup" 
+          element={!session ? <Navigate to="/auth" /> : <InitialSettings />} 
+        />
+
         {/* New Logic for Non-Pro Return Flow */}
         <Route 
           path="/onboarding"

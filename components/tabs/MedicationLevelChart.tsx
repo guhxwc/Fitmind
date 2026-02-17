@@ -1,8 +1,17 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
 import type { ApplicationEntry, MedicationName } from '../../types';
 import { useAppContext } from '../AppContext';
+import Portal from '../core/Portal';
+import { SyringeIcon, XMarkIcon } from '../core/Icons';
+
+// --- Ícone de Informação Local ---
+const InfoIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+    </svg>
+);
 
 interface MedicationLevelChartProps {
   history: ApplicationEntry[];
@@ -82,8 +91,76 @@ const generateData = (history: ApplicationEntry[], medName: string) => {
     return data;
 };
 
+// --- Modal de Informações ---
+const MedicationInfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+    <Portal>
+        <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-sm max-h-[85vh] rounded-[32px] p-0 shadow-2xl relative overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                
+                {/* Header Fixo */}
+                <div className="p-6 pb-2 flex-shrink-0">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2">
+                            <SyringeIcon className="w-6 h-6" />
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Estimativas de Nível</h2>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conteúdo Rolável */}
+                <div className="overflow-y-auto px-6 space-y-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed custom-scrollbar pb-6">
+                    <p>
+                        Os níveis de medicação fornecidos neste aplicativo são estimativas calculadas usando princípios farmacocinéticos estabelecidos. Nossos cálculos são baseados em estudos revisados por pares e dados oficiais de farmacologia clínica.
+                    </p>
+                    
+                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-3 text-xs uppercase tracking-wider">Como é Calculado:</h3>
+                        <ul className="space-y-3">
+                            <li className="flex gap-3">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                                <span><strong>Meia-vida:</strong> Consideramos a meia-vida do medicamento — a duração necessária para a concentração reduzir pela metade.</span>
+                            </li>
+                            <li className="flex gap-3">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                                <span><strong>Dosagem e Frequência:</strong> As estimativas levam em conta o acúmulo da substância no corpo com base nas datas e doses que você registrou.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        Essas estimativas fornecem uma indicação geral, mas não levam em conta variações individuais no metabolismo, condições de saúde ou outros fatores pessoais.
+                    </p>
+
+                    <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-xs uppercase tracking-wider">Fontes e Leituras:</h3>
+                        <ul className="text-xs space-y-1.5 text-gray-500 dark:text-gray-400">
+                            <li>• Revisão de Farmacologia Clínica do FDA</li>
+                            <li>• Informações de Bula do FDA (Ozempic/Mounjaro)</li>
+                            <li>• Estudos Clínicos PubMed</li>
+                        </ul>
+                    </div>
+
+                    <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-xl border border-red-100 dark:border-red-900/30">
+                        <p className="text-[11px] text-red-800 dark:text-red-300 font-medium leading-tight">
+                            <strong>Aviso:</strong> As respostas individuais podem variar. Estas estimativas são apenas para fins informativos e não substituem aconselhamento médico profissional.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Footer Fixo */}
+                <div className="p-6 pt-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] flex-shrink-0">
+                    <button onClick={onClose} className="w-full bg-black dark:bg-white text-white dark:text-black font-bold py-3.5 rounded-2xl active:scale-95 transition-transform shadow-lg">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Portal>
+);
+
 export const MedicationLevelChart: React.FC<MedicationLevelChartProps> = ({ history, medicationName, className }) => {
     const { theme } = useAppContext();
+    const [showInfo, setShowInfo] = useState(false);
     const data = useMemo(() => generateData(history, medicationName), [history, medicationName]);
     const currentLevel = data.find(d => d.isToday)?.level || 0;
 
@@ -93,7 +170,15 @@ export const MedicationLevelChart: React.FC<MedicationLevelChartProps> = ({ hist
         <div className={`relative ${className}`}>
             <div className="flex justify-between items-end mb-4 px-2">
                 <div>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">Nível de Medicação</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Nível de Medicação</p>
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(true); }}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                        >
+                            <InfoIcon className="w-4 h-4" />
+                        </button>
+                    </div>
                     <div className="flex items-baseline gap-1">
                         <span className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{currentLevel.toFixed(2)}</span>
                         <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">mg</span>
@@ -171,6 +256,8 @@ export const MedicationLevelChart: React.FC<MedicationLevelChartProps> = ({ hist
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
+
+            {showInfo && <MedicationInfoModal onClose={() => setShowInfo(false)} />}
         </div>
     );
 };

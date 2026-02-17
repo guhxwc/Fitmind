@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 // Removed GoogleGenAI import
 import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback, Exercise, WorkoutDay } from '../../types';
-import { DumbbellIcon, FlameIcon, ClockIcon, ChevronRightIcon, CheckCircleIcon, ArrowPathIcon, CalendarIcon, PlayIcon, PlusIcon, MinusIcon, LockIcon, EditIcon, TrashIcon } from '../core/Icons';
+import { DumbbellIcon, FlameIcon, ClockIcon, ChevronRightIcon, CheckCircleIcon, ArrowPathIcon, CalendarIcon, PlusIcon, MinusIcon, LockIcon, EditIcon, TrashIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { WorkoutQuiz } from './WorkoutQuiz';
 import { EXERCISE_DATABASE } from '../../workoutData';

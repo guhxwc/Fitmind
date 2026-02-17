@@ -7,12 +7,14 @@ interface NavItemProps {
   to: string;
   label: string;
   icon: React.ReactNode;
+  id?: string; // Added ID prop
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, label, icon }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, label, icon, id }) => {
   return (
     <NavLink 
         to={to} 
+        id={id}
         className={({ isActive }) => 
             `flex flex-col items-center justify-center flex-1 transition-all duration-300 ${
                 isActive 
@@ -39,25 +41,27 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon }) => {
 };
 
 export const BottomNav: React.FC = () => {
+  // Added specific IDs for the tour
   const tabs = [
-    { to: '/', label: 'Resumo', icon: <HomeIcon /> },
-    { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon /> },
-    { to: '/meals', label: 'Dieta', icon: <UtensilsIcon /> },
-    { to: '/workouts', label: 'Treinos', icon: <FlameIcon /> },
-    { to: '/progress', label: 'Corpo', icon: <BarChartIcon /> },
-    { to: '/settings', label: 'Ajustes', icon: <SettingsIcon /> },
+    { to: '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
+    { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
+    { to: '/meals', label: 'Dieta', icon: <UtensilsIcon />, id: 'nav-meals' },
+    { to: '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
+    { to: '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
+    { to: '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },
   ];
 
   return (
     <>
         {/* Blur backdrop for modern feel */}
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md glass border-t border-gray-200/40 dark:border-gray-800/40 flex justify-around py-3 pb-6 z-50">
+        <nav id="tour-nav" className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md glass border-t border-gray-200/40 dark:border-gray-800/40 flex justify-around py-3 pb-6 z-50">
             {tabs.map(tab => (
                 <NavItem 
                     key={tab.to}
                     to={tab.to}
                     label={tab.label}
                     icon={tab.icon}
+                    id={tab.id}
                 />
             ))}
         </nav>

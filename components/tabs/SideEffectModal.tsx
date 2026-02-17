@@ -40,7 +40,7 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
   const [notes, setNotes] = useState(initialEntry?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  const toggleEffect = (name: SideEffectName) => {
+  const toggleEffect = (name: SideEffectName | string) => {
     const existingEffect = effects.find(e => e.name === name);
     if (existingEffect) {
       setEffects(effects.filter(e => e.name !== name));
@@ -49,11 +49,11 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
     }
   };
 
-  const setIntensity = (name: SideEffectName, intensity: SideEffectIntensity) => {
+  const setIntensity = (name: SideEffectName | string, intensity: SideEffectIntensity) => {
     setEffects(effects.map(e => e.name === name ? { ...e, intensity } : e));
   };
 
-  const setDuration = (name: SideEffectName, duration: string) => {
+  const setDuration = (name: SideEffectName | string, duration: string) => {
     setEffects(effects.map(e => e.name === name ? { ...e, duration } : e));
   };
   
@@ -96,7 +96,7 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
                                     )}
                                 </div>
                                 <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-                                    {EFFECT_TIPS[effect.name]}
+                                    {EFFECT_TIPS[effect.name as SideEffectName]}
                                 </p>
                                 {effect.intensity === 'Severo' && (
                                     <p className="mt-3 text-xs text-red-500 font-medium bg-red-50 dark:bg-red-900/10 p-2 rounded-lg border border-red-100 dark:border-red-900/30">

@@ -64,6 +64,13 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
   const [showShowcase, setShowShowcase] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [showCheckout, setShowCheckout] = useState(false);
+  const [hasTrial, setHasTrial] = useState(false); // Default to FALSE (Pagar Agora)
+
+  const handleSuccess = () => {
+      // Set flag to trigger Pro Tour on return to Summary
+      localStorage.setItem('trigger_pro_tour', 'true');
+      onSubscribe(selectedPlan);
+  };
 
   // Use Portal to break out of any parent container limitations
   return (
@@ -77,8 +84,9 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
         ) : showCheckout ? (
             <PaymentPage 
                 plan={selectedPlan}
+                initialHasTrial={hasTrial}
                 onClose={() => setShowCheckout(false)}
-                onPaymentSuccess={() => onSubscribe(selectedPlan)}
+                onPaymentSuccess={handleSuccess}
             />
         ) : (
             <div className="fixed inset-0 bg-white dark:bg-black z-[70] animate-fade-in flex flex-col h-[100dvh]">
@@ -93,100 +101,62 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                     </button>
                 </div>
 
-                {/* Scrollable Content */}
-                <div className="flex-grow overflow-y-auto hide-scrollbar bg-white dark:bg-black">
-                    <div className="p-6 pt-8 pb-40 space-y-8 max-w-md mx-auto">
-                        
-                        {/* Hero Section */}
-                        <div className="text-center flex flex-col items-center">
-                            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg shadow-blue-500/30 mb-6 animate-pop-in">
-                                <StarIcon className="w-3 h-3 fill-white" />
-                                Oferta termina em 24h
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white text-center mb-4 tracking-tight leading-[1.1]">
-                                O Único App Feito Para Quem Usa GLP-1
-                            </h1>
-                            <p className="text-gray-600 dark:text-gray-300 text-center max-w-xs mx-auto mb-2 text-sm leading-relaxed font-medium">
-                                Você já gasta R$ 1.000+ por mês no medicamento. Por menos de R$ 50, você garante que esse investimento não seja desperdiçado.
-                            </p>
+                <div className="flex-grow overflow-y-auto p-6 pb-40">
+                    <div className="text-center mb-8">
+                        <div className="inline-block p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 mb-4">
+                            <StarIcon className="w-8 h-8 text-white" />
                         </div>
+                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Escolha seu Plano</h2>
+                        <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Invista na sua transformação definitiva.</p>
+                    </div>
 
-                        {/* Plans */}
-                        <div className="space-y-4">
-                            <PlanOption
-                                title="Anual"
-                                price="R$ 32,44 / mês"
-                                subtext="Cobrado anualmente (R$ 389,22)"
-                                isPopular
-                                savings="Economize 35%"
-                                extraTag="Menos que um café/dia"
-                                isSelected={selectedPlan === 'annual'}
-                                onClick={() => setSelectedPlan('annual')}
-                            />
-                            <PlanOption
-                                title="Mensal"
-                                price="R$ 49,00 / mês"
-                                isSelected={selectedPlan === 'monthly'}
-                                onClick={() => setSelectedPlan('monthly')}
-                            />
-                        </div>
+                    <div className="space-y-4">
+                        <PlanOption 
+                            title="Plano Anual"
+                            price="R$ 389,22"
+                            subtext="Equivalente a R$ 32,43/mês"
+                            isPopular
+                            savings="-35% OFF"
+                            extraTag="R$ 1,08/dia"
+                            isSelected={selectedPlan === 'annual'}
+                            onClick={() => setSelectedPlan('annual')}
+                        />
+                        <PlanOption 
+                            title="Plano Mensal"
+                            price="R$ 49,00"
+                            subtext="Cobrado mensalmente"
+                            isSelected={selectedPlan === 'monthly'}
+                            onClick={() => setSelectedPlan('monthly')}
+                        />
+                    </div>
 
-                        {/* Benefits List (Benefit-Focused) */}
-                        <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
-                            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Por que o PRO é indispensável?</h3>
-                            <ul className="space-y-4">
-                                <FeatureItem title="CalorieCam" desc="Saiba em segundos se a refeição acelera ou atrasa sua perda de peso" />
-                                <FeatureItem title="Personal Trainer IA" desc="Treinos que se adaptam à sua energia e aos efeitos colaterais do dia" />
-                                <FeatureItem title="Análise Inteligente" desc="Descubra quais hábitos realmente impactam seu progresso (e quais são perda de tempo)" />
-                                <FeatureItem title="Protocolo Anti-Rebote" desc="Garanta que o peso não volta quando você parar o medicamento" />
-                                <FeatureItem title="Fotos Antes x Depois" desc="Veja sua transformação visual e celebre cada conquista" />
-                            </ul>
-                        </div>
-
-                        {/* FAQ / Objection Block */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Dúvidas Comuns</h3>
-                            
-                            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                                <p className="font-bold text-sm mb-1 text-gray-800 dark:text-gray-200">E se eu não gostar?</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Você tem 7 dias para testar tudo. Se não for transformador, cancele com 1 clique.</p>
-                            </div>
-
-                            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                                <p className="font-bold text-sm mb-1 text-gray-800 dark:text-gray-200">É muito caro?</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">O plano anual custa menos que um café por dia. É um investimento para garantir que seu tratamento principal funcione.</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                            <ShieldCheckIcon className="w-4 h-4" />
-                            <span>Pagamento seguro via loja de aplicativos</span>
-                        </div>
-                        
+                    {/* Features List */}
+                    <div className="mt-8 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <h3 className="font-bold text-gray-900 dark:text-white mb-4 text-sm uppercase tracking-wide">O que está incluído:</h3>
+                        <ul className="space-y-4">
+                            <FeatureItem title="CalorieCam Ilimitado" desc="Reconhecimento instantâneo de alimentos via IA." />
+                            <FeatureItem title="Personal Trainer Adaptativo" desc="Treinos que se ajustam à sua energia diária." />
+                            <FeatureItem title="Dieta Anti-Rebote" desc="Planejamento nutricional para manutenção de peso." />
+                            <FeatureItem title="Relatórios Avançados" desc="Análise profunda de tendências e correlações." />
+                        </ul>
+                    </div>
+                    
+                    <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400 font-medium">
+                        <ShieldCheckIcon className="w-4 h-4 text-green-500" />
+                        <span>Compra 100% Segura e Criptografada</span>
                     </div>
                 </div>
-                
+
                 {/* Sticky Footer */}
-                <div className="flex-none p-6 pt-4 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-30 w-full">
-                    <div className="max-w-md mx-auto">
-                        <button 
-                            onClick={() => setShowCheckout(true)} 
-                            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-transform flex flex-col items-center justify-center leading-tight relative overflow-hidden"
-                        >
-                            {/* Shine effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
-                            
-                            <span>Começar 7 Dias Grátis</span>
-                            <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider mt-0.5">
-                                {selectedPlan === 'annual' 
-                                    ? 'Depois R$ 32,44/mês (cobrado anualmente)' 
-                                    : 'Depois R$ 49,00/mês'}
-                            </span>
-                        </button>
-                        <p className="text-center mt-2">
-                            <span className='text-xs font-bold text-orange-600 dark:text-orange-400'>Apenas 47 vagas restantes este mês</span>
-                        </p>
-                    </div>
+                <div className="fixed bottom-0 left-0 right-0 p-6 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                    <button 
+                        onClick={() => setShowCheckout(true)}
+                        className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2 relative overflow-hidden group"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
+                        Continuar
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
                 </div>
             </div>
         )}

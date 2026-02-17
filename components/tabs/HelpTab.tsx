@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleGenAI, Chat } from "@google/genai";
@@ -16,18 +17,14 @@ const UserMessage: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const renderMarkdown = (text: string) => {
-    // Split the text by the bold markdown syntax, keeping the delimiters
     const parts = text.split(/(\*\*.*?\*\*)/g).filter(part => part);
 
     return (
         <>
             {parts.map((part, index) => {
-                // Check if the part is bold markdown
                 if (part.startsWith('**') && part.endsWith('**')) {
-                    // Return a <strong> element without the asterisks
                     return <strong key={index}>{part.slice(2, -2)}</strong>;
                 }
-                // Otherwise, return the text part as is
                 return part;
             })}
         </>
@@ -65,7 +62,6 @@ export const HelpTab: React.FC = () => {
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Scroll to the bottom of the chat container when messages change
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
@@ -84,9 +80,9 @@ export const HelpTab: React.FC = () => {
             if (!chatRef.current) {
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
                 chatRef.current = ai.chats.create({
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3-flash-preview',
                     config: {
-                      systemInstruction: "Você é o 'Assistente FitMind', um chatbot amigável e prestativo, especialista no aplicativo FitMind. Sua única função é responder perguntas sobre como usar o aplicativo FitMind, seus recursos (como CalorieCam, planos de dieta e treino com IA, registro de aplicações), a assinatura PRO, e solucionar problemas comuns. Use **negrito** para destacar nomes de recursos ou ações importantes. Seja conciso, claro e use um tom encorajador. NÃO responda a perguntas que não sejam sobre o aplicativo FitMind. Se perguntarem algo fora do escopo, gentilmente redirecione a conversa de volta para o app. Exemplo de redirecionamento: 'Meu foco é ajudar você com o FitMind. Você tem alguma dúvida sobre o app?'",
+                      systemInstruction: "Você é o 'Assistente FitMind', um chatbot amigável e prestativo, especialista no aplicativo FitMind. Sua única função é responder perguntas sobre como usar o aplicativo FitMind, seus recursos (como CalorieCam, planos de dieta e treino com IA, registro de aplicações), a assinatura PRO, e solucionar problemas comuns. Use **negrito** para destacar nomes de recursos ou ações importantes. Seja conciso, claro e use um tom encorajador. NÃO responda a perguntas que não sejam sobre o aplicativo FitMind. Se perguntarem algo fora do escopo, gentilmente redirecione a conversa de volta para o app.",
                     },
                 });
             }
@@ -108,7 +104,7 @@ export const HelpTab: React.FC = () => {
         <div className="flex flex-col h-screen bg-white dark:bg-black">
             <header className="flex-shrink-0 flex items-center gap-4 p-4 border-b border-gray-200 dark:border-gray-800">
                 <button onClick={() => navigate(-1)} className="text-gray-600 dark:text-gray-300 p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
                 <div className="text-center flex-grow">
                     <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Assistente FitMind</h1>

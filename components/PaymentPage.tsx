@@ -5,7 +5,7 @@ import { LockIcon, ShieldCheckIcon, CheckCircleIcon, UserCircleIcon, CalendarIco
 import { useAppContext } from './AppContext';
 
 // CONFIGURAÇÃO STRIPE
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51STR9hQdX6ANfRVO0hpDkaTDe6Mj0WLrjFsXh57T4TX9fhWEhfWAriLC5s4Ti2WorlL57YYZOS42lhqBuDxc6Cuf003enTSGnn';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51STR9hQdX6ANfRVOFjGLFqO7MYNey2yZVVSDAoLl1irRvrPcc0nJs12XcDLx3jK9oBALnyUwrbKG6Qzq3BivCp3t006nJgpvwS';
 
 const STRIPE_PRICES = {
     monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c',
@@ -20,6 +20,7 @@ declare global {
 
 interface PaymentPageProps {
   plan: 'annual' | 'monthly';
+  initialHasTrial?: boolean; // Nova prop
   onClose: () => void;
   onPaymentSuccess: () => void;
 }
@@ -52,11 +53,12 @@ const getCardElementOptions = (isDarkMode: boolean) => ({
     hidePostalCode: true,
 });
 
-export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onClose, onPaymentSuccess }) => {
+export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, initialHasTrial = false, onClose, onPaymentSuccess }) => {
   const { userData, session } = useAppContext();
   
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>(initialPlan);
   const [paymentMethodType, setPaymentMethodType] = useState<'credit' | 'debit'>('credit');
+  const [hasTrial, setHasTrial] = useState(initialHasTrial); // Inicializa com a prop
   const [name, setName] = useState(userData?.name || '');
   const [postalCode, setPostalCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -68,13 +70,16 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
   const cardElement = useRef<any>(null);
 
   // Cálculos de preço
-  const price = selectedPlan === 'annual' ? 389.22 : 49.00;
-  const priceLabel = selectedPlan === 'annual' ? 'R$ 389,22 / ano' : 'R$ 49,00 / mês';
+  const priceValue = selectedPlan === 'annual' ? 389.22 : 49.00;
+  const priceFormatted = `R$ ${priceValue.toFixed(2).replace('.', ',')}`;
+  const priceLabel = selectedPlan === 'annual' ? `${priceFormatted} / ano` : `${priceFormatted} / mês`;
   const savingsLabel = selectedPlan === 'annual' ? 'Economia de 35%' : null;
   
   const trialDays = 7;
   const billingDate = new Date();
-  billingDate.setDate(billingDate.getDate() + trialDays);
+  if (hasTrial) {
+      billingDate.setDate(billingDate.getDate() + trialDays);
+  }
   const billingDateStr = billingDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
   useEffect(() => {
@@ -135,17 +140,18 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
             body: { 
                 priceId: priceId, 
                 email: session?.user?.email,
-                userId: userData?.id 
+                userId: userData?.id,
+                hasTrial: hasTrial // Envia a escolha do usuário
             }
         });
 
         if (functionError) {
             console.error('Edge Function Error:', functionError);
-            let msg = 'Erro de conexão com o servidor.';
-            if (functionError.context && functionError.context.status === 404) {
-                msg = 'Erro de configuração (404): Função de pagamento não encontrada.';
-            } else if (functionError.context && functionError.context.status === 500) {
-                msg = 'Erro interno (500): Verifique as chaves do Stripe no Supabase.';
+            let msg = 'Erro de conexão com o servidor de pagamento.';
+            if (functionError.code === 'FUNCTIONS_HTTP_STATUS_404' || functionError.status === 404) {
+                msg = 'Serviço de pagamento indisponível (404). Verifique se a função foi implantada.';
+            } else if (functionError.code === 'FUNCTIONS_HTTP_STATUS_500' || functionError.status === 500) {
+                msg = 'Erro interno do servidor. Tente novamente mais tarde.';
             }
             throw new Error(msg);
         }
@@ -153,12 +159,10 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
         const { clientSecret, type } = data; 
 
         if (!clientSecret) {
-            throw new Error('Erro na inicialização do pagamento.');
+            throw new Error('Erro na inicialização do pagamento. Chave secreta não recebida.');
         }
 
         // 2. Confirmar com a Stripe
-        // Nota: O Stripe Card Element lida automaticamente com Crédito e Débito baseando-se no BIN do cartão.
-        // O seletor de UI é apenas para UX, não altera a chamada da API do Stripe Element.
         const result = await (type === 'setup' 
             ? stripeRef.current.confirmCardSetup(clientSecret, {
                 payment_method: {
@@ -175,13 +179,57 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
         );
 
         if (result.error) {
-            throw new Error(result.error.message);
+            throw result.error;
         } else {
             onPaymentSuccess();
         }
 
     } catch (e: any) {
-        setError(e.message || "Ocorreu um erro inesperado.");
+        let msg = e.message || "Ocorreu um erro inesperado.";
+
+        // TRATAMENTO DE ERROS DO STRIPE (Mensagens em Português)
+        if (e.code) {
+            switch (e.code) {
+                case 'card_declined':
+                    if (e.decline_code === 'insufficient_funds') {
+                        msg = "Pagamento recusado: Saldo insuficiente.";
+                    } else if (e.decline_code === 'lost_card') {
+                        msg = "Pagamento recusado: Cartão marcado como perdido.";
+                    } else if (e.decline_code === 'stolen_card') {
+                        msg = "Pagamento recusado: Cartão marcado como roubado.";
+                    } else if (e.decline_code === 'do_not_honor') {
+                        msg = "Pagamento recusado pelo banco emissor. Entre em contato com seu banco.";
+                    } else {
+                        msg = "Seu cartão foi recusado. Verifique os dados ou tente outro cartão.";
+                    }
+                    break;
+                case 'expired_card':
+                    msg = "Seu cartão está expirado.";
+                    break;
+                case 'incorrect_cvc':
+                    msg = "O código de segurança (CVC) está incorreto.";
+                    break;
+                case 'incorrect_number':
+                    msg = "O número do cartão é inválido.";
+                    break;
+                case 'processing_error':
+                    msg = "Erro ao processar o cartão. Tente novamente mais tarde.";
+                    break;
+                case 'incomplete_number':
+                    msg = "Preencha o número do cartão corretamente.";
+                    break;
+                case 'incomplete_expiry':
+                    msg = "Preencha a data de validade corretamente.";
+                    break;
+                case 'incomplete_cvc':
+                    msg = "Preencha o código CVC corretamente.";
+                    break;
+                default:
+                    msg = e.message;
+            }
+        }
+
+        setError(msg);
     } finally {
         setIsProcessing(false);
     }
@@ -208,6 +256,24 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
 
                 <div className="p-6">
                     
+                    {/* Trial Toggle Option (Discreet Version) */}
+                    <div className="flex justify-center mb-6">
+                        <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                            <button 
+                                onClick={() => setHasTrial(true)}
+                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${hasTrial ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                                7 Dias Grátis
+                            </button>
+                            <button 
+                                onClick={() => setHasTrial(false)}
+                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${!hasTrial ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                                Pagar Agora
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Plan Summary Card */}
                     <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 mb-6 flex justify-between items-center relative overflow-hidden">
                         <div>
@@ -216,14 +282,16 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
                             <p className="text-sm text-gray-600 dark:text-gray-400">{priceLabel} {savingsLabel && <span className="text-green-600 dark:text-green-400 font-bold">({savingsLabel})</span>}</p>
                         </div>
                         <div className="text-right z-10">
-                            <span className="block text-2xl font-extrabold text-gray-900 dark:text-white">R$ 0,00</span>
+                            <span className="block text-2xl font-extrabold text-gray-900 dark:text-white">
+                                {hasTrial ? 'R$ 0,00' : priceFormatted}
+                            </span>
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">hoje</span>
                         </div>
                         {/* Decorative Circle */}
                         <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-200/50 dark:bg-blue-600/20 rounded-full blur-2xl"></div>
                     </div>
 
-                    {/* Method Toggle */}
+                    {/* Payment Method Toggle */}
                     <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6">
                         <button 
                             onClick={() => setPaymentMethodType('credit')}
@@ -297,7 +365,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white dark:border-black/30 dark:border-t-black rounded-full animate-spin"></div>
                         ) : (
                             <>
-                                <span>Ativar Teste Grátis</span>
+                                <span>{hasTrial ? 'Ativar Teste Grátis' : 'Assinar Agora'}</span>
                                 <ShieldCheckIcon className="w-5 h-5 text-white/50 dark:text-black/50" />
                             </>
                         )}
@@ -312,7 +380,11 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: initialPlan, onC
                             <span>Seus dados são processados de forma segura pelo Stripe.</span>
                         </div>
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight px-4">
-                            Você não será cobrado hoje. A primeira cobrança de <strong>R$ {price.toFixed(2).replace('.', ',')}</strong> ocorrerá em <strong>{billingDateStr}</strong>, a menos que você cancele antes. Cancele a qualquer momento nas configurações do app.
+                            {hasTrial 
+                                ? `Você não será cobrado hoje. A primeira cobrança de ${priceFormatted} ocorrerá em ${billingDateStr}, a menos que você cancele antes.`
+                                : `Você será cobrado ${priceFormatted} hoje. Sua assinatura renovará automaticamente em ${billingDateStr}.`
+                            }
+                            Cancele a qualquer momento nas configurações do app.
                         </p>
                     </div>
 

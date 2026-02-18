@@ -5,11 +5,11 @@ import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
 
 // =========================================================
-// IDs REAIS DO STRIPE CONFIGURADOS
+// SUBSTITUA PELOS SEUS IDs REAIS DO STRIPE
 // =========================================================
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c',
-    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'
+    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c', // Substitua pelo seu ID real
+    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'   // Substitua pelo seu ID real
 };
 
 interface PaymentPageProps {
@@ -39,20 +39,20 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
             throw new Error("Sessão expirada. Tente fazer login novamente.");
         }
 
-        // Chamada para a Edge Function que cria a sessão de checkout dinâmica
+        // Chamada para a Edge Function
         const { data, error: funcError } = await supabase.functions.invoke('create-payment-intent', {
             body: {
                 priceId: selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly,
                 email: userEmail,
-                userId: userId,
-                // Onde o usuário deve cair após o pagamento (URL absoluta)
+                userId: userId, // Importante para o Webhook
                 returnUrl: window.location.origin + '/#/payment/success'
             }
         });
 
         if (funcError) throw funcError;
+        
         if (data?.url) {
-            // Redireciona para o checkout dinâmico do Stripe
+            // REDIRECIONAMENTO PARA O CHECKOUT DA STRIPE
             window.location.href = data.url;
         } else {
             throw new Error("Não foi possível gerar o link de pagamento.");

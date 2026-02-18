@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
 
+// Declare Deno namespace to satisfy TypeScript in edge function environment
 declare const Deno: {
   env: {
     get(key: string): string | undefined;
@@ -15,16 +16,13 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // 1. Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeKey) {
-        throw new Error("STRIPE_SECRET_KEY não configurada no ambiente.");
-    }
+    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não encontrada.");
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
@@ -33,11 +31,7 @@ serve(async (req) => {
 
     const { priceId, email, userId, returnUrl } = await req.json()
 
-    if (!priceId || !email || !userId || !returnUrl) {
-      throw new Error("Parâmetros obrigatórios ausentes.");
-    }
-
-    // 1. Criar ou recuperar cliente Stripe
+    // Criar ou recuperar cliente na Stripe
     const customers = await stripe.customers.list({ email: email, limit: 1 });
     let customerId = customers.data.length > 0 ? customers.data[0].id : null;
 
@@ -49,42 +43,26 @@ serve(async (req) => {
         customerId = customer.id;
     }
 
-    // 2. Criar Sessão de Checkout
+    // Criar a Sessão de Checkout (A página onde o usuário digita o cartão)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: `${returnUrl}?session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
       cancel_url: `${returnUrl}?payment_canceled=true`,
-      subscription_data: {
-        metadata: {
-            supabase_uid: userId
-        }
-      },
+      client_reference_id: userId, // CRUCIAL: Vincula o pagamento ao ID do Supabase
       allow_promotion_codes: true,
     });
 
     return new Response(
-      JSON.stringify({ sessionId: session.id, url: session.url }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 200 
-      }
+      JSON.stringify({ url: session.url }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error) {
-    console.error("Erro Edge Function:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message || "Erro interno." }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 400 
-      }
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     )
   }
 })

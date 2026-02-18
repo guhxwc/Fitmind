@@ -273,7 +273,7 @@ const BIOLOGICAL_STAGES = [
     { start: 4, end: 8, title: "Queda de Insulina", description: "O açúcar no sangue normaliza. O corpo para de estocar gordura.", icon: "📉" },
     { start: 8, end: 12, title: "Gliconeogênese", description: "O corpo começa a produzir glicose e despertar a queima de gordura.", icon: "🔥" },
     { start: 12, end: 18, title: "Cetose Leve", description: "O corpo muda o combustível principal de açúcar para gordura.", icon: "⚡" },
-    { start: 18, end: 24, title: "Autofagia", description: "Modo de limpeza celular. Reciclagem de componentes velhos.", icon: "🧬" },
+    { start: 18, end: 24, title: "Autofagia", description: "Modo de limpeza celular. Reciclagem de componentes velhas.", icon: "🧬" },
     { start: 24, end: 72, title: "Pico de GH", description: "Hormônio do crescimento aumenta para preservar músculo.", icon: "💪" },
 ];
 
@@ -375,7 +375,7 @@ const FastingDetailModal: React.FC<{ plan: FastingPlanData, onClose: () => void,
                                 </ul>
                             </div>
                             <p className="text-xs text-gray-400 text-center px-4">
-                                Se você usa medicamentos para diabetes (como Ozempic/Mounjaro), consulte seu médico antes de fazer jejuns prolongados (>16h).
+                                Se você usa medicamentos para diabetes (como Ozempic/Mounjaro), consulte seu médico antes de fazer jejuns prolongados (&gt;16h).
                             </p>
                         </div>
                     )}

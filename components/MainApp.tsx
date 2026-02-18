@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { AppContextProvider, useAppContext } from './AppContext';
+import { useAppContext } from './AppContext';
 import { SummaryTab } from './tabs/SummaryTab';
 import { MealsTab } from './tabs/MealsTab';
 import { WorkoutsTab } from './tabs/WorkoutsTab';
@@ -24,7 +24,7 @@ import type { Meal } from '../types';
 import { useToast } from './ToastProvider';
 import { NotificationManager } from './NotificationManager'; // Imported
 
-const AppContent: React.FC = () => {
+export const MainApp: React.FC = () => {
   const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects } = useAppContext();
   const navigate = useNavigate();
   const { addToast } = useToast();
@@ -192,10 +192,3 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-
-export const MainApp: React.FC = () => (
-  <AppContextProvider>
-    <AppContent />
-  </AppContextProvider>
-);

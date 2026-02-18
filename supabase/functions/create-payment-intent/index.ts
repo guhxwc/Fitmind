@@ -15,6 +15,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // 1. Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -26,7 +27,7 @@ serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16', // Updated api version
+      apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
     });
 
@@ -70,14 +71,20 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 200 
+      }
     )
 
   } catch (error) {
     console.error("Erro Edge Function:", error.message);
     return new Response(
       JSON.stringify({ error: error.message || "Erro interno." }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
     )
   }
 })

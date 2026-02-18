@@ -299,17 +299,17 @@ export const SettingsTab: React.FC = () => {
                 <SettingsItem 
                     icon={<div className="text-black dark:text-white"><LightBulbIcon className="w-5 h-5"/></div>}
                     label="Enviar Sugestão" 
-                    onClick={() => {}} 
+                    onClick={() => window.location.href = "mailto:support@fitmind.app?subject=Sugestão"} 
                 />
                 <SettingsItem 
                     icon={<div className="text-black dark:text-white"><DocumentIcon className="w-5 h-5"/></div>}
                     label="Termos e Condições" 
-                    onClick={() => {}} 
+                    onClick={() => navigate('/terms')} 
                 />
                 <SettingsItem 
                     icon={<div className="text-black dark:text-white"><ShieldIcon className="w-5 h-5"/></div>}
                     label="Política de Privacidade" 
-                    onClick={() => {}} 
+                    onClick={() => navigate('/privacy')} 
                 />
                 <SettingsItem 
                     icon={<div className="text-black dark:text-white"><LogOutIcon className="w-5 h-5"/></div>}
@@ -319,7 +319,7 @@ export const SettingsTab: React.FC = () => {
                 />
             </SettingsGroup>
             
-            <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.3 • Feito com ❤️</p>
+            <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.4 • Feito com ❤️</p>
 
             {showSubPage && (
                 <SubscriptionPage 

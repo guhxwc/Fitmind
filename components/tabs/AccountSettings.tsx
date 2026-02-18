@@ -232,6 +232,11 @@ export const AccountSettings: React.FC = () => {
                         label="Peso Inicial" 
                         value={`${userData.startWeight} kg`} 
                         onClick={() => handleOpenEdit('Peso Inicial', 'start_weight', userData.startWeight, 'number', undefined, 'kg')} 
+                    />
+                    <ListItem 
+                        label="Meta de Peso" 
+                        value={`${userData.targetWeight} kg`} 
+                        onClick={() => handleOpenEdit('Meta de Peso', 'target_weight', userData.targetWeight, 'number', undefined, 'kg')} 
                         isLast
                     />
                 </ListGroup>

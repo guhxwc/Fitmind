@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import { LockIcon, ShieldCheckIcon, ArrowPathIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
+import { supabase } from '../supabaseClient';
 
-// --- CONFIGURAÇÃO STRIPE PAYMENT LINKS ---
-const STRIPE_LINKS = {
-    monthly: 'https://buy.stripe.com/4gM6oJfpdbdm0yZ5QdfIs01', 
-    annual: 'https://buy.stripe.com/dRmfZjel9a9iepPemJfIs00'
+// =========================================================
+// IDs REAIS DO STRIPE CONFIGURADOS
+// =========================================================
+const STRIPE_PRICE_IDS = {
+    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c',
+    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'
 };
 
 interface PaymentPageProps {
@@ -23,33 +26,37 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
   const priceValue = selectedPlan === 'annual' ? 389.22 : 49.00;
   const priceFormatted = `R$ ${priceValue.toFixed(2).replace('.', ',')}`;
   const billingFrequency = selectedPlan === 'annual' ? 'Anual' : 'Mensal';
-  const savingsLabel = selectedPlan === 'annual' ? 'Economia de 35%' : null;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     setError(null);
     setIsProcessing(true);
 
     try {
-        const linkUrl = selectedPlan === 'annual' ? STRIPE_LINKS.annual : STRIPE_LINKS.monthly;
-        
-        // Validação simples
-        if (linkUrl.includes('SEU_LINK')) {
-            throw new Error("Links de pagamento do Stripe não configurados no código (PaymentPage.tsx).");
+        const userId = userData?.id || session?.user?.id;
+        const userEmail = session?.user?.email;
+
+        if (!userId || !userEmail) {
+            throw new Error("Sessão expirada. Tente fazer login novamente.");
         }
 
-        if (!userData?.id || !session?.user?.email) {
-            throw new Error("Dados do usuário não encontrados.");
+        // Chamada para a Edge Function que cria a sessão de checkout dinâmica
+        const { data, error: funcError } = await supabase.functions.invoke('create-payment-intent', {
+            body: {
+                priceId: selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly,
+                email: userEmail,
+                userId: userId,
+                // Onde o usuário deve cair após o pagamento (URL absoluta)
+                returnUrl: window.location.origin + '/#/payment/success'
+            }
+        });
+
+        if (funcError) throw funcError;
+        if (data?.url) {
+            // Redireciona para o checkout dinâmico do Stripe
+            window.location.href = data.url;
+        } else {
+            throw new Error("Não foi possível gerar o link de pagamento.");
         }
-
-        // CONSTRUÇÃO DA URL COM RASTREAMENTO
-        // client_reference_id: O ID do usuário no Supabase. O Webhook usará isso para ativar o PRO.
-        // prefilled_email: Preenche o email automaticamente no checkout para o usuário.
-        const checkoutUrl = new URL(linkUrl);
-        checkoutUrl.searchParams.append('client_reference_id', userData.id);
-        checkoutUrl.searchParams.append('prefilled_email', session.user.email);
-
-        // Redireciona o usuário
-        window.location.href = checkoutUrl.toString();
 
     } catch (e: any) {
         console.error("Checkout Error:", e);
@@ -84,11 +91,6 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         <div>
                             <h3 className="font-bold text-gray-900 dark:text-white text-lg">FitMind PRO</h3>
                             <p className="text-gray-500 dark:text-gray-400 text-sm">{billingFrequency}</p>
-                            {savingsLabel && (
-                                <span className="inline-block mt-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    {savingsLabel}
-                                </span>
-                            )}
                         </div>
                     </div>
 
@@ -102,7 +104,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                     </div>
 
                     {error && (
-                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl text-center border border-red-100 dark:border-red-900/30 animate-shake">
+                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl text-center border border-red-100 dark:border-red-900/30">
                             {error}
                         </div>
                     )}
@@ -115,7 +117,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         {isProcessing ? (
                             <>
                                 <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                <span>Redirecionando...</span>
+                                <span>Processando...</span>
                             </>
                         ) : (
                             <>

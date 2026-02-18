@@ -10,6 +10,9 @@ import type { UserData } from './types';
 import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
 import { DEFAULT_USER_DATA } from './constants';
 import { InitialSettings } from './components/tabs/InitialSettings';
+import { TermsPage } from './components/legal/TermsPage';
+import { PrivacyPage } from './components/legal/PrivacyPage';
+import { SuccessPage } from './components/payment/SuccessPage';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -176,6 +179,12 @@ const App: React.FC = () => {
           path="/settings/initial-setup" 
           element={!session ? <Navigate to="/auth" /> : <InitialSettings />} 
         />
+        
+        <Route path="/payment/success" element={<SuccessPage />} />
+
+        {/* Legal Pages */}
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         {/* New Logic for Non-Pro Return Flow */}
         <Route 
@@ -186,7 +195,7 @@ const App: React.FC = () => {
                 <OnboardingFlow 
                     onComplete={handleReturnFlowComplete} 
                     initialData={userProfile}
-                    initialStep={26} // Index of StepFinalPlan
+                    initialStep={28} // Index of StepFinalPlan
                 />
             ) :
             (profileExists ? <Navigate to="/" /> : <OnboardingFlow onComplete={handleOnboardingComplete} />)

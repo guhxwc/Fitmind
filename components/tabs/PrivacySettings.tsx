@@ -182,13 +182,13 @@ export const PrivacySettings: React.FC = () => {
                         icon={<DocumentIcon className="w-5 h-5"/>}
                         colorClass="bg-gray-500"
                         label="Termos de Uso"
-                        onClick={() => {}}
+                        onClick={() => navigate('/terms')}
                     />
                     <ActionItem 
                         icon={<ShieldIcon className="w-5 h-5"/>}
                         colorClass="bg-gray-500"
                         label="Política de Privacidade"
-                        onClick={() => {}}
+                        onClick={() => navigate('/privacy')}
                         isLast
                     />
                 </GroupContainer>

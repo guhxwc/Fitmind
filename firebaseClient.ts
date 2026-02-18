@@ -3,20 +3,19 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
-// SUBSTITUA COM SUAS CHAVES DO CONSOLE FIREBASE
-// Vá em: Firebase Console -> Project Settings -> General -> Your apps
+// As chaves são lidas das variáveis de ambiente (process.env)
+// Configure seu arquivo .env com estas variáveis
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "seu-projeto.firebaseapp.com",
-  projectId: "seu-projeto",
-  storageBucket: "seu-projeto.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: process.env.FIREBASE_API_KEY || "SUA_API_KEY_AQUI",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "seu-projeto.firebaseapp.com",
+  projectId: process.env.FIREBASE_PROJECT_ID || "seu-projeto",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "seu-projeto.appspot.com",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "SEU_SENDER_ID",
+  appId: process.env.FIREBASE_APP_ID || "SEU_APP_ID"
 };
 
-// Esta é a chave "Vapid Key" (Web Push Certificates)
-// Vá em: Firebase Console -> Project Settings -> Cloud Messaging -> Web configuration
-export const VAPID_KEY = "SUA_VAPID_KEY_AQUI"; 
+// Chave Vapid para Web Push
+export const VAPID_KEY = process.env.FIREBASE_VAPID_KEY || "SUA_VAPID_KEY_AQUI"; 
 
 const app = initializeApp(firebaseConfig);
 

@@ -1,7 +1,10 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
-import { CheckCircleIcon, StarIcon } from '../core/Icons';
+import { CheckCircleIcon, StarIcon, ArrowPathIcon } from '../core/Icons';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../ToastProvider';
 
 const FeatureItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <li className="flex items-center space-x-3">
@@ -13,8 +16,33 @@ const FeatureItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 export const ProPlanTab: React.FC = () => {
     const navigate = useNavigate();
     const { userData } = useAppContext();
+    const { addToast } = useToast();
+    const [loading, setLoading] = useState(false);
 
     if (!userData) return null;
+
+    const handleManageSubscription = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-portal-session', {
+                body: { returnUrl: window.location.href }
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error("URL não retornada");
+            }
+        } catch (error: any) {
+            console.error(error);
+            addToast(error.message === 'Nenhuma assinatura ativa encontrada para este usuário.' 
+                ? 'Você não possui uma assinatura ativa vinculada.' 
+                : 'Erro ao abrir portal. Tente novamente.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-white dark:bg-black">
@@ -27,7 +55,7 @@ export const ProPlanTab: React.FC = () => {
 
             <main className="flex-grow overflow-y-auto p-6 animate-fade-in">
                 <div className="text-center">
-                    <div className="w-20 h-20 bg-blue-100 text-blue-500 rounded-3xl mx-auto flex items-center justify-center">
+                    <div className="w-20 h-20 bg-blue-100 text-blue-500 rounded-3xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <StarIcon className="w-10 h-10"/>
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-4">Você é PRO!</h2>
@@ -36,22 +64,32 @@ export const ProPlanTab: React.FC = () => {
                     </p>
                 </div>
                 
-                <div className="mt-8 bg-gray-100/60 dark:bg-gray-800/50 p-6 rounded-2xl">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Seus benefícios exclusivos:</h3>
-                    <ul className="space-y-3">
-                        <FeatureItem>
-                            <strong>CalorieCam:</strong> Reconhecimento de alimentos por IA
-                        </FeatureItem>
-                        <FeatureItem>Planos de treino completos e personalizados</FeatureItem>
-                        <FeatureItem>Dietas avançadas geradas por IA</FeatureItem>
-                        <FeatureItem>Gráficos detalhados e projeções</FeatureItem>
-                        <FeatureItem>Comparador de fotos de progresso</FeatureItem>
-                         <FeatureItem>Relatórios semanais inteligentes</FeatureItem>
+                <div className="mt-8 bg-gray-50 dark:bg-gray-900 rounded-[24px] p-6 border border-gray-100 dark:border-gray-800">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4">Seus benefícios ativos</h3>
+                    <ul className="space-y-4">
+                        <FeatureItem><strong>CalorieCam:</strong> Reconhecimento de alimentos</FeatureItem>
+                        <FeatureItem>Planos de treino personalizados</FeatureItem>
+                        <FeatureItem>Dietas geradas por IA</FeatureItem>
+                        <FeatureItem>Gráficos e projeções avançadas</FeatureItem>
+                        <FeatureItem>Relatórios semanais inteligentes</FeatureItem>
                     </ul>
                 </div>
 
                 <div className="mt-8 text-center">
-                     <button className="text-gray-500 dark:text-gray-400 font-semibold">Gerenciar Assinatura</button>
+                     <button 
+                        onClick={handleManageSubscription}
+                        disabled={loading}
+                        className="text-gray-500 dark:text-gray-400 font-bold text-sm hover:text-black dark:hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto w-full py-3"
+                    >
+                        {loading ? (
+                            <>
+                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                Abrindo Portal...
+                            </>
+                        ) : (
+                            'Gerenciar Assinatura / Cancelar'
+                        )}
+                    </button>
                 </div>
 
             </main>

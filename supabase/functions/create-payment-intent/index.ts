@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import Stripe from "https://esm.sh/stripe@12.0.0?target=deno"
+import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
 
 declare const Deno: {
   env: {
@@ -8,14 +8,10 @@ declare const Deno: {
   };
 };
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-  apiVersion: '2022-11-15',
-  httpClient: Stripe.createFetchHttpClient(),
-})
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -24,18 +20,35 @@ serve(async (req) => {
   }
 
   try {
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+        throw new Error("STRIPE_SECRET_KEY não configurada no ambiente.");
+    }
+
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2023-10-16', // Updated api version
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+
     const { priceId, email, userId, returnUrl } = await req.json()
+
+    if (!priceId || !email || !userId || !returnUrl) {
+      throw new Error("Parâmetros obrigatórios ausentes.");
+    }
 
     // 1. Criar ou recuperar cliente Stripe
     const customers = await stripe.customers.list({ email: email, limit: 1 });
     let customerId = customers.data.length > 0 ? customers.data[0].id : null;
 
     if (!customerId) {
-        const customer = await stripe.customers.create({ email, metadata: { supabase_uid: userId } });
+        const customer = await stripe.customers.create({ 
+          email, 
+          metadata: { supabase_uid: userId } 
+        });
         customerId = customer.id;
     }
 
-    // 2. Criar Sessão de Checkout (Stripe Hosted Page)
+    // 2. Criar Sessão de Checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
@@ -52,19 +65,18 @@ serve(async (req) => {
             supabase_uid: userId
         }
       },
-      // Permite códigos promocionais no checkout
       allow_promotion_codes: true,
     });
 
     return new Response(
-      JSON.stringify({ sessionId: session.id }),
+      JSON.stringify({ sessionId: session.id, url: session.url }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error) {
-    console.error(error);
+    console.error("Erro Edge Function:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Erro interno." }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     )
   }

@@ -1,19 +1,13 @@
 
 import React, { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { supabaseUrl, supabaseAnonKey } from '../supabaseClient';
 import { LockIcon, ShieldCheckIcon, ArrowPathIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
 
-// --- CONFIGURAÇÃO STRIPE ---
-// Certifique-se de que estes IDs correspondem aos seus produtos no Stripe Dashboard
-const STRIPE_PRICES = {
-    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c',
-    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'
+// --- CONFIGURAÇÃO STRIPE PAYMENT LINKS ---
+const STRIPE_LINKS = {
+    monthly: 'https://buy.stripe.com/4gM6oJfpdbdm0yZ5QdfIs01', 
+    annual: 'https://buy.stripe.com/dRmfZjel9a9iepPemJfIs00'
 };
-
-// Chave pública do Stripe (pk_...)
-const STRIPE_PUBLIC_KEY = 'pk_test_51SyGAmQdX6ANfRVO9vL7E8eNM5O8lVlC9UvL6m9vV8lVlC9UvL6m9vV8lVlC9UvL6m9vV8lVlC9UvL6m9vV'; 
 
 interface PaymentPageProps {
   plan: 'annual' | 'monthly';
@@ -31,52 +25,35 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
   const billingFrequency = selectedPlan === 'annual' ? 'Anual' : 'Mensal';
   const savingsLabel = selectedPlan === 'annual' ? 'Economia de 35%' : null;
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     setError(null);
     setIsProcessing(true);
 
     try {
-        const stripe = await loadStripe(STRIPE_PUBLIC_KEY);
-        if (!stripe) throw new Error("O provedor de pagamentos não pôde ser carregado. Tente novamente.");
-
-        const priceId = selectedPlan === 'annual' ? STRIPE_PRICES.annual : STRIPE_PRICES.monthly;
+        const linkUrl = selectedPlan === 'annual' ? STRIPE_LINKS.annual : STRIPE_LINKS.monthly;
         
-        // A URL de retorno deve ser a base do app para que o Router entenda para onde ir
-        const returnUrl = window.location.origin + window.location.pathname;
-
-        const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${session?.access_token}`
-            },
-            body: JSON.stringify({ 
-                priceId: priceId, 
-                email: session?.user?.email,
-                userId: userData?.id,
-                returnUrl: returnUrl
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "Não foi possível criar a sessão de pagamento.");
+        // Validação simples
+        if (linkUrl.includes('SEU_LINK')) {
+            throw new Error("Links de pagamento do Stripe não configurados no código (PaymentPage.tsx).");
         }
 
-        if (data.sessionId) {
-            const result = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-            if (result.error) {
-                throw new Error(result.error.message);
-            }
-        } else {
-            throw new Error("ID da sessão de pagamento não recebido.");
+        if (!userData?.id || !session?.user?.email) {
+            throw new Error("Dados do usuário não encontrados.");
         }
+
+        // CONSTRUÇÃO DA URL COM RASTREAMENTO
+        // client_reference_id: O ID do usuário no Supabase. O Webhook usará isso para ativar o PRO.
+        // prefilled_email: Preenche o email automaticamente no checkout para o usuário.
+        const checkoutUrl = new URL(linkUrl);
+        checkoutUrl.searchParams.append('client_reference_id', userData.id);
+        checkoutUrl.searchParams.append('prefilled_email', session.user.email);
+
+        // Redireciona o usuário
+        window.location.href = checkoutUrl.toString();
 
     } catch (e: any) {
-        console.error("Stripe Checkout Error:", e);
-        setError(e.message || "Ocorreu um problema ao conectar com o Stripe.");
+        console.error("Checkout Error:", e);
+        setError(e.message || "Ocorreu um problema ao redirecionar para o Stripe.");
         setIsProcessing(false);
     }
   };
@@ -125,7 +102,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                     </div>
 
                     {error && (
-                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl text-center border border-red-100 dark:border-red-900/30">
+                        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl text-center border border-red-100 dark:border-red-900/30 animate-shake">
                             {error}
                         </div>
                     )}
@@ -138,18 +115,18 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         {isProcessing ? (
                             <>
                                 <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                <span>Processando...</span>
+                                <span>Redirecionando...</span>
                             </>
                         ) : (
                             <>
-                                <span>Ativar Agora</span>
+                                <span>Ir para Pagamento</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                             </>
                         )}
                     </button>
                     
                     <p className="text-[10px] text-gray-400 mt-4 text-center leading-relaxed">
-                        Pagamento processado de forma segura pelo Stripe.<br/>Sua assinatura renova automaticamente, cancele quando quiser.
+                        Você será redirecionado para o ambiente seguro do Stripe.<br/>Sua assinatura renova automaticamente, cancele quando quiser.
                     </p>
                 </div>
             </div>

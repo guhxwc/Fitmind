@@ -5,12 +5,9 @@ import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 
-/**
- * IDs REAIS EXTRAÍDOS DO SEU PRODUTO
- */
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c', // Fitmind PRO (Mensal)
-    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'    // Fitmind PRO Anual
+    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c',
+    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'
 };
 
 interface PaymentPageProps {
@@ -32,36 +29,29 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
         
-        console.log(`[Checkout] Iniciando para ${selectedPlan}: ${priceId}`);
+        // Construção da URL de retorno. Como usamos HashRouter, o Stripe precisa redirecionar para a raiz + a rota do hash.
+        // O parâmetro session_id é adicionado pela Stripe automaticamente se usarmos {CHECKOUT_SESSION_ID}
+        const returnUrl = `${window.location.origin}/#/payment/success`;
 
-        // Chamada para a Edge Function
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
                 email: session.user.email,
                 userId: session.user.id,
-                returnUrl: window.location.origin + '/#/payment/success'
+                returnUrl: returnUrl
             }
         });
 
-        if (funcError) {
-            console.error("[Checkout] Erro na função:", funcError);
-            throw new Error(data?.error || funcError.message || "Erro de rede.");
-        }
+        if (funcError) throw new Error(data?.error || funcError.message);
 
-        // Tenta extrair a URL de todos os lugares possíveis para evitar o erro de "Resposta inesperada"
-        const checkoutUrl = data?.url || data?.session?.url || (data?.data && data.data.url);
-
-        if (checkoutUrl) {
-            console.log("[Checkout] URL encontrada, redirecionando...");
-            window.location.href = checkoutUrl;
+        if (data?.url) {
+            window.location.href = data.url;
         } else {
-            console.error("[Checkout] Dados recebidos sem URL:", data);
-            throw new Error("O servidor de pagamentos não retornou um link válido. Verifique as chaves da Stripe no painel do Supabase.");
+            throw new Error("Erro ao gerar link de pagamento.");
         }
 
     } catch (e: any) {
-        console.error("[Checkout] Erro fatal:", e);
+        console.error("[Checkout] Erro:", e);
         addToast(e.message || "Erro ao iniciar pagamento.", "error");
     } finally {
         setIsProcessing(false);
@@ -92,23 +82,13 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70"
                     >
                         {isProcessing ? (
-                            <>
-                                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                Processando...
-                            </>
+                            <><ArrowPathIcon className="w-5 h-5 animate-spin" /> Processando...</>
                         ) : (
-                            <>
-                                <LockIcon className="w-5 h-5" />
-                                Ir para Pagamento
-                            </>
+                            <><LockIcon className="w-5 h-5" /> Ir para Pagamento</>
                         )}
                     </button>
                     
-                    <button 
-                        onClick={onClose} 
-                        disabled={isProcessing}
-                        className="mt-6 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors"
-                    >
+                    <button onClick={onClose} disabled={isProcessing} className="mt-6 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors">
                         Cancelar e voltar
                     </button>
                 </div>

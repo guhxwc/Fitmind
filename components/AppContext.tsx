@@ -87,26 +87,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  const unlockPro = async () => {
-      if(userData) {
-          const updated = { ...userData, isPro: true, subscriptionStatus: 'active' as const };
-          setUserData(updated);
-          addToast("Ativando benefícios PRO...", "info");
-          
-          const { error } = await supabase.from('profiles').update({ 
-              is_pro: true, 
-              subscription_status: 'active' 
-          }).eq('id', userData.id);
-
-          if (error) {
-              console.error("Erro ao salvar status PRO:", error);
-              addToast("Erro ao sincronizar assinatura.", "error");
-          } else {
-              addToast("FitMind PRO desbloqueado!", "success");
-          }
-      }
-  }
-
   const formatProfileToUserData = (profile: any): UserData => ({
       id: profile.id,
       name: profile.name || DEFAULT_USER_DATA.name,
@@ -130,7 +110,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       goals: profile.goals || DEFAULT_USER_DATA.goals,
       streak: profile.streak || 0,
       lastActivityDate: profile.last_activity_date || null,
-      isPro: profile.is_pro || false,
+      isPro: profile.is_pro || false, // CRÍTICO: Mapeamento is_pro -> isPro
       subscriptionStatus: profile.subscription_status || 'free',
       journeyDuration: profile.journey_duration,
       biggestFrustration: profile.biggest_frustration,
@@ -210,12 +190,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
-  // Escuta mudanças em tempo real no perfil (útil para Webhooks do Stripe)
+  // Escuta mudanças em tempo real no perfil (Stripe Webhook -> Supabase -> App)
   useEffect(() => {
     if (!session?.user?.id) return;
 
     const profileSubscription = supabase
-      .channel('profile_changes')
+      .channel(`profile-${session.user.id}`)
       .on(
         'postgres_changes',
         {
@@ -225,12 +205,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           filter: `id=eq.${session.user.id}`
         },
         (payload) => {
-          console.log('Realtime profile update detected:', payload.new);
-          setUserData(formatProfileToUserData(payload.new));
-          if (payload.new.is_pro && !userData?.isPro) {
-            addToast("Sua assinatura PRO foi ativada!", "success");
-            localStorage.setItem('trigger_pro_tour', 'true');
+          console.log('Detectada mudança de perfil em tempo real:', payload.new);
+          const updatedUserData = formatProfileToUserData(payload.new);
+          
+          // Se o usuário acabou de se tornar PRO
+          if (updatedUserData.isPro && !userData?.isPro) {
+              addToast("Assinatura PRO ativada com sucesso!", "success");
+              // Só dispara o tour se não estivermos na página de sucesso (que já tem sua lógica)
+              if (window.location.hash !== '#/payment/success') {
+                  localStorage.setItem('trigger_pro_tour', 'true');
+              }
           }
+          
+          setUserData(updatedUserData);
         }
       )
       .subscribe();
@@ -238,11 +225,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => {
       supabase.removeChannel(profileSubscription);
     };
-  }, [session, userData]);
+  }, [session?.user?.id, userData?.isPro]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const unlockPro = async () => {
+      if(userData) {
+          const { error } = await supabase.from('profiles').update({ 
+              is_pro: true, 
+              subscription_status: 'active' 
+          }).eq('id', userData.id);
+
+          if (!error) {
+              await fetchData();
+              addToast("Modo PRO desbloqueado!", "success");
+          }
+      }
+  }
 
   useEffect(() => {
     if (isInitialLoad.current || loading || !userData) {

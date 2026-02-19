@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
@@ -12,7 +13,6 @@ import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { SuccessPage } from './components/payment/SuccessPage';
-import { WelcomeProPage } from './components/WelcomeProPage';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -26,10 +26,9 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
-  const [userProfile, setUserProfile] = useState<Omit<UserData, 'id'> | null>(null);
-  const [planReviewed, setPlanReviewed] = useState(false);
   const navigate = useNavigate();
 
+  // Fix for line 42: Correct property name 'activityLevel' and complete the mapping function
   const mapProfileToUserData = (profile: any): Omit<UserData, 'id'> => ({
       name: profile.name || DEFAULT_USER_DATA.name,
       gender: profile.gender || DEFAULT_USER_DATA.gender,
@@ -46,179 +45,134 @@ const App: React.FC = () => {
       pace: profile.pace || DEFAULT_USER_DATA.pace,
       motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
       mainSideEffect: profile.main_side_effect,
+      medication: profile.medication || DEFAULT_USER_DATA.medication,
+      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
+      goals: profile.goals || DEFAULT_USER_DATA.goals,
+      streak: profile.streak || 0,
+      lastActivityDate: profile.last_activity_date,
+      isPro: profile.is_pro || false,
+      subscriptionStatus: profile.subscription_status || 'free',
       journeyDuration: profile.journey_duration,
       biggestFrustration: profile.biggest_frustration,
       futureWorry: profile.future_worry,
       oneThingGuaranteed: profile.one_thing_guaranteed,
       dreamOutcome: profile.dream_outcome,
       monthlyInvestment: profile.monthly_investment,
-      medication: profile.medication || DEFAULT_USER_DATA.medication,
-      medicationReminder: profile.medication_reminder,
-      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
-      goals: profile.goals || DEFAULT_USER_DATA.goals,
-      streak: profile.streak || 0,
-      lastActivityDate: profile.last_activity_date,
-      isPro: profile.is_pro || false,
-      subscriptionStatus: profile.subscription_status,
   });
 
-  const checkUserProfile = async (user: Session['user']) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    const exists = !!(profile && profile.weight);
-    setProfileExists(exists);
-    
-    if (profile) {
-        setUserProfile(mapProfileToUserData(profile));
-    }
-    
-    return exists;
-  }
-
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      if (currentSession) {
-        await checkUserProfile(currentSession.user);
-      }
-      setLoading(false);
-    };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else setLoading(false);
+    });
 
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-       if (newSession) {
-        checkUserProfile(newSession.user);
-      } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else {
         setProfileExists(null);
-        setUserProfile(null);
+        setLoading(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleOnboardingComplete = async (data: Omit<UserData, 'id'>) => {
-    if (!session?.user) return;
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
 
-    // Calcular metas baseadas no peso novo
-    const finalWater = parseFloat((data.weight * 0.035).toFixed(1));
-    const finalProtein = Math.round(data.weight * 1.6);
-    const bmr = 10 * data.weight + 6.25 * 175 - 5 * 30 + (data.gender === 'Masculino' ? 5 : -161);
-    const finalCalories = Math.round(bmr * 1.375);
-
-    const profilePayload = {
-      id: session.user.id,
-      name: data.name || session.user.email?.split('@')[0],
-      gender: data.gender,
-      age: data.age,
-      height: data.height,
-      weight: data.weight,
-      target_weight: data.targetWeight,
-      start_weight: data.startWeight,
-      start_weight_date: data.startWeightDate,
-      activity_level: data.activityLevel,
-      medication: data.medication,
-      glp_status: data.glpStatus,
-      application_frequency: data.applicationFrequency,
-      pace: data.pace,
-      motivation: data.motivation,
-      main_side_effect: data.mainSideEffect,
-      // Marketing/Funnel fields
-      journey_duration: data.journeyDuration,
-      biggest_frustration: data.biggestFrustration,
-      future_worry: data.futureWorry,
-      one_thing_guaranteed: data.oneThingGuaranteed,
-      dream_outcome: data.dreamOutcome,
-      monthly_investment: data.monthlyInvestment,
-      notifications: data.notifications || DEFAULT_USER_DATA.notifications,
-      
-      goals: {
-          water: finalWater,
-          protein: finalProtein,
-          calories: finalCalories
-      }
-    };
-
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(profilePayload);
-
-    if (error) {
-      console.error("Error upserting profile:", error);
-    } else {
-      setProfileExists(true);
-      setPlanReviewed(true);
-      // Update local profile state to reflect changes immediately
-      setUserProfile(prev => ({ ...prev, ...data, ...profilePayload } as any));
-      navigate('/');
+      if (error) throw error;
+      setProfileExists(!!data);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleReturnFlowComplete = () => {
-      setPlanReviewed(true);
+  const handleOnboardingComplete = async (userData: Omit<UserData, 'id'>) => {
+    if (!session) return;
+    setLoading(true);
+
+    const profileData = {
+      id: session.user.id,
+      name: userData.name,
+      gender: userData.gender,
+      age: userData.age,
+      birth_date: userData.birthDate,
+      height: userData.height,
+      weight: userData.weight,
+      target_weight: userData.targetWeight,
+      start_weight: userData.startWeight,
+      start_weight_date: userData.startWeightDate,
+      activity_level: userData.activityLevel,
+      glp_status: userData.glpStatus,
+      application_frequency: userData.applicationFrequency,
+      pace: userData.pace,
+      motivation: userData.motivation,
+      main_side_effect: userData.mainSideEffect,
+      medication: userData.medication,
+      notifications: userData.notifications,
+      goals: userData.goals,
+      streak: userData.streak,
+      last_activity_date: userData.lastActivityDate,
+      is_pro: userData.isPro || false,
+      subscription_status: userData.subscriptionStatus || 'free',
+      journey_duration: userData.journeyDuration,
+      biggest_frustration: userData.biggestFrustration,
+      future_worry: userData.futureWorry,
+      one_thing_guaranteed: userData.oneThingGuaranteed,
+      dream_outcome: userData.dreamOutcome,
+      monthly_investment: userData.monthlyInvestment,
+    };
+
+    const { error } = await supabase.from('profiles').upsert(profileData);
+    if (!error) {
+      setProfileExists(true);
       navigate('/');
-  }
+    } else {
+      console.error("Error saving profile:", error);
+    }
+    setLoading(false);
+  };
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center text-gray-800 dark:text-gray-200">FitMind...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg relative">
-      <Routes>
-        <Route path="/auth" element={session ? <Navigate to="/" /> : <Auth />} />
-        
-        <Route 
-          path="/settings/initial-setup" 
-          element={!session ? <Navigate to="/auth" /> : <InitialSettings />} 
-        />
-        
-        <Route path="/payment/success" element={<SuccessPage />} />
-
-        {/* Rota para o a tela linda de Boas-vindas ao PRO */}
-        <Route path="/welcome-pro" element={!session ? <Navigate to="/auth" /> : <WelcomeProPage />} />
-
-        {/* Legal Pages */}
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-
-        {/* New Logic for Non-Pro Return Flow */}
-        <Route 
-          path="/onboarding"
-          element={
-            !session ? <Navigate to="/auth" /> : 
-            (profileExists && userProfile && !userProfile.isPro && !planReviewed) ? (
-                <OnboardingFlow 
-                    onComplete={handleReturnFlowComplete} 
-                    initialData={userProfile}
-                    initialStep={28} // Index of StepFinalPlan
-                />
-            ) :
-            (profileExists ? <Navigate to="/" /> : <OnboardingFlow onComplete={handleOnboardingComplete} />)
-          }
-        />
-        
-        {/* Logic to intercept PRO users who haven't seen the welcome screen */}
-        <Route 
-          path="/*"
-          element={
-            !session ? <Navigate to="/auth" /> : 
-            (!profileExists ? <Navigate to="/onboarding" /> : 
-            (userProfile && !userProfile.isPro && !planReviewed ? <Navigate to="/onboarding" /> : 
-            (userProfile?.isPro && !localStorage.getItem('has_seen_pro_welcome_2') ? <Navigate to="/welcome-pro" /> : 
-            <MainApp />)))
-          } 
-        />
-      </Routes>
-    </div>
+    <Routes>
+      <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/payment/success" element={<SuccessPage />} />
+      
+      <Route path="/*" element={
+        session ? (
+          profileExists ? (
+            <MainApp />
+          ) : (
+            <OnboardingFlow onComplete={handleOnboardingComplete} />
+          )
+        ) : (
+          <Navigate to="/auth" />
+        )
+      } />
+      
+      <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
+    </Routes>
   );
 };
 
+// Fix: Exporting App as default to resolve index.tsx error
 export default App;

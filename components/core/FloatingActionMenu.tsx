@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { 
     PlusIcon, 
@@ -108,7 +109,6 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({ onAction
 
             {/* Floating Action Button (FAB) */}
             <button 
-                id="tour-fab"
                 onClick={toggleMenu}
                 className={`fixed bottom-24 right-5 w-14 h-14 rounded-full bg-black dark:bg-white text-white dark:text-black shadow-2xl flex items-center justify-center z-[70] transition-all duration-300 active:scale-90 border-4 border-white/10 dark:border-black/10 ${isOpen ? 'rotate-45' : 'rotate-0'}`}
                 aria-label="Menu de Ações Rápidas"

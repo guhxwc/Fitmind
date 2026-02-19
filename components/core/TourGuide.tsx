@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
@@ -34,126 +33,88 @@ export const TourGuide: React.FC = () => {
 
         const intro = introJs();
 
-        // Specific steps as requested by the user
+        // Steps remodelados e com textos premium
         const commonSteps = [
-            // 1. Welcome
             {
-                title: 'Bem-vindo ao FitMind!',
-                intro: 'Seu assistente completo para acompanhar seu tratamento GLP-1 e evolução. Vamos conhecer o app!',
+                title: 'Boas-vindas ao FitMind! 👋',
+                intro: 'Seu assistente inteligente para acompanhar o tratamento GLP-1. Vamos fazer um tour rápido para você aproveitar ao máximo!',
             },
-            // 2. Weight Goal
             {
                 element: '#tour-weight-card',
-                title: 'Meta de Peso',
-                intro: 'Aqui você acompanha seu peso atual em relação à sua meta e registra variações.',
+                title: 'Sua Evolução ⚖️',
+                intro: 'Acompanhe seu peso e o progresso em relação à sua meta. Cada grama conquistada importa.',
                 position: 'top'
             },
-            // 3. Nutrition (Protein/Water)
             {
                 element: '#tour-nutrition',
-                title: 'Nutrição Diária',
-                intro: 'Monitore sua ingestão de proteínas e hidratação, essenciais para o tratamento.',
+                title: 'Nutrição e Água 💧',
+                intro: 'Mantenha a ingestão de proteínas alta e bata sua meta de água para evitar efeitos colaterais.',
                 position: 'top'
             },
-            // 4. Quick Action (Smart Log)
             {
                 element: '#tour-smartlog',
-                title: 'Registro Rápido',
-                intro: 'Use a IA para registrar refeições apenas descrevendo ou tirando foto.',
+                title: 'Registro Mágico ✨',
+                intro: 'Basta descrever o que comeu (ou tirar uma foto no PRO). Nossa IA calcula todas as calorias e proteínas pra você.',
                 position: 'top'
             },
-            // 5. Treatment (Medication Card)
             {
                 element: '#tour-medication',
-                title: 'Tratamento',
-                intro: 'Visualize sua próxima dose e mantenha o controle do cronograma.',
+                title: 'Sua Medicação 💉',
+                intro: 'Acompanhe a data da próxima dose e não perca o controle. Gerencie também o nível de medicação no corpo.',
                 position: 'bottom'
             },
-            // 6. Diet & Fasting (Nav Icon)
             {
-                element: '#nav-meals',
-                title: 'Dieta e Jejum',
-                intro: 'Nesta aba, acesse seu plano alimentar e controle seus jejuns.',
+                element: '#tour-fab',
+                title: 'Ações Rápidas ⚡',
+                intro: 'Toque aqui a qualquer momento para registrar refeições, peso, exercícios físicos ou efeitos colaterais.',
+                position: 'left'
+            },
+            {
+                element: '#tour-nav',
+                title: 'Navegação 🧭',
+                intro: 'Acesse Planos de Dieta, Treinos com IA e o Histórico Completo. Tudo estruturado para seus resultados.',
                 position: 'top'
             },
-            // 7. Doses (Nav Icon)
             {
-                element: '#nav-applications',
-                title: 'Doses e Níveis',
-                intro: 'Histórico completo de aplicações e estimativa do nível da medicação no corpo.',
-                position: 'top'
-            },
-            // 8. Side Effects (Quick Action Btn)
-            {
-                element: '#tour-side-effects-btn',
-                title: 'Efeitos Colaterais',
-                intro: 'Registre sintomas rapidamente para receber dicas de alívio.',
-                position: 'top'
-            },
-            // 9. Results/Graph (Nav Icon)
-            {
-                element: '#nav-progress',
-                title: 'Resultados e Gráficos',
-                intro: 'Acompanhe sua curva de peso, fotos de progresso e estatísticas corporais.',
-                position: 'top'
-            },
-            // 10. History (Daily Records Section)
-            {
-                element: '#tour-daily-history',
-                title: 'Histórico de Registros',
-                intro: 'Tudo o que você fez hoje aparece aqui: refeições, treinos e doses.',
-                position: 'top'
-            },
-            // 11. Settings (Nav Icon)
-            {
-                element: '#nav-settings',
-                title: 'Configurações',
-                intro: 'Ajuste suas metas, lembretes e dados da conta.',
-                position: 'top'
-            },
-            // 12. Conclusion
-            {
-                title: 'Pronto para começar!',
-                intro: 'Agora você conhece o FitMind. Registre sua primeira atividade e comece sua jornada!',
+                title: 'Tudo pronto! 🚀',
+                intro: 'Sua jornada rumo à sua melhor versão começa agora. Adicione seu primeiro registro do dia!',
             }
         ];
 
         const proSteps = [
             {
-                title: 'Bem-vindo ao PRO!',
-                intro: 'Parabéns pela decisão! Agora você tem o sistema completo para garantir seus resultados.',
+                title: 'Você é PRO! 🌟',
+                intro: 'Sua conta foi atualizada com sucesso. Agora você tem o sistema completo para garantir resultados permanentes.',
             },
             {
                 element: '#tour-smartlog',
-                title: 'CalorieCam Liberado',
-                intro: 'Agora você pode usar a câmera para registrar alimentos instantaneamente. Experimente na sua próxima refeição!',
+                title: 'CalorieCam Liberada 📸',
+                intro: 'Aponte a câmera para seu prato e deixe a Inteligência Artificial calcular todos os macros por você.',
                 position: 'top'
             },
             {
                 element: '#nav-workouts',
-                title: 'Treinos Personalizados',
-                intro: 'Acesse seus planos de treino adaptativos nesta aba.',
+                title: 'Treinos Adaptativos 🏋️',
+                intro: 'Seus treinos exclusivos gerados por IA já estão disponíveis. Evolua respeitando os limites do seu corpo.',
                 position: 'top'
             }
         ];
 
         intro.setOptions({
             steps: type === 'initial' ? commonSteps : proSteps,
-            showProgress: true,
-            showBullets: false,
+            showProgress: false, // Esconde a barra de progresso em favor dos bullets estilo iOS
+            showBullets: true,
             exitOnOverlayClick: false,
             exitOnEsc: true,
-            nextLabel: 'Próximo',
+            nextLabel: 'Avançar',
             prevLabel: 'Voltar',
-            doneLabel: 'Começar',
-            skipLabel: 'Pular',
+            doneLabel: 'Começar Agora',
+            skipLabel: '×', // Usando um símbolo de "X" simples e elegante
             disableInteraction: true,
             showSkipButton: true,
-            scrollToElement: false, // We handle scrolling manually for better control
-            tooltipClass: document.documentElement.classList.contains('dark') ? 'dark-mode-tour' : '',
+            scrollToElement: false, // Nós controlamos o scroll suave manualmente
         });
 
-        // Function to check if element is in viewport
         const isElementInViewport = (el: HTMLElement) => {
             const rect = el.getBoundingClientRect();
             return (
@@ -164,22 +125,19 @@ export const TourGuide: React.FC = () => {
             );
         };
 
-        // Helper to manipulate Intro.js overlay opacity
         const setOverlayOpacity = (opacity: string) => {
             const helperLayer = document.querySelector('.introjs-helperLayer') as HTMLElement;
             const tooltipReference = document.querySelector('.introjs-tooltipReferenceLayer') as HTMLElement;
             
             if (helperLayer) {
-                helperLayer.style.transition = 'opacity 0.3s ease';
                 helperLayer.style.opacity = opacity;
             }
             if (tooltipReference) {
-                tooltipReference.style.transition = 'opacity 0.3s ease';
                 tooltipReference.style.opacity = opacity;
             }
         };
 
-        // Advanced Scroll Handler
+        // Scroll Handling Suave
         intro.onbeforechange(function(targetElement: HTMLElement) {
             return new Promise<void>((resolve) => {
                 if (!targetElement) {
@@ -187,84 +145,40 @@ export const TourGuide: React.FC = () => {
                     return;
                 }
 
-                // SPECIAL HANDLING: Side Effects Button
-                // Jump directly to view without smooth scroll animation (Snap behavior)
-                if (targetElement.id === 'tour-side-effects-btn') {
-                    // 1. Hide overlay to prevent visual glitches
-                    setOverlayOpacity('0');
-
-                    // 2. Ensure we are on the correct route
-                    if (location.pathname !== '/') {
-                        navigate('/');
-                    }
-
-                    // 3. Instant Snap (setTimeout allows React to render/route to settle)
-                    setTimeout(() => {
-                        const el = document.getElementById('tour-side-effects-btn');
-                        if (el) {
-                            el.scrollIntoView({
-                                behavior: 'auto', // INSTANT SNAP (No animation)
-                                block: 'center',
-                                inline: 'nearest'
-                            });
-                            intro.refresh();
-                            
-                            // 4. Fade In
-                            setTimeout(() => {
-                                setOverlayOpacity('1');
-                                resolve();
-                            }, 100);
-                        } else {
-                            resolve();
-                        }
-                    }, 50);
-                    return;
-                }
-
-                // STANDARD HANDLING: Smooth Scroll for other elements
-                // If not visible or partially visible
                 if (!isElementInViewport(targetElement)) {
-                    
-                    // 1. Hide the highlighter immediately to prevent ugly jumping
+                    // Esconde a tooltip antes de mover a tela para evitar efeito esticado feio
                     setOverlayOpacity('0');
 
-                    // 2. Scroll to element
                     targetElement.scrollIntoView({
                         behavior: 'smooth',
                         block: 'center',
                         inline: 'nearest'
                     });
 
-                    // 3. Wait for scroll to finish
+                    // Aguarda o scroll finalizar checando a posição do eixo Y
                     let lastScrollPos = window.pageYOffset || document.documentElement.scrollTop;
                     let checkCount = 0;
                     
                     const scrollInterval = setInterval(() => {
                         const currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
                         
-                        // Check if scroll stopped (position hasn't changed in 100ms)
                         if (Math.abs(currentScrollPos - lastScrollPos) < 2) {
                             checkCount++;
-                            // Confirm stability (wait ~300ms of stability)
-                            if (checkCount > 3) {
+                            if (checkCount > 3) { // Tela estabilizada
                                 clearInterval(scrollInterval);
-                                
-                                // 4. Refresh Intro.js position calculation now that we are steady
-                                intro.refresh();
-                                
-                                // 5. Fade highlighter back in and resolve
+                                intro.refresh(); // Recalcula a posição
                                 setTimeout(() => {
                                     setOverlayOpacity('1');
                                     resolve();
                                 }, 150);
                             }
                         } else {
-                            checkCount = 0; // Reset if still moving
+                            checkCount = 0;
                             lastScrollPos = currentScrollPos;
                         }
                     }, 100);
 
-                    // Safety timeout (max 1.5s scroll time)
+                    // Timeout de segurança caso o scroll fique preso
                     setTimeout(() => {
                         clearInterval(scrollInterval);
                         intro.refresh();
@@ -272,7 +186,6 @@ export const TourGuide: React.FC = () => {
                         resolve();
                     }, 1500);
                 } else {
-                    // Element is visible, just proceed
                     resolve();
                 }
             });
@@ -288,11 +201,11 @@ export const TourGuide: React.FC = () => {
             isRunning.current = false;
         });
 
-        // Delay slightly to ensure DOM elements are rendered
+        // Delay para garantir que a UI carregou perfeitamente
         setTimeout(() => {
             intro.start();
-        }, 1000);
+        }, 800);
     };
 
-    return null; // This is a logic-only component
+    return null;
 };

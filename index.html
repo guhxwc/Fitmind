@@ -62,8 +62,8 @@
       html, body {
         height: 100%;
         width: 100%;
-        overflow: hidden; /* Prevent scrolling of root */
-        position: fixed; /* Prevent bouncy scroll on iOS */
+        overflow: hidden;
+        position: fixed;
       }
       
       body {
@@ -76,7 +76,7 @@
       #root {
         height: 100%;
         width: 100%;
-        overflow-y: auto; /* Internal scrolling handled here */
+        overflow-y: auto;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -117,7 +117,6 @@
         100% { transform: translateX(200%); }
       }
 
-      /* Hide Scrollbar but keep functionality */
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -126,12 +125,10 @@
         scrollbar-width: none;
       }
       
-      /* iOS specific inputs */
       input, textarea, button, select, a {
         -webkit-tap-highlight-color: rgba(0,0,0,0);
       }
       
-      /* Glassmorphism utilities */
       .glass {
         background: rgba(255, 255, 255, 0.75);
         backdrop-filter: blur(20px);
@@ -141,145 +138,213 @@
         background: rgba(28, 28, 30, 0.75);
       }
 
-      /* --- INTRO.JS CUSTOM THEME (iOS Style) --- */
+      /* ========================================================================= */
+      /* --- INTRO.JS PREMIUM UX REWORK (iOS / GLASSMORPHISM STYLE)            --- */
+      /* ========================================================================= */
+
+      /* Overlay Escuro com Blur */
       .introjs-overlay {
-        background-color: rgba(0, 0, 0, 0.6) !important;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.6) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        transition: opacity 0.4s ease !important;
       }
       
+      /* Janela de Corte (Foco no Elemento) */
       .introjs-helperLayer {
-        background-color: transparent !important;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 0 1000vw rgba(0,0,0,0.2) !important; /* Soft focus ring */
-        border-radius: 16px;
+        background: transparent !important;
+        border-radius: 20px !important;
+        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.8), 0 0 0 5000px rgba(0,0,0,0.4) !important;
+        transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+      }
+      .dark .introjs-helperLayer {
+        box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.8), 0 0 0 5000px rgba(0,0,0,0.6) !important;
       }
 
+      /* Card do Tooltip */
       .introjs-tooltip {
-        background-color: #FFFFFF;
-        color: #1C1C1E;
-        border-radius: 24px;
-        padding: 24px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        border: none;
-        font-family: 'Inter', sans-serif;
-        max-width: 320px;
+        background: #FFFFFF !important;
+        border-radius: 28px !important;
+        box-shadow: 0 24px 48px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05) !important;
+        padding: 24px !important;
+        max-width: 340px !important;
+        font-family: 'Inter', sans-serif !important;
+        animation: tooltipPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        transform-origin: center;
       }
-
       .dark .introjs-tooltip {
-        background-color: #1C1C1E;
-        color: #FFFFFF;
-        border: 1px solid rgba(255,255,255,0.1);
+        background: #1C1C1E !important;
+        box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1) !important;
+      }
+      @keyframes tooltipPop {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
       }
 
+      /* Textos Internos */
+      .introjs-tooltip-header {
+        padding-right: 32px !important;
+        margin-bottom: 8px !important;
+      }
       .introjs-tooltip-title {
-        font-size: 20px;
-        font-weight: 800;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-        color: #000;
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #000000 !important;
+        line-height: 1.2 !important;
+        letter-spacing: -0.5px !important;
       }
       .dark .introjs-tooltip-title {
-        color: #FFF;
+        color: #FFFFFF !important;
       }
-
       .introjs-tooltip-text {
-        font-size: 15px;
-        line-height: 1.5;
-        color: #636366; /* iOS Gray */
-        font-weight: 500;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        color: #636366 !important;
+        line-height: 1.5 !important;
+        margin-top: 8px !important;
       }
       .dark .introjs-tooltip-text {
-        color: #AEAEB2;
+        color: #AEAEB2 !important;
       }
 
-      .introjs-tooltipbuttons {
-        border-top: none;
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-      }
-
-      /* Buttons */
-      .introjs-button {
-        border-radius: 99px !important;
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        padding: 10px 20px !important;
-        text-shadow: none !important;
-        box-shadow: none !important;
-        transition: transform 0.2s !important;
-        border: none !important;
-      }
-      
-      .introjs-button:active {
-        transform: scale(0.96);
-      }
-
-      /* Next / Done Button */
-      .introjs-nextbutton, .introjs-donebutton {
-        background-color: #000 !important;
-        color: #FFF !important;
-      }
-      .dark .introjs-nextbutton, .dark .introjs-donebutton {
-        background-color: #FFF !important;
-        color: #000 !important;
-      }
-
-      /* Prev Button */
-      .introjs-prevbutton {
-        background-color: #F2F2F7 !important;
-        color: #000 !important;
-      }
-      .dark .introjs-prevbutton {
-        background-color: #2C2C2E !important;
-        color: #FFF !important;
-      }
-      .introjs-disabled {
-        opacity: 0.5;
-        pointer-events: none;
-      }
-
-      /* Skip Button */
+      /* Botão Flutuante de Fechar (Skip) */
       .introjs-skipbutton {
+        position: absolute !important;
+        top: 16px !important;
+        right: 16px !important;
+        width: 32px !important;
+        height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #F2F2F7 !important;
         color: #8E8E93 !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        text-decoration: none;
+        font-size: 24px !important;
+        line-height: 1 !important;
+        border-radius: 50% !important;
+        text-decoration: none !important;
+        font-weight: 300 !important;
+        transition: all 0.2s ease !important;
       }
       .introjs-skipbutton:hover {
-        color: #000 !important;
+        background: #E5E5EA !important;
+        color: #000000 !important;
+      }
+      .dark .introjs-skipbutton {
+        background: #2C2C2E !important;
       }
       .dark .introjs-skipbutton:hover {
+        background: #3A3A3C !important;
+        color: #FFFFFF !important;
+      }
+
+      /* Área de Botões (Next / Prev / Done) */
+      .introjs-tooltipbuttons {
+        border-top: none !important;
+        margin-top: 24px !important;
+        display: flex !important;
+        gap: 12px !important;
+        justify-content: flex-end !important;
+      }
+
+      .introjs-button {
+        font-family: 'Inter', sans-serif !important;
+        border-radius: 16px !important;
+        padding: 12px 20px !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        transition: transform 0.2s ease, filter 0.2s ease !important;
+        cursor: pointer !important;
+        outline: none !important;
+      }
+      .introjs-button:active {
+        transform: scale(0.95) !important;
+      }
+
+      /* Botão Voltar */
+      .introjs-prevbutton {
+        background: #F2F2F7 !important;
+        color: #8E8E93 !important;
+      }
+      .dark .introjs-prevbutton {
+        background: #2C2C2E !important;
+        color: #AEAEB2 !important;
+      }
+      .introjs-prevbutton:hover {
+        color: #000 !important;
+      }
+      .dark .introjs-prevbutton:hover {
         color: #FFF !important;
       }
 
-      /* Bullets */
+      /* Botão Próximo / Concluir */
+      .introjs-nextbutton, .introjs-donebutton {
+        background: #007AFF !important;
+        color: #FFFFFF !important;
+        flex: 1 !important;
+        text-align: center !important;
+        box-shadow: 0 8px 16px rgba(0, 122, 255, 0.2) !important;
+      }
+      .dark .introjs-nextbutton, .dark .introjs-donebutton {
+        background: #0A84FF !important;
+      }
+      .introjs-disabled {
+        opacity: 0.5 !important;
+        pointer-events: none !important;
+      }
+
+      /* Bullets (Pontos de Progresso) */
+      .introjs-bullets {
+        margin-top: 16px !important;
+        padding-bottom: 0 !important;
+      }
       .introjs-bullets ul li a {
-        background: #D1D1D6;
-        width: 8px;
-        height: 8px;
+        background: #E5E5EA !important;
+        width: 6px !important;
+        height: 6px !important;
+        border-radius: 50% !important;
+        transition: all 0.3s ease !important;
+        margin: 0 4px !important;
+      }
+      .dark .introjs-bullets ul li a {
+        background: #38383A !important;
       }
       .introjs-bullets ul li a.active {
-        background: #007AFF;
-        width: 20px;
-        border-radius: 4px;
+        background: #007AFF !important;
+        width: 16px !important;
+        border-radius: 4px !important;
       }
-      .introjs-arrow {
-        border-bottom-color: #FFF !important;
+      .dark .introjs-bullets ul li a.active {
+        background: #0A84FF !important;
       }
-      .dark .introjs-arrow {
-        border-bottom-color: #1C1C1E !important;
-      }
+
+      /* Ajustes de Seta (Setinhas Apontando para o Elemento) */
       .introjs-arrow.top {
-        border-top-color: #FFF !important;
+        border-bottom-color: #FFFFFF !important;
       }
       .dark .introjs-arrow.top {
+        border-bottom-color: #1C1C1E !important;
+      }
+      .introjs-arrow.bottom {
+        border-top-color: #FFFFFF !important;
+      }
+      .dark .introjs-arrow.bottom {
         border-top-color: #1C1C1E !important;
+      }
+      .introjs-arrow.right {
+        border-left-color: #FFFFFF !important;
+      }
+      .dark .introjs-arrow.right {
+        border-left-color: #1C1C1E !important;
+      }
+      .introjs-arrow.left {
+        border-right-color: #FFFFFF !important;
+      }
+      .dark .introjs-arrow.left {
+        border-right-color: #1C1C1E !important;
       }
     </style>
   <script type="importmap">

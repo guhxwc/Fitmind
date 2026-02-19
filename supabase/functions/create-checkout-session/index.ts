@@ -15,29 +15,22 @@ declare const Deno: {
 };
 
 serve(async (req) => {
-  // CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não encontrada nas configurações do Supabase.");
+    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não configurada.");
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    const body = await req.json();
-    const { priceId, email, userId, returnUrl } = body;
+    const { priceId, email, userId, returnUrl } = await req.json();
     
-    // Validações básicas
-    if (!priceId) throw new Error("Parâmetro 'priceId' está faltando.");
-    if (!userId) throw new Error("Parâmetro 'userId' está faltando.");
-    if (!returnUrl) throw new Error("Parâmetro 'returnUrl' está faltando.");
-
-    console.log(`[Stripe Edge] Criando sessão para User=${userId}, Price=${priceId}`);
+    if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
 
     const session = await stripe.checkout.sessions.create({
       customer_email: email && email.trim() !== "" ? email : undefined,
@@ -51,16 +44,13 @@ serve(async (req) => {
     });
 
     if (!session.url) {
-        console.error("[Stripe Edge] Stripe não retornou URL. Session ID:", session.id);
-        throw new Error("Erro na geração do link de checkout pela Stripe.");
+        throw new Error("O Stripe não gerou uma URL para esta sessão.");
     }
 
-    console.log(`[Stripe Edge] Sessão criada com sucesso: ${session.id}`);
-
-    // Retorna a URL em vários níveis para máxima compatibilidade com o frontend
+    // RETORNO PLANO: O frontend espera encontrar 'url' aqui.
     return new Response(JSON.stringify({ 
-      url: session.url, 
-      session: session, // Mantém o objeto completo se necessário
+      url: session.url,
+      id: session.id,
       success: true 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -68,7 +58,6 @@ serve(async (req) => {
     })
 
   } catch (error: any) {
-    console.error(`[Stripe Edge Error]: ${error.message}`);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false 

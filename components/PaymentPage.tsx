@@ -6,11 +6,11 @@ import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 
 /**
- * IDs REAIS EXTRAÍDOS DO SEU CSV
+ * IDs REAIS EXTRAÍDOS DO SEU PRODUTO
  */
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c', // Fitmind PRO (Mensal) - R$ 49,00
-    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'    // Fitmind PRO Anual - R$ 389,22
+    monthly: 'price_1SyGAmQdX6ANfRVOv6WAl27c', // Fitmind PRO (Mensal)
+    annual: 'price_1SyGFsQdX6ANfRVOkKskMwZ7'    // Fitmind PRO Anual
 };
 
 interface PaymentPageProps {
@@ -32,9 +32,9 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
         
-        console.log(`[Stripe] Iniciando checkout: Plan=${selectedPlan}, PriceID=${priceId}`);
+        console.log(`[Checkout] Iniciando para ${selectedPlan}: ${priceId}`);
 
-        // Chama a Edge Function do Supabase
+        // Chamada para a Edge Function
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
@@ -45,32 +45,24 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         });
 
         if (funcError) {
-            console.error("[Stripe] Erro na Edge Function:", funcError);
-            throw new Error(data?.error || funcError.message || "Erro de comunicação com o servidor.");
+            console.error("[Checkout] Erro na função:", funcError);
+            throw new Error(data?.error || funcError.message || "Erro de rede.");
         }
 
-        console.log("[Stripe] Resposta recebida do servidor:", JSON.stringify(data));
-
-        // Tenta encontrar a URL em qualquer lugar da estrutura (flat, session, ou data.url)
-        const checkoutUrl = data?.url || data?.session?.url || data?.data?.url;
+        // Tenta extrair a URL de todos os lugares possíveis para evitar o erro de "Resposta inesperada"
+        const checkoutUrl = data?.url || data?.session?.url || (data?.data && data.data.url);
 
         if (checkoutUrl) {
-            console.log("[Stripe] Sucesso! Redirecionando para:", checkoutUrl);
+            console.log("[Checkout] URL encontrada, redirecionando...");
             window.location.href = checkoutUrl;
         } else {
-            console.error("[Stripe] Resposta incompleta. Data:", data);
-            
-            // Verificação extra: se o objeto 'session' existe mas não tem 'url'
-            if (data?.session && !data.session.url) {
-                throw new Error("A sessão do Stripe foi criada, mas não gerou um link de pagamento. Verifique se o Modo de Teste/Live do Stripe e o Price ID estão corretos.");
-            }
-            
-            throw new Error("O servidor não retornou um link de checkout válido. Verifique os logs do console.");
+            console.error("[Checkout] Dados recebidos sem URL:", data);
+            throw new Error("O servidor de pagamentos não retornou um link válido. Verifique as chaves da Stripe no painel do Supabase.");
         }
 
     } catch (e: any) {
-        console.error("[Stripe] Erro fatal no checkout:", e);
-        addToast(e.message || "Erro inesperado ao iniciar pagamento.", "error");
+        console.error("[Checkout] Erro fatal:", e);
+        addToast(e.message || "Erro ao iniciar pagamento.", "error");
     } finally {
         setIsProcessing(false);
     }
@@ -85,12 +77,12 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         <ShieldCheckIcon className="w-10 h-10 text-blue-600" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Checkout Seguro</h2>
-                    <p className="text-gray-500 mb-8">Você será redirecionado para o ambiente criptografado da Stripe para concluir sua assinatura.</p>
+                    <p className="text-gray-500 mb-8">Você será redirecionado para a Stripe para concluir sua assinatura com total segurança.</p>
 
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-8 text-left border border-gray-100 dark:border-gray-800">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Plano Selecionado</p>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind' : 'Assinatura Mensal FitMind'}
+                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind PRO' : 'Assinatura Mensal FitMind PRO'}
                         </p>
                     </div>
 
@@ -102,7 +94,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                         {isProcessing ? (
                             <>
                                 <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                Carregando...
+                                Processando...
                             </>
                         ) : (
                             <>

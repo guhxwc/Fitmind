@@ -12,7 +12,6 @@ import { DEFAULT_USER_DATA } from './constants';
 import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
-import { SuccessPage } from './components/payment/SuccessPage';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -27,38 +26,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const navigate = useNavigate();
-
-  // Fix for line 42: Correct property name 'activityLevel' and complete the mapping function
-  const mapProfileToUserData = (profile: any): Omit<UserData, 'id'> => ({
-      name: profile.name || DEFAULT_USER_DATA.name,
-      gender: profile.gender || DEFAULT_USER_DATA.gender,
-      age: profile.age || DEFAULT_USER_DATA.age,
-      birthDate: profile.birth_date,
-      height: profile.height || DEFAULT_USER_DATA.height,
-      weight: profile.weight || DEFAULT_USER_DATA.weight,
-      targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
-      startWeight: profile.start_weight || DEFAULT_USER_DATA.startWeight,
-      startWeightDate: profile.start_weight_date,
-      activityLevel: profile.activity_level || DEFAULT_USER_DATA.activityLevel,
-      glpStatus: profile.glp_status || DEFAULT_USER_DATA.glpStatus,
-      applicationFrequency: profile.application_frequency || DEFAULT_USER_DATA.applicationFrequency,
-      pace: profile.pace || DEFAULT_USER_DATA.pace,
-      motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
-      mainSideEffect: profile.main_side_effect,
-      medication: profile.medication || DEFAULT_USER_DATA.medication,
-      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
-      goals: profile.goals || DEFAULT_USER_DATA.goals,
-      streak: profile.streak || 0,
-      lastActivityDate: profile.last_activity_date,
-      isPro: profile.is_pro || false,
-      subscriptionStatus: profile.subscription_status || 'free',
-      journeyDuration: profile.journey_duration,
-      biggestFrustration: profile.biggest_frustration,
-      futureWorry: profile.future_worry,
-      oneThingGuaranteed: profile.one_thing_guaranteed,
-      dreamOutcome: profile.dream_outcome,
-      monthlyInvestment: profile.monthly_investment,
-  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -155,7 +122,6 @@ const App: React.FC = () => {
       <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/payment/success" element={<SuccessPage />} />
       
       <Route path="/*" element={
         session ? (
@@ -174,5 +140,4 @@ const App: React.FC = () => {
   );
 };
 
-// Fix: Exporting App as default to resolve index.tsx error
 export default App;

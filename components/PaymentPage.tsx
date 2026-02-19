@@ -29,9 +29,8 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
         
-        // Construção da URL de retorno. Como usamos HashRouter, o Stripe precisa redirecionar para a raiz + a rota do hash.
-        // O parâmetro session_id é adicionado pela Stripe automaticamente se usarmos {CHECKOUT_SESSION_ID}
-        const returnUrl = `${window.location.origin}/#/payment/success`;
+        // Redireciona diretamente para a Home (#/) após o pagamento
+        const returnUrl = `${window.location.origin}/#/`;
 
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {

@@ -15,14 +15,14 @@ declare const Deno: {
 };
 
 serve(async (req) => {
-  // Resposta para Preflight request (CORS)
+  // CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não configurada no Supabase.");
+    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não encontrada nas configurações do Supabase.");
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
@@ -32,14 +32,15 @@ serve(async (req) => {
     const body = await req.json();
     const { priceId, email, userId, returnUrl } = body;
     
-    if (!priceId) throw new Error("Price ID é obrigatório.");
-    if (!userId) throw new Error("User ID é obrigatório.");
-    if (!returnUrl) throw new Error("Return URL é obrigatória.");
+    // Validações básicas
+    if (!priceId) throw new Error("Parâmetro 'priceId' está faltando.");
+    if (!userId) throw new Error("Parâmetro 'userId' está faltando.");
+    if (!returnUrl) throw new Error("Parâmetro 'returnUrl' está faltando.");
 
-    console.log(`[Checkout] Criando sessão para: ${email || 'Sem email'}, User: ${userId}, Price: ${priceId}`);
+    console.log(`[Stripe Edge] Criando sessão para User=${userId}, Price=${priceId}`);
 
-    // Configurações da Sessão
-    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
+    const session = await stripe.checkout.sessions.create({
+      customer_email: email && email.trim() !== "" ? email : undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: `${returnUrl}?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -47,28 +48,31 @@ serve(async (req) => {
       client_reference_id: userId,
       metadata: { supabase_user_id: userId },
       allow_promotion_codes: true,
-    };
-
-    // Só adiciona email se existir, para evitar erro de validação do Stripe se for string vazia
-    if (email && email.trim() !== "") {
-      sessionOptions.customer_email = email;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionOptions);
+    });
 
     if (!session.url) {
-      throw new Error("Stripe falhou ao gerar a URL de checkout.");
+        console.error("[Stripe Edge] Stripe não retornou URL. Session ID:", session.id);
+        throw new Error("Erro na geração do link de checkout pela Stripe.");
     }
 
-    console.log(`[Checkout] Sessão criada com sucesso: ${session.id}`);
+    console.log(`[Stripe Edge] Sessão criada com sucesso: ${session.id}`);
 
-    return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
+    // Retorna a URL em vários níveis para máxima compatibilidade com o frontend
+    return new Response(JSON.stringify({ 
+      url: session.url, 
+      session: session, // Mantém o objeto completo se necessário
+      success: true 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
-    console.error(`[Checkout Error]: ${error.message}`);
-    return new Response(JSON.stringify({ error: error.message }), {
+
+  } catch (error: any) {
+    console.error(`[Stripe Edge Error]: ${error.message}`);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      success: false 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

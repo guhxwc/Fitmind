@@ -32,10 +32,10 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
         
-        console.log(`Iniciando checkout para o plano: ${selectedPlan} com ID: ${priceId}`);
+        console.log(`[Stripe] Iniciando checkout: Plan=${selectedPlan}, PriceID=${priceId}`);
 
         // Chama a Edge Function do Supabase
-        const response = await supabase.functions.invoke('create-checkout-session', {
+        const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
                 email: session.user.email,
@@ -44,28 +44,32 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
             }
         });
 
-        const { data, error: funcError } = response;
-
         if (funcError) {
-            console.error("Erro retornado pela Edge Function:", funcError);
-            // Tenta extrair a mensagem de erro do corpo se disponível
-            let errorMessage = "Erro na comunicação com o servidor de pagamento.";
-            if (data && data.error) errorMessage = data.error;
-            else if (funcError.message) errorMessage = funcError.message;
-            
-            throw new Error(errorMessage);
+            console.error("[Stripe] Erro na Edge Function:", funcError);
+            throw new Error(data?.error || funcError.message || "Erro de comunicação com o servidor.");
         }
 
-        if (data && data.url) {
-            console.log("Redirecionando para Stripe:", data.url);
-            window.location.href = data.url;
+        console.log("[Stripe] Resposta recebida do servidor:", JSON.stringify(data));
+
+        // Tenta encontrar a URL em qualquer lugar da estrutura (flat, session, ou data.url)
+        const checkoutUrl = data?.url || data?.session?.url || data?.data?.url;
+
+        if (checkoutUrl) {
+            console.log("[Stripe] Sucesso! Redirecionando para:", checkoutUrl);
+            window.location.href = checkoutUrl;
         } else {
-            console.error("Resposta inesperada do servidor:", data);
-            throw new Error("O servidor de pagamentos não retornou um link válido. Verifique se as chaves da Stripe estão configuradas corretamente.");
+            console.error("[Stripe] Resposta incompleta. Data:", data);
+            
+            // Verificação extra: se o objeto 'session' existe mas não tem 'url'
+            if (data?.session && !data.session.url) {
+                throw new Error("A sessão do Stripe foi criada, mas não gerou um link de pagamento. Verifique se o Modo de Teste/Live do Stripe e o Price ID estão corretos.");
+            }
+            
+            throw new Error("O servidor não retornou um link de checkout válido. Verifique os logs do console.");
         }
 
     } catch (e: any) {
-        console.error("Erro fatal no processo de checkout:", e);
+        console.error("[Stripe] Erro fatal no checkout:", e);
         addToast(e.message || "Erro inesperado ao iniciar pagamento.", "error");
     } finally {
         setIsProcessing(false);

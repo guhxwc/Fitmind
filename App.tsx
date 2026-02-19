@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -13,6 +12,7 @@ import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { SuccessPage } from './components/payment/SuccessPage';
+import { WelcomeProPage } from './components/WelcomeProPage';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -182,6 +182,9 @@ const App: React.FC = () => {
         
         <Route path="/payment/success" element={<SuccessPage />} />
 
+        {/* Rota para o a tela linda de Boas-vindas ao PRO */}
+        <Route path="/welcome-pro" element={!session ? <Navigate to="/auth" /> : <WelcomeProPage />} />
+
         {/* Legal Pages */}
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
@@ -202,12 +205,15 @@ const App: React.FC = () => {
           }
         />
         
+        {/* Logic to intercept PRO users who haven't seen the welcome screen */}
         <Route 
           path="/*"
           element={
             !session ? <Navigate to="/auth" /> : 
             (!profileExists ? <Navigate to="/onboarding" /> : 
-            (userProfile && !userProfile.isPro && !planReviewed ? <Navigate to="/onboarding" /> : <MainApp />))
+            (userProfile && !userProfile.isPro && !planReviewed ? <Navigate to="/onboarding" /> : 
+            (userProfile?.isPro && !localStorage.getItem('has_seen_pro_welcome') ? <Navigate to="/welcome-pro" /> : 
+            <MainApp />)))
           } 
         />
       </Routes>

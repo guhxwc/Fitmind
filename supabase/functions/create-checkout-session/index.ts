@@ -32,14 +32,17 @@ serve(async (req) => {
     
     if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
 
+    // Criar a Sessão de Checkout
     const session = await stripe.checkout.sessions.create({
       customer_email: email && email.trim() !== "" ? email : undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: `${returnUrl}?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl.replace('/success', '')}?payment_canceled=true`,
-      client_reference_id: userId,
-      metadata: { supabase_user_id: userId },
+      client_reference_id: userId, // Identificador principal
+      metadata: { 
+        supabase_user_id: userId // Backup no metadata
+      },
       allow_promotion_codes: true,
     });
 
@@ -47,7 +50,6 @@ serve(async (req) => {
         throw new Error("O Stripe não gerou uma URL para esta sessão.");
     }
 
-    // RETORNO PLANO: O frontend espera encontrar 'url' aqui.
     return new Response(JSON.stringify({ 
       url: session.url,
       id: session.id,
@@ -58,6 +60,7 @@ serve(async (req) => {
     })
 
   } catch (error: any) {
+    console.error("[Checkout Error]:", error.message);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false 

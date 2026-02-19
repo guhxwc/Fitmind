@@ -39,38 +39,37 @@ serve(async (req) => {
       webhookSecret
     )
 
-    console.log(`🔔 Evento recebido da Stripe: ${event.type}`);
+    console.log(`🔔 Evento Stripe: ${event.type}`);
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
-      const userId = session.client_reference_id
+      // Tenta pegar o ID do usuário de dois lugares possíveis
+      const userId = session.client_reference_id || session.metadata?.supabase_user_id;
       const customerId = session.customer
 
-      console.log(`✅ Pagamento Confirmado! Preparando promoção para PRO.`);
-      console.log(`👤 ID Usuário FitMind: ${userId}`);
-
       if (!userId) {
-          console.error("❌ ERRO: client_reference_id não encontrado na sessão da Stripe.");
-          return new Response("Missing client_reference_id", { status: 400 });
+          console.error("❌ Erro: ID do usuário não encontrado na sessão.");
+          return new Response("User ID not found", { status: 400 });
       }
 
-      // Atualiza o perfil para PRO no banco de dados usando SERVICE_ROLE
-      const { data, error } = await supabase
+      console.log(`✅ Processando PRO para usuário: ${userId}`);
+
+      // Atualiza o perfil usando SERVICE_ROLE (bypassa RLS)
+      const { error } = await supabase
         .from('profiles')
         .update({ 
           is_pro: true, 
           subscription_status: 'active',
           stripe_customer_id: customerId 
         })
-        .eq('id', userId)
-        .select();
+        .eq('id', userId);
       
       if (error) {
-          console.error("❌ Erro ao atualizar perfil no banco:", error.message);
+          console.error("❌ Erro ao atualizar banco:", error.message);
           throw error;
       }
       
-      console.log(`🚀 SUCESSO: Usuário ${userId} promovido a PRO.`);
+      console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);
     }
 
     return new Response(JSON.stringify({ received: true }), { 

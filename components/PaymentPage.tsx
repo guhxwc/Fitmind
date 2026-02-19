@@ -35,7 +35,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         console.log(`Iniciando checkout para o plano: ${selectedPlan} com ID: ${priceId}`);
 
         // Chama a Edge Function do Supabase
-        const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
+        const response = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
                 email: session.user.email,
@@ -44,17 +44,29 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
             }
         });
 
-        if (funcError) throw funcError;
+        const { data, error: funcError } = response;
 
-        if (data?.url) {
+        if (funcError) {
+            console.error("Erro retornado pela Edge Function:", funcError);
+            // Tenta extrair a mensagem de erro do corpo se disponível
+            let errorMessage = "Erro na comunicação com o servidor de pagamento.";
+            if (data && data.error) errorMessage = data.error;
+            else if (funcError.message) errorMessage = funcError.message;
+            
+            throw new Error(errorMessage);
+        }
+
+        if (data && data.url) {
+            console.log("Redirecionando para Stripe:", data.url);
             window.location.href = data.url;
         } else {
-            throw new Error("A Stripe não retornou uma URL de pagamento.");
+            console.error("Resposta inesperada do servidor:", data);
+            throw new Error("O servidor de pagamentos não retornou um link válido. Verifique se as chaves da Stripe estão configuradas corretamente.");
         }
 
     } catch (e: any) {
-        console.error("Erro no checkout:", e);
-        addToast(e.message || "Erro ao conectar com a Stripe.", "error");
+        console.error("Erro fatal no processo de checkout:", e);
+        addToast(e.message || "Erro inesperado ao iniciar pagamento.", "error");
     } finally {
         setIsProcessing(false);
     }

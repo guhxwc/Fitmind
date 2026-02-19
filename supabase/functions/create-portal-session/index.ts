@@ -61,7 +61,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error(error)
+    console.error(`Erro no portal: ${error.message}`);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

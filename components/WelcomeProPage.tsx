@@ -13,8 +13,8 @@ export const WelcomeProPage: React.FC = () => {
     }, []);
 
     const handleStart = () => {
-        // Marca que o usuário já viu esta tela para não aparecer nos próximos logins
-        localStorage.setItem('has_seen_pro_welcome', 'true');
+        // Marca que o usuário já viu esta tela (usando a nova chave para forçar reexibição em atualizações)
+        localStorage.setItem('has_seen_pro_welcome_2', 'true');
         localStorage.setItem('trigger_pro_tour', 'true');
         navigate('/', { replace: true });
     };

@@ -212,7 +212,7 @@ const App: React.FC = () => {
             !session ? <Navigate to="/auth" /> : 
             (!profileExists ? <Navigate to="/onboarding" /> : 
             (userProfile && !userProfile.isPro && !planReviewed ? <Navigate to="/onboarding" /> : 
-            (userProfile?.isPro && !localStorage.getItem('has_seen_pro_welcome') ? <Navigate to="/welcome-pro" /> : 
+            (userProfile?.isPro && !localStorage.getItem('has_seen_pro_welcome_2') ? <Navigate to="/welcome-pro" /> : 
             <MainApp />)))
           } 
         />

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon } from './Icons';
+import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon, DietIcon } from './Icons';
 
 interface NavItemProps {
   to: string;
@@ -45,7 +45,7 @@ export const BottomNav: React.FC = () => {
   const tabs = [
     { to: '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
     { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
-    { to: '/meals', label: 'Dieta', icon: <UtensilsIcon />, id: 'nav-meals' },
+    { to: '/meals', label: 'Dieta', icon: <DietIcon />, id: 'nav-meals' },
     { to: '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
     { to: '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
     { to: '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },

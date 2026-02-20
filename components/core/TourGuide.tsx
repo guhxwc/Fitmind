@@ -20,13 +20,23 @@ export const TourGuide: React.FC = () => {
         const triggerProTour = localStorage.getItem('trigger_pro_tour');
 
         if (!hasSeenIntro) {
-            startTour('initial');
+            if (location.pathname !== '/') {
+                navigate('/');
+                setTimeout(() => startTour('initial'), 500);
+            } else {
+                startTour('initial');
+            }
         } else if (triggerProTour === 'true') {
-            startTour('pro');
+            if (location.pathname !== '/') {
+                navigate('/');
+                setTimeout(() => startTour('pro'), 500);
+            } else {
+                startTour('pro');
+            }
             localStorage.removeItem('trigger_pro_tour');
         }
 
-    }, [userData]);
+    }, [userData, location.pathname, navigate]);
 
     const startTour = (type: 'initial' | 'pro') => {
         if (typeof introJs === 'undefined') return;
@@ -44,25 +54,25 @@ export const TourGuide: React.FC = () => {
                 element: '#tour-weight-card',
                 title: 'Meta de Peso',
                 intro: 'Aqui você acompanha seu peso atual em relação à sua meta e registra variações.',
-                position: 'top'
+                position: 'bottom'
             },
             {
                 element: '#tour-nutrition',
                 title: 'Nutrição Diária',
                 intro: 'Monitore sua ingestão de proteínas e hidratação, essenciais para o tratamento.',
-                position: 'top'
+                position: 'bottom'
             },
             {
                 element: '#tour-smartlog',
                 title: 'Registro Rápido',
                 intro: 'Use a IA para registrar refeições apenas descrevendo ou tirando foto.',
-                position: 'top'
+                position: 'bottom'
             },
             {
                 element: '#tour-medication',
                 title: 'Tratamento',
                 intro: 'Visualize sua próxima dose e mantenha o controle do cronograma.',
-                position: 'bottom'
+                position: 'top'
             },
             {
                 element: '#nav-meals',
@@ -112,7 +122,7 @@ export const TourGuide: React.FC = () => {
                 element: '#tour-smartlog',
                 title: 'CalorieCam Desbloqueado!',
                 intro: 'Agora você pode usar a câmera para registrar alimentos instantaneamente. Experimente na sua próxima refeição!',
-                position: 'top'
+                position: 'bottom'
             },
             {
                 element: '#nav-workouts',
@@ -122,8 +132,10 @@ export const TourGuide: React.FC = () => {
             }
         ];
 
+        const steps = type === 'initial' ? commonSteps : proSteps;
+
         intro.setOptions({
-            steps: type === 'initial' ? commonSteps : proSteps,
+            steps: steps,
             showProgress: true,
             showBullets: false,
             exitOnOverlayClick: false,
@@ -138,21 +150,12 @@ export const TourGuide: React.FC = () => {
             tooltipClass: document.documentElement.classList.contains('dark') ? 'dark-mode-tour' : '',
         });
 
-        const isElementSafeInViewport = (el: HTMLElement) => {
-            const rect = el.getBoundingClientRect();
-            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            return (
-                rect.top >= 70 &&
-                rect.bottom <= (windowHeight - 120)
-            );
-        };
-
         const setOverlayOpacity = (opacity: string) => {
             const helperLayer = document.querySelector('.introjs-helperLayer') as HTMLElement;
             const tooltipReference = document.querySelector('.introjs-tooltipReferenceLayer') as HTMLElement;
             
             if (helperLayer) {
-                helperLayer.style.transition = 'opacity-0.3s ease';
+                helperLayer.style.transition = 'opacity 0.3s ease';
                 helperLayer.style.opacity = opacity;
             }
             if (tooltipReference) {
@@ -161,68 +164,73 @@ export const TourGuide: React.FC = () => {
             }
         };
 
-        intro.onbeforechange(function(targetElement: HTMLElement) {
-            return new Promise<void>((resolve) => {
-                if (!targetElement) {
+        const scrollAndResolve = (el: HTMLElement, resolve: () => void) => {
+            const rect = el.getBoundingClientRect();
+            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            
+            // Check if element is reasonably in view
+            const isSafe = rect.top >= 80 && rect.bottom <= (windowHeight - 100);
+
+            if (!isSafe) {
+                setOverlayOpacity('0');
+                
+                // Find the scrollable container (main)
+                const scrollContainer = document.querySelector('main.flex-grow') || document.documentElement;
+                
+                // Calculate position to scroll to center
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const absoluteElementTop = rect.top - containerRect.top + scrollContainer.scrollTop;
+                const middle = absoluteElementTop - (containerRect.height / 2) + (rect.height / 2);
+                
+                scrollContainer.scrollTo({
+                    top: Math.max(0, middle),
+                    behavior: 'smooth'
+                });
+
+                // Wait for scroll to finish
+                setTimeout(() => {
+                    intro.refresh();
+                    setOverlayOpacity('1');
                     resolve();
-                    return;
-                }
+                }, 600);
+            } else {
+                resolve();
+            }
+        };
 
-                if (targetElement.id === 'tour-side-effects-btn') {
-                    setOverlayOpacity('0');
-                    if (location.pathname !== '/') navigate('/');
-
-                    setTimeout(() => {
-                        const el = document.getElementById('tour-side-effects-btn');
-                        if (el) {
-                            el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
-                            intro.refresh();
-                            setTimeout(() => {
-                                setOverlayOpacity('1');
+        intro.onbeforechange(function(this: any, targetElement: HTMLElement) {
+            return new Promise<void>((resolve) => {
+                const currentStepIndex = this._currentStep;
+                const currentStepData = steps[currentStepIndex];
+                
+                // If the element is supposed to be on the home page, ensure we are there
+                if (currentStepData.element && (currentStepData.element as string).startsWith('#tour-')) {
+                    if (window.location.pathname !== '/') {
+                        setOverlayOpacity('0');
+                        navigate('/');
+                        setTimeout(() => {
+                            const el = document.querySelector(currentStepData.element as string) as HTMLElement;
+                            if (el) {
+                                scrollAndResolve(el, resolve);
+                            } else {
                                 resolve();
-                            }, 100);
-                        } else {
-                            resolve();
-                        }
-                    }, 50);
-                    return;
+                            }
+                        }, 300);
+                        return;
+                    }
                 }
 
-                if (!isElementSafeInViewport(targetElement)) {
-                    setOverlayOpacity('0');
-                    targetElement.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                        inline: 'nearest'
-                    });
+                if (!targetElement && currentStepData.element) {
+                     // Try to find it again just in case
+                     const el = document.querySelector(currentStepData.element as string) as HTMLElement;
+                     if (el) {
+                         scrollAndResolve(el, resolve);
+                         return;
+                     }
+                }
 
-                    let lastTop = targetElement.getBoundingClientRect().top;
-                    let checkCount = 0;
-                    
-                    const scrollInterval = setInterval(() => {
-                        const currentTop = targetElement.getBoundingClientRect().top;
-                        if (Math.abs(currentTop - lastTop) < 1) {
-                            checkCount++;
-                            if (checkCount > 2) {
-                                clearInterval(scrollInterval);
-                                intro.refresh();
-                                setTimeout(() => {
-                                    setOverlayOpacity('1');
-                                    resolve();
-                                }, 50);
-                            }
-                        } else {
-                            checkCount = 0;
-                            lastTop = currentTop;
-                        }
-                    }, 50);
-
-                    setTimeout(() => {
-                        clearInterval(scrollInterval);
-                        intro.refresh();
-                        setOverlayOpacity('1');
-                        resolve();
-                    }, 1500);
+                if (targetElement) {
+                    scrollAndResolve(targetElement, resolve);
                 } else {
                     resolve();
                 }
@@ -241,7 +249,7 @@ export const TourGuide: React.FC = () => {
 
         setTimeout(() => {
             intro.start();
-        }, 1000);
+        }, 500);
     };
 
     return null; 

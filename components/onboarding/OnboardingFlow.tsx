@@ -101,7 +101,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   // Total questions/interactive steps (excluding Analyzing and FinalPlan)
   const TOTAL_STEPS = 26;
 
-  // The sequence of screens - StepWelcome removed
+  // The sequence of screens
   const steps = [
     // 1. Status
     <StepGlpStatus key="glp" onNext={nextStep} onBack={prevStep} value={userData.glpStatus} onSelect={(status) => updateUserData({ glpStatus: status })} step={1} total={TOTAL_STEPS} />,

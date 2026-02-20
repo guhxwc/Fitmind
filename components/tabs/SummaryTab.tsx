@@ -4,7 +4,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
@@ -501,7 +501,7 @@ export const SummaryTab: React.FC = () => {
       <section className="pt-2">
           <div className="flex items-center justify-between mb-4 px-1">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <UtensilsIcon className="w-5 h-5 text-gray-400" />
+                  <DietIcon className="w-5 h-5 text-gray-400" />
                   Refeições
               </h3>
           </div>

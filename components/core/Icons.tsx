@@ -289,6 +289,15 @@ export const ShieldIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 );
 
+export const DietIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 2v5a4 4 0 0 0 8 0V2" />
+        <path d="M7 2v20" />
+        <path d="M15 2v20" />
+        <path d="M15 2h1a5 5 0 0 1 5 5v3a5 5 0 0 1-5 5h-1" />
+    </svg>
+);
+
 export const FaceIdIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path d="M8 3a3 3 0 0 1 2.5-1.5M13.5 1.5A3 3 0 0 1 16 3M3 8a3 3 0 0 1 1.5-2.5M1.5 13.5A3 3 0 0 1 3 16M21 8a3 3 0 0 0-1.5-2.5M22.5 13.5A3 3 0 0 0 21 16M8 21a3 3 0 0 0 2.5 1.5M13.5 22.5A3 3 0 0 0 16 21" />

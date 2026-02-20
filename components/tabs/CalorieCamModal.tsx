@@ -49,7 +49,7 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
 
     try {
       const base64Data = await blobToBase64(file);
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
       const schema = {
         type: Type.OBJECT,

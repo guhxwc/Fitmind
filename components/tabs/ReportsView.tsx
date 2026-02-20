@@ -71,7 +71,7 @@ export const ReportsView: React.FC<ReportsViewProps> = () => {
                 7.  **Formato:** Use markdown para negrito (**texto**) e listas.
             `;
             
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
                 contents: prompt,

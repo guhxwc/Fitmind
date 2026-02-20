@@ -23,7 +23,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
     setIsProcessing(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
       
       const schema = {
         type: Type.OBJECT,

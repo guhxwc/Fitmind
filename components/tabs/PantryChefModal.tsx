@@ -21,7 +21,7 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
     setError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
       
       const schema = {
         type: Type.OBJECT,

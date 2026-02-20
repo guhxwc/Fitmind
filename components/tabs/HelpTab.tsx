@@ -78,7 +78,7 @@ export const HelpTab: React.FC = () => {
 
         try {
             if (!chatRef.current) {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+                const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
                 chatRef.current = ai.chats.create({
                     model: 'gemini-3-flash-preview',
                     config: {

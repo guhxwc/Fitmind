@@ -111,8 +111,12 @@ export const CoffeeIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>
 );
 
-export const SoupIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M7 21v-8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8"/><path d="M20 21v-8a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v8"/></svg>
+export const LunchIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M4 11h16a1 1 0 0 1 1 1v1a9 9 0 0 1-18 0v-1a1 1 0 0 1 1-1Z" />
+        <path d="M21 6 8 14" />
+        <path d="M18 6 5 14" />
+    </svg>
 );
 
 export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (

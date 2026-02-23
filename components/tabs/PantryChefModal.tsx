@@ -60,7 +60,8 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
         },
       });
 
-      const recipe = JSON.parse(response.text) as Recipe;
+      const text = response.text || '{}';
+      const recipe = JSON.parse(text) as Recipe;
       recipe.image = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop';
       
       onSelectRecipe(recipe);

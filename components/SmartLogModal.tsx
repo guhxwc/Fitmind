@@ -65,7 +65,8 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
         },
       });
 
-      const result = JSON.parse(response.text);
+      const text = response.text || '{}';
+      const result = JSON.parse(text);
       
       if (result.meals && result.meals.length > 0) {
           const newMeals = result.meals.map((m: any) => ({

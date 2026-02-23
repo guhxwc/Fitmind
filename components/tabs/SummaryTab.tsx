@@ -4,7 +4,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, SoupIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, LunchIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
@@ -517,7 +517,7 @@ export const SummaryTab: React.FC = () => {
                 bgClass="bg-orange-500"
               />
               <MealCard 
-                icon={<SoupIcon />} 
+                icon={<LunchIcon />} 
                 title="Almoço" 
                 calories={lunchCals} 
                 goal={lunchGoal} 
@@ -526,7 +526,7 @@ export const SummaryTab: React.FC = () => {
                 bgClass="bg-yellow-500"
               />
               <MealCard 
-                icon={<UtensilsIcon />} 
+                icon={<DietIcon />} 
                 title="Jantar" 
                 calories={dinnerCals} 
                 goal={dinnerGoal} 

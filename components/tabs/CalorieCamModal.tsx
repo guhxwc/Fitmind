@@ -77,7 +77,8 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
         },
       });
 
-      const result = JSON.parse(response.text) as AnalysisResult;
+      const text = response.text || '{}';
+      const result = JSON.parse(text) as AnalysisResult;
       setAnalysisResult(result);
       setStage('results');
 

@@ -150,52 +150,128 @@ export const TourGuide: React.FC = () => {
             tooltipClass: document.documentElement.classList.contains('dark') ? 'dark-mode-tour' : '',
         });
 
-        const setOverlayOpacity = (opacity: string) => {
-            const helperLayer = document.querySelector('.introjs-helperLayer') as HTMLElement;
-            const tooltipReference = document.querySelector('.introjs-tooltipReferenceLayer') as HTMLElement;
+        const isFullyVisible = (el: HTMLElement) => {
+            const rect = el.getBoundingClientRect();
+            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+            const windowWidth = window.innerWidth || document.documentElement.clientWidth;
             
-            if (helperLayer) {
-                helperLayer.style.transition = 'opacity 0.3s ease';
-                helperLayer.style.opacity = opacity;
-            }
-            if (tooltipReference) {
-                tooltipReference.style.transition = 'opacity 0.3s ease';
-                tooltipReference.style.opacity = opacity;
-            }
+            // Strict 100% visibility check
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= windowHeight &&
+                rect.right <= windowWidth
+            );
         };
 
         const scrollAndResolve = (el: HTMLElement, resolve: () => void) => {
-            const rect = el.getBoundingClientRect();
-            const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            
-            // Check if element is reasonably in view
-            const isSafe = rect.top >= 80 && rect.bottom <= (windowHeight - 100);
-
-            if (!isSafe) {
-                setOverlayOpacity('0');
-                
-                // Find the scrollable container (main)
-                const scrollContainer = document.querySelector('main.flex-grow') || document.documentElement;
-                
-                // Calculate position to scroll to center
-                const containerRect = scrollContainer.getBoundingClientRect();
-                const absoluteElementTop = rect.top - containerRect.top + scrollContainer.scrollTop;
-                const middle = absoluteElementTop - (containerRect.height / 2) + (rect.height / 2);
-                
-                scrollContainer.scrollTo({
-                    top: Math.max(0, middle),
-                    behavior: 'smooth'
-                });
-
-                // Wait for scroll to finish
-                setTimeout(() => {
+            const performScroll = () => {
+                if (isFullyVisible(el)) {
                     intro.refresh();
-                    setOverlayOpacity('1');
                     resolve();
-                }, 600);
-            } else {
-                resolve();
+                    return;
+                }
+
+                // Use smooth scroll to center the element
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Polling to detect when scroll stops and element is visible
+                let lastTop = el.getBoundingClientRect().top;
+                let sameCount = 0;
+                let startTime = Date.now();
+                
+                const checkScroll = () => {
+                    const rect = el.getBoundingClientRect();
+                    const isVisible = isFullyVisible(el);
+                    
+                    if (isVisible) {
+                        intro.refresh();
+                        setTimeout(resolve, 200); // Stability buffer
+                        return;
+                    }
+                    
+                    // Timeout after 3 seconds to avoid infinite loop
+                    if (Date.now() - startTime > 3000) {
+                        intro.refresh();
+                        resolve();
+                        return;
+                    }
+
+                    // Check if scroll position has stabilized
+                    if (Math.abs(rect.top - lastTop) < 0.5) {
+                        sameCount++;
+                    } else {
+                        sameCount = 0;
+                        lastTop = rect.top;
+                    }
+
+                    if (sameCount > 10) { // Scroll likely stopped
+                        // If still not visible after scroll stops, force jump (fallback)
+                        if (!isVisible) {
+                             el.scrollIntoView({ behavior: 'auto', block: 'center' });
+                             intro.refresh();
+                             setTimeout(resolve, 100);
+                        } else {
+                             intro.refresh();
+                             resolve();
+                        }
+                    } else {
+                        requestAnimationFrame(checkScroll);
+                    }
+                };
+                requestAnimationFrame(checkScroll);
+            };
+
+            // 1. Handle specific collapsible sections (Accordion/Expandable)
+            // Check if element is inside a collapsed section
+            const collapsedParent = el.closest('[aria-expanded="false"], .collapsed'); // Generic check
+            if (collapsedParent) {
+                 const toggle = collapsedParent.querySelector('button, [role="button"]');
+                 if (toggle instanceof HTMLElement) {
+                     toggle.click();
+                     setTimeout(() => scrollAndResolve(el, resolve), 300); // Retry after expansion
+                     return;
+                 }
             }
+
+            // Specific for this app's SummaryTab "Ver mais"
+            if (el.id === 'tour-daily-history' || el.closest('#tour-daily-history')) {
+                const section = document.getElementById('tour-daily-history');
+                if (section) {
+                    const buttons = Array.from(section.querySelectorAll('button'));
+                    const verMaisBtn = buttons.find(b => b.innerText.includes('Ver mais'));
+                    
+                    if (verMaisBtn) {
+                        verMaisBtn.click();
+                        setTimeout(performScroll, 400); // Wait for expansion
+                        return;
+                    }
+                }
+            }
+
+            // 2. Handle generic hidden elements (offsetParent === null usually means hidden)
+            if (el.offsetParent === null) {
+                let parent = el.parentElement;
+                while (parent && parent !== document.body) {
+                    // Try to find a toggle button in the parent chain
+                    const buttons = Array.from(parent.querySelectorAll('button'));
+                    const toggle = buttons.find(b => 
+                        b.innerText.includes('Ver mais') || 
+                        b.innerText.includes('Expandir') ||
+                        b.innerText.includes('Mostrar') ||
+                        b.getAttribute('aria-expanded') === 'false'
+                    );
+
+                    if (toggle) {
+                        toggle.click();
+                        setTimeout(() => scrollAndResolve(el, resolve), 400); // Retry
+                        return;
+                    }
+                    parent = parent.parentElement;
+                }
+            }
+
+            performScroll();
         };
 
         intro.onbeforechange(function(this: any, targetElement: HTMLElement) {
@@ -203,13 +279,19 @@ export const TourGuide: React.FC = () => {
                 const currentStepIndex = this._currentStep;
                 const currentStepData = steps[currentStepIndex];
                 
+                if (!currentStepData) {
+                    resolve();
+                    return;
+                }
+                
+                const elementSelector = currentStepData.element;
+
                 // If the element is supposed to be on the home page, ensure we are there
-                if (currentStepData.element && (currentStepData.element as string).startsWith('#tour-')) {
+                if (elementSelector && typeof elementSelector === 'string' && elementSelector.startsWith('#tour-')) {
                     if (window.location.pathname !== '/') {
-                        setOverlayOpacity('0');
                         navigate('/');
                         setTimeout(() => {
-                            const el = document.querySelector(currentStepData.element as string) as HTMLElement;
+                            const el = document.querySelector(elementSelector) as HTMLElement;
                             if (el) {
                                 scrollAndResolve(el, resolve);
                             } else {
@@ -220,9 +302,9 @@ export const TourGuide: React.FC = () => {
                     }
                 }
 
-                if (!targetElement && currentStepData.element) {
+                if (!targetElement && elementSelector && typeof elementSelector === 'string') {
                      // Try to find it again just in case
-                     const el = document.querySelector(currentStepData.element as string) as HTMLElement;
+                     const el = document.querySelector(elementSelector) as HTMLElement;
                      if (el) {
                          scrollAndResolve(el, resolve);
                          return;
@@ -237,15 +319,27 @@ export const TourGuide: React.FC = () => {
             });
         });
 
-        intro.oncomplete(() => {
-            localStorage.setItem('has_seen_onboarding', 'true');
-            isRunning.current = false;
-        });
+        const handleScroll = () => {
+            if (intro) {
+                intro.refresh();
+            }
+        };
 
-        intro.onexit(() => {
+        const scrollContainer = document.querySelector('main.flex-grow');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+        }
+
+        const cleanup = () => {
+            if (scrollContainer) {
+                scrollContainer.removeEventListener('scroll', handleScroll);
+            }
             localStorage.setItem('has_seen_onboarding', 'true');
             isRunning.current = false;
-        });
+        };
+
+        intro.oncomplete(cleanup);
+        intro.onexit(cleanup);
 
         setTimeout(() => {
             intro.start();

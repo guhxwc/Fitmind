@@ -19,6 +19,7 @@ import { StepSuccessGraph } from './StepSuccessGraph';
 import { StepMotivationImageStyle } from './StepMotivationImageStyle';
 import { StepSocialProof } from './StepSocialProof'; 
 import { StepAnalyzing } from './StepAnalyzing';
+import { StepWelcome } from './StepWelcome';
 import { StepSideEffectsImageStyle } from './StepSideEffectsImageStyle';
 import { StepComparison } from './StepComparison';
 import { StepFinalPlan } from './StepFinalPlan';
@@ -45,10 +46,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   const [step, setStep] = useState(() => {
     if (initialStep !== undefined) return initialStep;
     const savedStep = localStorage.getItem('onboarding_step');
-    return savedStep ? parseInt(savedStep, 10) : 0;
+    // If there's a saved step and it's not the welcome screen, force to final plan (index 28)
+    if (savedStep && parseInt(savedStep, 10) > 0) return 28;
+    return 0;
   });
 
-  const [userData, setUserData] = useState<Omit<UserData, 'id'>>(initialData || DEFAULT_USER_DATA);
+  const [userData, setUserData] = useState<Omit<UserData, 'id'>>(() => {
+    if (initialData) return initialData;
+    const savedData = localStorage.getItem('onboarding_userData');
+    return savedData ? JSON.parse(savedData) : DEFAULT_USER_DATA;
+  });
   const [showSubscription, setShowSubscription] = useState(false);
   const { addToast } = useToast();
 
@@ -56,6 +63,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
       // Save step to localStorage whenever it changes, unless we are in the forced return flow (initialStep used)
       if (initialStep === undefined) {
         localStorage.setItem('onboarding_step', step.toString());
+        localStorage.setItem('onboarding_userData', JSON.stringify(userData));
       }
       
       // Scroll to top on step change
@@ -76,6 +84,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   const handleComplete = () => {
     // Clear saved step on completion
     localStorage.removeItem('onboarding_step');
+    localStorage.removeItem('onboarding_userData');
     onComplete(userData);
   };
 
@@ -101,8 +110,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   // Total questions/interactive steps (excluding Analyzing and FinalPlan)
   const TOTAL_STEPS = 26;
 
-  // The sequence of screens - StepWelcome removed
+  // The sequence of screens
   const steps = [
+    // 0. Welcome
+    <StepWelcome key="welcome" onNext={nextStep} />,
+
     // 1. Status
     <StepGlpStatus key="glp" onNext={nextStep} onBack={prevStep} value={userData.glpStatus} onSelect={(status) => updateUserData({ glpStatus: status })} step={1} total={TOTAL_STEPS} />,
     

@@ -63,7 +63,6 @@ export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({ title, subti
         </div>
         
         <div className="w-10 text-right">
-            <span className="text-[11px] font-bold text-gray-500 dark:text-[#636366]">{step + 1}/{totalSteps}</span>
         </div>
       </div>
 

@@ -89,14 +89,14 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
     <Portal>
         {showShowcase ? (
             <PreSubscriptionPage 
-                onClose={onClose} 
+                onClose={() => setShowShowcase(false)} 
                 onContinue={() => setShowShowcase(false)} 
                 customUserData={customUserData}
             />
         ) : showCheckout ? (
             <PaymentPage 
                 plan={selectedPlan}
-                onClose={() => setShowCheckout(false)}
+                onClose={onClose}
                 onPaymentSuccess={handleSuccess}
             />
         ) : (

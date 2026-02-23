@@ -1,24 +1,96 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { useAppContext } from './AppContext';
 import Portal from './core/Portal';
-import { SparklesIcon, CheckCircleIcon } from './core/Icons';
+import { SparklesIcon, CheckCircleIcon, MicrophoneIcon, KeyboardIcon, CameraIcon, XMarkIcon, ArrowPathIcon, ChevronLeftIcon } from './core/Icons';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
+import { CalorieCamModal } from './tabs/CalorieCamModal';
 
 interface SmartLogModalProps {
   onClose: () => void;
 }
 
+type LogMode = 'menu' | 'type' | 'voice' | 'camera';
+
 export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
   const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData } = useAppContext();
   const { addToast } = useToast();
+  const [mode, setMode] = useState<LogMode>('menu');
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Voice Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const timerRef = useRef<number | null>(null);
 
-  const handleProcess = async () => {
-    if (!input.trim() || !userData) return;
+  useEffect(() => {
+    if (isRecording) {
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isRecording]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      addToast("Erro ao acessar microfone", "error");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result.split(',')[1]);
+        } else {
+          reject(new Error("Failed to convert blob to base64"));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleProcess = async (source: 'text' | 'audio') => {
+    if (source === 'text' && !input.trim()) return;
+    if (source === 'audio' && !audioBlob) return;
+    if (!userData) return;
     
     setIsProcessing(true);
 
@@ -36,8 +108,12 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
                 name: { type: Type.STRING },
                 calories: { type: Type.NUMBER },
                 protein: { type: Type.NUMBER },
+                meal_type: { 
+                  type: Type.STRING, 
+                  description: "Tipo da refeição: 'Café da manhã', 'Almoço', 'Jantar' ou 'Lanche'. Inferir do contexto (ex: 'almocei' -> Almoço) ou horário mencionado (ex: 'meio dia' -> Almoço, '22h' -> Jantar)." 
+                }
               },
-              required: ['name', 'calories', 'protein'],
+              required: ['name', 'calories', 'protein', 'meal_type'],
             },
           },
           water_liters: { type: Type.NUMBER, description: "Amount of water in liters to ADD to current total. E.g., 0.5" },
@@ -47,29 +123,48 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
       };
 
       const prompt = `
-        Analise o texto do usuário sobre sua ingestão alimentar, água ou peso.
+        Analise a entrada do usuário (texto ou áudio) sobre sua ingestão alimentar, água ou peso.
         Extraia os dados estruturados.
         Para alimentos, estime calorias e proteínas se não especificado.
         Para água, converta para litros.
         Para peso, extraia o valor em kg.
         
-        Texto do usuário: "${input}"
+        REGRAS DE TIPO DE REFEIÇÃO:
+        - Se o usuário disser "almocei" ou mencionar horários próximos ao meio-dia (11h-14h), o tipo é "Almoço".
+        - Se disser "jantei" ou horários noturnos (18h-23h), o tipo é "Jantar".
+        - Se disser "café da manhã" ou horários matinais (5h-10h), o tipo é "Café da manhã".
+        - Caso contrário, use "Lanche".
       `;
+
+      let contents: any;
+      if (source === 'text') {
+        contents = `${prompt}\n\nTexto do usuário: "${input}"`;
+      } else {
+        const base64Audio = await blobToBase64(audioBlob!);
+        contents = {
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: audioBlob!.type, data: base64Audio } }
+          ]
+        };
+      }
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: prompt,
+        contents: contents,
         config: {
           responseMimeType: 'application/json',
           responseSchema: schema,
         },
       });
 
-      const result = JSON.parse(response.text);
+      const result = JSON.parse(response.text || '{}');
       
       if (result.meals && result.meals.length > 0) {
           const newMeals = result.meals.map((m: any) => ({
-              ...m,
+              name: m.name,
+              calories: m.calories,
+              protein: m.protein,
               id: new Date().toISOString() + Math.random(),
               time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           }));
@@ -108,6 +203,26 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (mode === 'camera') {
+    return (
+      <CalorieCamModal 
+        onClose={onClose} 
+        onAddMeal={(meal) => {
+          setMeals(prev => [...prev, { ...meal, id: Date.now().toString(), time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }]);
+          updateStreak();
+          addToast('Refeição adicionada!', 'success');
+          onClose();
+        }} 
+      />
+    );
+  }
+
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={onClose}>
@@ -115,42 +230,121 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
             
             <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 opacity-50"></div>
 
-            <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                    <SparklesIcon className="w-8 h-8 text-white" />
+            {mode === 'menu' && (
+              <div className="animate-fade-in">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                      <SparklesIcon className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registro Inteligente</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Escolha como deseja registrar hoje</p>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registro Inteligente</h2>
-                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-                    Escreva naturalmente o que comeu, bebeu ou seu peso. A IA organiza tudo para você.
-                </p>
-            </div>
 
-            <div className="relative mb-6">
+                <div className="grid grid-cols-1 gap-4 mb-4">
+                  <button 
+                    onClick={() => setMode('type')}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <KeyboardIcon className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-gray-900 dark:text-white">Digitar</p>
+                      <p className="text-xs text-gray-500">Escreva naturalmente o que comeu</p>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => setMode('voice')}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <MicrophoneIcon className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-gray-900 dark:text-white">Falar</p>
+                      <p className="text-xs text-gray-500">Grave um áudio descrevendo tudo</p>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => setMode('camera')}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
+                      <CameraIcon className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-gray-900 dark:text-white">CalorieCam</p>
+                      <p className="text-xs text-gray-500">Tire uma foto do seu prato</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'type' && (
+              <div className="animate-fade-in">
+                <div className="flex items-center justify-between mb-6">
+                  <button onClick={() => setMode('menu')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar Registro</h2>
+                  <div className="w-6"></div>
+                </div>
+
                 <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ex: Comi 2 ovos mexidos no café e bebi 500ml de água. Também me pesei e estou com 70kg."
-                    className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                    placeholder="Ex: Almocei frango com salada agora ao meio-dia..."
+                    className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600 mb-6"
                     autoFocus
                 />
-            </div>
 
-            <button
-                onClick={handleProcess}
-                disabled={isProcessing || !input.trim()}
-                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
-            >
-                {isProcessing ? (
+                <button
+                    onClick={() => handleProcess('text')}
+                    disabled={isProcessing || !input.trim()}
+                    className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                >
+                    {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Processar com IA"}
+                </button>
+              </div>
+            )}
+
+            {mode === 'voice' && (
+              <div className="animate-fade-in text-center">
+                <div className="flex items-center justify-between mb-6">
+                  <button onClick={() => { stopRecording(); setMode('menu'); }} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Falar Registro</h2>
+                  <div className="w-6"></div>
+                </div>
+
+                <div className="py-10">
+                  <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all duration-500 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-purple-500'}`}>
+                    <MicrophoneIcon className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-2xl font-mono font-bold mt-6 text-gray-900 dark:text-white">{formatTime(recordingTime)}</p>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2">
+                    {isRecording ? "Gravando... Fale naturalmente." : audioBlob ? "Gravação concluída!" : "Toque em Iniciar para falar"}
+                  </p>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  {!isRecording && !audioBlob && (
+                    <button onClick={startRecording} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold">Iniciar Gravação</button>
+                  )}
+                  {isRecording && (
+                    <button onClick={stopRecording} className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold">Parar</button>
+                  )}
+                  {audioBlob && !isRecording && (
                     <>
-                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Processando...
+                      <button onClick={() => { setAudioBlob(null); setRecordingTime(0); }} className="w-1/3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"><ArrowPathIcon className="w-5 h-5" /> Refazer</button>
+                      <button onClick={() => handleProcess('audio')} disabled={isProcessing} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                        {isProcessing ? "Analisando..." : "Analisar Áudio"}
+                      </button>
                     </>
-                ) : (
-                    <>
-                        Processar com IA
-                    </>
-                )}
-            </button>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
       </div>
     </Portal>

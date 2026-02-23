@@ -6,6 +6,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
+import { useAppContext } from './components/AppContext';
 import type { UserData } from './types';
 import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
 import { DEFAULT_USER_DATA } from './constants';
@@ -23,15 +24,15 @@ const App: React.FC = () => {
   }
 
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { userData, loading: contextLoading, fetchData } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
+  const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) fetchProfile(session.user.id);
-      else setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -39,7 +40,6 @@ const App: React.FC = () => {
       if (session) fetchProfile(session.user.id);
       else {
         setProfileExists(null);
-        setLoading(false);
       }
     });
 
@@ -58,58 +58,61 @@ const App: React.FC = () => {
       setProfileExists(!!data);
     } catch (err) {
       console.error("Error fetching profile:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleOnboardingComplete = async (userData: Omit<UserData, 'id'>) => {
     if (!session) return;
-    setLoading(true);
 
     const profileData = {
       id: session.user.id,
-      name: userData.name,
+      name: userData.name || 'Usuário',
       gender: userData.gender,
       age: userData.age,
-      birth_date: userData.birthDate,
+      birth_date: userData.birthDate || null,
       height: userData.height,
       weight: userData.weight,
       target_weight: userData.targetWeight,
       start_weight: userData.startWeight,
-      start_weight_date: userData.startWeightDate,
+      start_weight_date: userData.startWeightDate || new Date().toISOString(),
       activity_level: userData.activityLevel,
       glp_status: userData.glpStatus,
       application_frequency: userData.applicationFrequency,
       pace: userData.pace,
       motivation: userData.motivation,
-      main_side_effect: userData.mainSideEffect,
+      main_side_effect: userData.mainSideEffect || null,
       medication: userData.medication,
       notifications: userData.notifications,
       goals: userData.goals,
-      streak: userData.streak,
-      last_activity_date: userData.lastActivityDate,
+      streak: userData.streak || 0,
+      last_activity_date: userData.lastActivityDate || new Date().toISOString(),
       is_pro: userData.isPro || false,
       subscription_status: userData.subscriptionStatus || 'free',
-      journey_duration: userData.journeyDuration,
-      biggest_frustration: userData.biggestFrustration,
-      future_worry: userData.futureWorry,
-      one_thing_guaranteed: userData.oneThingGuaranteed,
-      dream_outcome: userData.dreamOutcome,
-      monthly_investment: userData.monthlyInvestment,
+      journey_duration: userData.journeyDuration || null,
+      biggest_frustration: userData.biggestFrustration || null,
+      future_worry: userData.futureWorry || null,
+      one_thing_guaranteed: userData.oneThingGuaranteed || null,
+      dream_outcome: userData.dreamOutcome || null,
+      monthly_investment: userData.monthlyInvestment || null,
     };
 
-    const { error } = await supabase.from('profiles').upsert(profileData);
-    if (!error) {
+    try {
+      const { error } = await supabase.from('profiles').upsert(profileData);
+      if (error) {
+        console.error("Error saving profile:", error);
+      }
+      await fetchData();
+      setProfileExists(true);
+      setUpsellDismissed(true);
+      navigate('/');
+    } catch (err) {
+      console.error("Critical error during onboarding complete:", err);
       setProfileExists(true);
       navigate('/');
-    } else {
-      console.error("Error saving profile:", error);
     }
-    setLoading(false);
   };
 
-  if (loading) {
+  if (contextLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
@@ -125,8 +128,20 @@ const App: React.FC = () => {
       
       <Route path="/*" element={
         session ? (
-          profileExists ? (
-            <MainApp />
+          profileExists === null ? (
+            <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+              <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+            </div>
+          ) : profileExists ? (
+            (userData?.isPro || upsellDismissed) ? (
+              <MainApp />
+            ) : (
+              <OnboardingFlow 
+                onComplete={handleOnboardingComplete} 
+                initialStep={28} 
+                initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
+              />
+            )
           ) : (
             <OnboardingFlow onComplete={handleOnboardingComplete} />
           )

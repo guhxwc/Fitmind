@@ -165,6 +165,52 @@ export const AccountSettings: React.FC = () => {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (!userData || !session) return;
+
+        const confirmed = window.confirm(
+            "TEM CERTEZA? Esta ação é permanente e apagará todos os seus dados de progresso, fotos, histórico de peso e configurações. Não há como desfazer."
+        );
+
+        if (!confirmed) return;
+
+        try {
+            addToast("Excluindo conta...", "info");
+            
+            // 1. Delete all user data from all tables
+            const userId = userData.id;
+            const tables = [
+                'weight_history', 
+                'progress_photos', 
+                'workout_plans', 
+                'workout_history', 
+                'applications', 
+                'daily_records', 
+                'daily_notes', 
+                'side_effects'
+            ];
+
+            for (const table of tables) {
+                await supabase.from(table).delete().eq('user_id', userId);
+            }
+            
+            // Delete profile last
+            await supabase.from('profiles').delete().eq('id', userId);
+
+            // 2. Sign out
+            await supabase.auth.signOut();
+            
+            // 3. Clear local storage
+            localStorage.clear();
+            
+            addToast("Conta excluída com sucesso.", "success");
+            navigate('/auth');
+        } catch (error) {
+            console.error("Error deleting account:", error);
+            addToast("Erro ao excluir conta. Tente novamente.", "error");
+        }
+    };
+
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return 'Definir';
         const [year, month, day] = dateStr.split('-');
@@ -240,6 +286,18 @@ export const AccountSettings: React.FC = () => {
                         isLast
                     />
                 </ListGroup>
+                
+                <div className="mt-12 mb-8">
+                    <button 
+                        onClick={handleDeleteAccount}
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-white dark:bg-[#1C1C1E] text-red-500 font-bold rounded-2xl border border-red-100 dark:border-red-900/30 active:scale-[0.98] transition-all shadow-sm"
+                    >
+                        Excluir Minha Conta
+                    </button>
+                    <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-4 px-8 leading-relaxed">
+                        Ao excluir sua conta, todos os seus dados serão removidos permanentemente de nossos servidores em conformidade com a LGPD.
+                    </p>
+                </div>
 
                 <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6 px-6 leading-relaxed">
                     Esses dados são usados para calcular seu metabolismo basal, IMC e necessidades de água. Mantenha-os atualizados para melhores resultados.

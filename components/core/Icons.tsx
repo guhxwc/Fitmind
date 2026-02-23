@@ -51,7 +51,12 @@ c164 -165 312 -307 328 -316 46 -24 145 -14 188 19 67 51 91 154 54 228 -10
   </svg>
 );
 export const UtensilsIcon: React.FC<{className?: string}> = ({className}) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"></path></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M3 2v5a4 4 0 0 0 8 0V2" />
+    <path d="M7 2v20" />
+    <path d="M15 2v20" />
+    <path d="M15 2h1a5 5 0 0 1 5 5v3a5 5 0 0 1-5 5h-1" />
+  </svg>
 );
 export const DumbbellIcon: React.FC<{className?: string}> = ({className}) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m6 2 4 4"></path><path d="m3 10 4 4"></path><path d="m21 14-4-4"></path></svg>
@@ -112,7 +117,12 @@ export const CoffeeIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const SoupIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M7 21v-8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8"/><path d="M20 21v-8a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v8"/></svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="15" y1="3" x2="9" y2="12"></line>
+        <line x1="19" y1="3" x2="13" y2="12"></line>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M4 12c0 4.4 3.6 8 8 8s8-3.6 8-8"></path>
+    </svg>
 );
 
 export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -297,3 +307,29 @@ export const FaceIdIcon: React.FC<{ className?: string }> = ({ className }) => (
         <line x1="15" y1="9" x2="15.01" y2="9" />
     </svg>
 );
+
+export const MicrophoneIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+);
+
+export const KeyboardIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect width="20" height="16" x="2" y="4" rx="2" />
+        <path d="M6 8h.01" />
+        <path d="M10 8h.01" />
+        <path d="M14 8h.01" />
+        <path d="M18 8h.01" />
+        <path d="M6 12h.01" />
+        <path d="M10 12h.01" />
+        <path d="M14 12h.01" />
+        <path d="M18 12h.01" />
+        <path d="M7 16h10" />
+    </svg>
+);
+
+export const DietIcon = UtensilsIcon;
+export const LunchIcon = SoupIcon;

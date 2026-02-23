@@ -131,10 +131,49 @@ export const PrivacySettings: React.FC = () => {
         navigate('/auth');
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
         if (window.confirm("ATENÇÃO: Essa ação é irreversível. Todos os seus dados serão apagados permanentemente. Deseja continuar?")) {
-             // In a real scenario, this would call a deletion endpoint
-             addToast("Solicitação enviada. Seus dados serão removidos em até 30 dias.", 'info');
+            try {
+                const userId = session.user.id;
+                addToast("Iniciando exclusão...", 'info');
+
+                // 1. Delete photos from Storage
+                const { data: list } = await supabase.storage.from('progress_photos').list(userId);
+                if (list && list.length > 0) {
+                    const filesToRemove = list.map(x => `${userId}/${x.name}`);
+                    await supabase.storage.from('progress_photos').remove(filesToRemove);
+                }
+
+                // 2. Delete data from related tables
+                // We use Promise.allSettled to try to delete everything even if one fails (though ideally they shouldn't)
+                await Promise.allSettled([
+                    supabase.from('weight_history').delete().eq('user_id', userId),
+                    supabase.from('applications').delete().eq('user_id', userId),
+                    supabase.from('progress_photos').delete().eq('user_id', userId),
+                    supabase.from('side_effects').delete().eq('user_id', userId),
+                    supabase.from('daily_notes').delete().eq('user_id', userId),
+                    supabase.from('workout_history').delete().eq('user_id', userId),
+                    supabase.from('workout_plans').delete().eq('user_id', userId),
+                    supabase.from('daily_records').delete().eq('user_id', userId),
+                    supabase.from('user_devices').delete().eq('user_id', userId),
+                ]);
+                
+                // 3. Delete profile
+                const { error } = await supabase.from('profiles').delete().eq('id', userId);
+
+                if (error) {
+                    console.error("Erro ao excluir perfil:", error);
+                    throw new Error("Não foi possível excluir o perfil. Tente novamente.");
+                }
+
+                addToast("Conta excluída com sucesso.", 'success');
+                await supabase.auth.signOut();
+                navigate('/auth');
+
+            } catch (error: any) {
+                console.error("Erro ao excluir conta:", error);
+                addToast(error.message || "Erro ao excluir conta. Tente novamente ou contate o suporte.", 'error');
+            }
         }
     };
 

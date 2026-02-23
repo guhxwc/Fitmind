@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { useToast } from './ToastProvider';
 
 // A simple Google icon component
 const GoogleIcon = () => (
@@ -15,15 +14,13 @@ const GoogleIcon = () => (
 
 
 export const Auth: React.FC = () => {
-  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [token, setToken] = useState(Array(6).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token' | 'verify_email'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token'>('landing');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -70,24 +67,9 @@ export const Auth: React.FC = () => {
     setError(null);
     setMessage(null);
 
-    if (password !== confirmPassword) {
-      setError("As senhas não coincidem.");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
-      setLoading(false);
-      return;
-    }
-
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      }
     });
 
     if (signUpError) {
@@ -96,7 +78,16 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    setView('verify_email');
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+    });
+
+    if (otpError) {
+      setError(otpError.message);
+    } else {
+      setMessage(`Um código de verificação foi enviado para ${email}.`);
+      setView('enter_token');
+    }
     setLoading(false);
   };
 
@@ -160,14 +151,14 @@ export const Auth: React.FC = () => {
   const renderLoginOrSignupView = (isSignupView: boolean) => {
     const handleSubmit = isSignupView ? handleSignUp : handleLogin;
     return (
-        <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto">
+        <div className="h-screen flex flex-col p-8 bg-white dark:bg-black">
           <div className="pt-4">
             <button onClick={() => { setView('landing'); setError(null); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
           </div>
 
-          <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
+          <div className="flex-grow flex flex-col justify-center">
               <div className="text-left mb-10">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{isSignupView ? 'Criar sua conta' : 'Entrar na sua conta'}</h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-2">Use seu email e senha para continuar.</p>
@@ -197,20 +188,6 @@ export const Auth: React.FC = () => {
                     required
                   />
                 </div>
-
-                {isSignupView && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirmar Senha</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="mt-1 block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      placeholder="••••••••"
-                      required
-                    />
-                  </div>
-                )}
                 
                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
@@ -234,75 +211,6 @@ export const Auth: React.FC = () => {
       return renderLoginOrSignupView(false);
     case 'signup':
       return renderLoginOrSignupView(true);
-    case 'verify_email':
-      return (
-        <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black text-center animate-fade-in">
-          <div className="max-w-md mx-auto w-full">
-            <div className="relative mb-8">
-              <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 animate-bounce-slow">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white border-4 border-white dark:border-black">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-            </div>
-
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Verifique seu email</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-4 text-lg">
-              Enviamos um link de confirmação para:
-            </p>
-            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 inline-block">
-              <span className="font-bold text-gray-900 dark:text-gray-100">{email}</span>
-            </div>
-
-            <p className="text-gray-500 dark:text-gray-400 mt-6 leading-relaxed">
-              Por favor, clique no botão <span className="text-green-600 font-bold">"Entrar no FitMind"</span> no email que enviamos para ativar sua conta.
-            </p>
-            
-            <div className="mt-10 space-y-4">
-              <button 
-                onClick={() => window.location.reload()} 
-                className="w-full py-4 px-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all hover:opacity-90"
-              >
-                Já confirmei meu email
-              </button>
-              
-              <div className="pt-4 flex flex-col gap-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Não recebeu o email?</p>
-                <button 
-                  onClick={async () => {
-                    setLoading(true);
-                    const { error } = await supabase.auth.resend({
-                      type: 'signup',
-                      email: email,
-                      options: {
-                        emailRedirectTo: window.location.origin,
-                      }
-                    });
-                    setLoading(false);
-                    if (error) {
-                      setError(error.message);
-                    } else {
-                      addToast("Email reenviado com sucesso!", "success");
-                    }
-                  }}
-                  disabled={loading}
-                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline disabled:opacity-50"
-                >
-                  {loading ? 'Reenviando...' : 'Reenviar link de confirmação'}
-                </button>
-              </div>
-
-              <button 
-                onClick={() => setView('signup')} 
-                className="w-full py-3 px-4 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Usar outro email
-              </button>
-            </div>
-          </div>
-        </div>
-      );
     case 'enter_token':
        return (
         <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black">

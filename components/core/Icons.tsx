@@ -330,6 +330,3 @@ export const KeyboardIcon: React.FC<{ className?: string }> = ({ className }) =>
         <path d="M7 16h10" />
     </svg>
 );
-
-export const DietIcon = UtensilsIcon;
-export const LunchIcon = SoupIcon;

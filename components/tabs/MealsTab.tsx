@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { FlameIcon, DietIcon, AppleIcon, CoffeeIcon, LunchIcon, PlusIcon, LockIcon } from '../core/Icons';
+import { FlameIcon, UtensilsIcon, AppleIcon, CoffeeIcon, SoupIcon, PlusIcon, LockIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import type { Meal } from '../../types';
 import { ManualMealModal } from './ManualMealModal';
@@ -73,7 +73,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                 <button onClick={handleCalorieCamClick} className="bg-blue-500 text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-transform relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent skew-x-12 translate-x-[-150%] group-hover:animate-[shimmer_1s_infinite]"></div>
                     {!userData?.isPro && <div className="absolute top-2 right-2 bg-white text-blue-500 text-[10px] px-1.5 rounded font-bold shadow-sm flex items-center gap-1"><LockIcon className="w-2.5 h-2.5"/> PRO</div>}
-                    <div className="bg-white/20 p-2 rounded-full"><DietIcon className="w-6 h-6" /></div>
+                    <div className="bg-white/20 p-2 rounded-full"><UtensilsIcon className="w-6 h-6" /></div>
                     <span>CalorieCam</span>
                 </button>
                 <button onClick={() => setIsManualModalOpen(true)} className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
@@ -169,7 +169,7 @@ const DietPlanView: React.FC = () => {
                      </div>
                  </div>
                  <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                     <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-xl text-yellow-600 dark:text-yellow-400"><LunchIcon /></div>
+                     <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-xl text-yellow-600 dark:text-yellow-400"><SoupIcon /></div>
                      <div>
                          <p className="font-bold text-gray-900 dark:text-white">Almoço</p>
                          <p className="text-xs text-gray-500">Frango grelhado e salada</p>

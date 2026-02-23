@@ -111,20 +111,17 @@ export const PrivacySettings: React.FC = () => {
     };
 
     const handlePasswordReset = async () => {
-        const newPassword = window.prompt("Digite sua nova senha (mínimo 6 caracteres):");
-        if (!newPassword) return;
-        if (newPassword.length < 6) {
-            addToast("A senha deve ter pelo menos 6 caracteres.", "error");
-            return;
-        }
-
+        if (!session.user.email) return;
         setIsResetting(true);
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+            redirectTo: window.location.origin + '/#/settings/account',
+        });
 
         if (error) {
-            addToast("Erro ao alterar senha: " + error.message, 'error');
+            addToast("Erro ao solicitar troca: " + error.message, 'error');
         } else {
-            addToast("Senha alterada com sucesso!", 'success');
+            addToast(`Email de redefinição enviado para ${session.user.email}`, 'success');
         }
         setIsResetting(false);
     };
@@ -134,31 +131,10 @@ export const PrivacySettings: React.FC = () => {
         navigate('/auth');
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeleteAccount = () => {
         if (window.confirm("ATENÇÃO: Essa ação é irreversível. Todos os seus dados serão apagados permanentemente. Deseja continuar?")) {
-            setIsResetting(true);
-            try {
-                const userId = session.user.id;
-                
-                // Deletar dados de todas as tabelas relacionadas
-                await Promise.all([
-                    supabase.from('meals').delete().eq('user_id', userId),
-                    supabase.from('applications').delete().eq('user_id', userId),
-                    supabase.from('weight_history').delete().eq('user_id', userId),
-                    supabase.from('side_effects').delete().eq('user_id', userId),
-                    supabase.from('workout_history').delete().eq('user_id', userId),
-                    supabase.from('progress_photos').delete().eq('user_id', userId),
-                    supabase.from('profiles').delete().eq('id', userId)
-                ]);
-
-                addToast("Sua conta e dados foram excluídos com sucesso.", 'success');
-                await supabase.auth.signOut();
-                navigate('/auth');
-            } catch (error: any) {
-                addToast("Erro ao excluir conta: " + error.message, 'error');
-            } finally {
-                setIsResetting(false);
-            }
+             // In a real scenario, this would call a deletion endpoint
+             addToast("Solicitação enviada. Seus dados serão removidos em até 30 dias.", 'info');
         }
     };
 

@@ -88,7 +88,7 @@ export const HelpTab: React.FC = () => {
             }
             
             const response = await chatRef.current.sendMessage({ message: userMessage.content });
-            const modelMessage: Message = { role: 'model', content: response.text || '' };
+            const modelMessage: Message = { role: 'model', content: response.text };
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error) {

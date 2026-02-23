@@ -20,23 +20,13 @@ export const TourGuide: React.FC = () => {
         const triggerProTour = localStorage.getItem('trigger_pro_tour');
 
         if (!hasSeenIntro) {
-            if (location.pathname !== '/') {
-                navigate('/');
-                setTimeout(() => startTour('initial'), 500);
-            } else {
-                startTour('initial');
-            }
+            startTour('initial');
         } else if (triggerProTour === 'true') {
-            if (location.pathname !== '/') {
-                navigate('/');
-                setTimeout(() => startTour('pro'), 500);
-            } else {
-                startTour('pro');
-            }
+            startTour('pro');
             localStorage.removeItem('trigger_pro_tour');
         }
 
-    }, [userData, location.pathname, navigate]);
+    }, [userData]);
 
     const startTour = (type: 'initial' | 'pro') => {
         if (typeof introJs === 'undefined') return;
@@ -54,25 +44,25 @@ export const TourGuide: React.FC = () => {
                 element: '#tour-weight-card',
                 title: 'Meta de Peso',
                 intro: 'Aqui você acompanha seu peso atual em relação à sua meta e registra variações.',
-                position: 'bottom'
+                position: 'top'
             },
             {
                 element: '#tour-nutrition',
                 title: 'Nutrição Diária',
                 intro: 'Monitore sua ingestão de proteínas e hidratação, essenciais para o tratamento.',
-                position: 'bottom'
+                position: 'top'
             },
             {
                 element: '#tour-smartlog',
                 title: 'Registro Rápido',
                 intro: 'Use a IA para registrar refeições apenas descrevendo ou tirando foto.',
-                position: 'bottom'
+                position: 'top'
             },
             {
                 element: '#tour-medication',
                 title: 'Tratamento',
                 intro: 'Visualize sua próxima dose e mantenha o controle do cronograma.',
-                position: 'top'
+                position: 'bottom'
             },
             {
                 element: '#nav-meals',
@@ -122,7 +112,7 @@ export const TourGuide: React.FC = () => {
                 element: '#tour-smartlog',
                 title: 'CalorieCam Desbloqueado!',
                 intro: 'Agora você pode usar a câmera para registrar alimentos instantaneamente. Experimente na sua próxima refeição!',
-                position: 'bottom'
+                position: 'top'
             },
             {
                 element: '#nav-workouts',
@@ -132,10 +122,8 @@ export const TourGuide: React.FC = () => {
             }
         ];
 
-        const steps = type === 'initial' ? commonSteps : proSteps;
-
         intro.setOptions({
-            steps: steps,
+            steps: type === 'initial' ? commonSteps : proSteps,
             showProgress: true,
             showBullets: false,
             exitOnOverlayClick: false,
@@ -150,200 +138,110 @@ export const TourGuide: React.FC = () => {
             tooltipClass: document.documentElement.classList.contains('dark') ? 'dark-mode-tour' : '',
         });
 
-        const isFullyVisible = (el: HTMLElement) => {
+        const isElementSafeInViewport = (el: HTMLElement) => {
             const rect = el.getBoundingClientRect();
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-            const windowWidth = window.innerWidth || document.documentElement.clientWidth;
-            
-            // Strict 100% visibility check
             return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= windowHeight &&
-                rect.right <= windowWidth
+                rect.top >= 70 &&
+                rect.bottom <= (windowHeight - 120)
             );
         };
 
-        const scrollAndResolve = (el: HTMLElement, resolve: () => void) => {
-            const performScroll = () => {
-                if (isFullyVisible(el)) {
-                    intro.refresh();
-                    resolve();
-                    return;
-                }
-
-                // Use smooth scroll to center the element
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Polling to detect when scroll stops and element is visible
-                let lastTop = el.getBoundingClientRect().top;
-                let sameCount = 0;
-                let startTime = Date.now();
-                
-                const checkScroll = () => {
-                    const rect = el.getBoundingClientRect();
-                    const isVisible = isFullyVisible(el);
-                    
-                    if (isVisible) {
-                        intro.refresh();
-                        setTimeout(resolve, 200); // Stability buffer
-                        return;
-                    }
-                    
-                    // Timeout after 3 seconds to avoid infinite loop
-                    if (Date.now() - startTime > 3000) {
-                        intro.refresh();
-                        resolve();
-                        return;
-                    }
-
-                    // Check if scroll position has stabilized
-                    if (Math.abs(rect.top - lastTop) < 0.5) {
-                        sameCount++;
-                    } else {
-                        sameCount = 0;
-                        lastTop = rect.top;
-                    }
-
-                    if (sameCount > 10) { // Scroll likely stopped
-                        // If still not visible after scroll stops, force jump (fallback)
-                        if (!isVisible) {
-                             el.scrollIntoView({ behavior: 'auto', block: 'center' });
-                             intro.refresh();
-                             setTimeout(resolve, 100);
-                        } else {
-                             intro.refresh();
-                             resolve();
-                        }
-                    } else {
-                        requestAnimationFrame(checkScroll);
-                    }
-                };
-                requestAnimationFrame(checkScroll);
-            };
-
-            // 1. Handle specific collapsible sections (Accordion/Expandable)
-            // Check if element is inside a collapsed section
-            const collapsedParent = el.closest('[aria-expanded="false"], .collapsed'); // Generic check
-            if (collapsedParent) {
-                 const toggle = collapsedParent.querySelector('button, [role="button"]');
-                 if (toggle instanceof HTMLElement) {
-                     toggle.click();
-                     setTimeout(() => scrollAndResolve(el, resolve), 300); // Retry after expansion
-                     return;
-                 }
+        const setOverlayOpacity = (opacity: string) => {
+            const helperLayer = document.querySelector('.introjs-helperLayer') as HTMLElement;
+            const tooltipReference = document.querySelector('.introjs-tooltipReferenceLayer') as HTMLElement;
+            
+            if (helperLayer) {
+                helperLayer.style.transition = 'opacity-0.3s ease';
+                helperLayer.style.opacity = opacity;
             }
-
-            // Specific for this app's SummaryTab "Ver mais"
-            if (el.id === 'tour-daily-history' || el.closest('#tour-daily-history')) {
-                const section = document.getElementById('tour-daily-history');
-                if (section) {
-                    const buttons = Array.from(section.querySelectorAll('button'));
-                    const verMaisBtn = buttons.find(b => b.innerText.includes('Ver mais'));
-                    
-                    if (verMaisBtn) {
-                        verMaisBtn.click();
-                        setTimeout(performScroll, 400); // Wait for expansion
-                        return;
-                    }
-                }
+            if (tooltipReference) {
+                tooltipReference.style.transition = 'opacity 0.3s ease';
+                tooltipReference.style.opacity = opacity;
             }
-
-            // 2. Handle generic hidden elements (offsetParent === null usually means hidden)
-            if (el.offsetParent === null) {
-                let parent = el.parentElement;
-                while (parent && parent !== document.body) {
-                    // Try to find a toggle button in the parent chain
-                    const buttons = Array.from(parent.querySelectorAll('button'));
-                    const toggle = buttons.find(b => 
-                        b.innerText.includes('Ver mais') || 
-                        b.innerText.includes('Expandir') ||
-                        b.innerText.includes('Mostrar') ||
-                        b.getAttribute('aria-expanded') === 'false'
-                    );
-
-                    if (toggle) {
-                        toggle.click();
-                        setTimeout(() => scrollAndResolve(el, resolve), 400); // Retry
-                        return;
-                    }
-                    parent = parent.parentElement;
-                }
-            }
-
-            performScroll();
         };
 
-        intro.onbeforechange(function(this: any, targetElement: HTMLElement) {
+        intro.onbeforechange(function(targetElement: HTMLElement) {
             return new Promise<void>((resolve) => {
-                const currentStepIndex = this._currentStep;
-                const currentStepData = steps[currentStepIndex];
-                
-                if (!currentStepData) {
+                if (!targetElement) {
                     resolve();
                     return;
                 }
-                
-                const elementSelector = currentStepData.element;
 
-                // If the element is supposed to be on the home page, ensure we are there
-                if (elementSelector && typeof elementSelector === 'string' && elementSelector.startsWith('#tour-')) {
-                    if (window.location.pathname !== '/') {
-                        navigate('/');
-                        setTimeout(() => {
-                            const el = document.querySelector(elementSelector) as HTMLElement;
-                            if (el) {
-                                scrollAndResolve(el, resolve);
-                            } else {
+                if (targetElement.id === 'tour-side-effects-btn') {
+                    setOverlayOpacity('0');
+                    if (location.pathname !== '/') navigate('/');
+
+                    setTimeout(() => {
+                        const el = document.getElementById('tour-side-effects-btn');
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+                            intro.refresh();
+                            setTimeout(() => {
+                                setOverlayOpacity('1');
                                 resolve();
+                            }, 100);
+                        } else {
+                            resolve();
+                        }
+                    }, 50);
+                    return;
+                }
+
+                if (!isElementSafeInViewport(targetElement)) {
+                    setOverlayOpacity('0');
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+
+                    let lastTop = targetElement.getBoundingClientRect().top;
+                    let checkCount = 0;
+                    
+                    const scrollInterval = setInterval(() => {
+                        const currentTop = targetElement.getBoundingClientRect().top;
+                        if (Math.abs(currentTop - lastTop) < 1) {
+                            checkCount++;
+                            if (checkCount > 2) {
+                                clearInterval(scrollInterval);
+                                intro.refresh();
+                                setTimeout(() => {
+                                    setOverlayOpacity('1');
+                                    resolve();
+                                }, 50);
                             }
-                        }, 300);
-                        return;
-                    }
-                }
+                        } else {
+                            checkCount = 0;
+                            lastTop = currentTop;
+                        }
+                    }, 50);
 
-                if (!targetElement && elementSelector && typeof elementSelector === 'string') {
-                     // Try to find it again just in case
-                     const el = document.querySelector(elementSelector) as HTMLElement;
-                     if (el) {
-                         scrollAndResolve(el, resolve);
-                         return;
-                     }
-                }
-
-                if (targetElement) {
-                    scrollAndResolve(targetElement, resolve);
+                    setTimeout(() => {
+                        clearInterval(scrollInterval);
+                        intro.refresh();
+                        setOverlayOpacity('1');
+                        resolve();
+                    }, 1500);
                 } else {
                     resolve();
                 }
             });
         });
 
-        const handleScroll = () => {
-            if (intro) {
-                intro.refresh();
-            }
-        };
-
-        const scrollContainer = document.querySelector('main.flex-grow');
-        if (scrollContainer) {
-            scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-        }
-
-        const cleanup = () => {
-            if (scrollContainer) {
-                scrollContainer.removeEventListener('scroll', handleScroll);
-            }
+        intro.oncomplete(() => {
             localStorage.setItem('has_seen_onboarding', 'true');
             isRunning.current = false;
-        };
+        });
 
-        intro.oncomplete(cleanup);
-        intro.onexit(cleanup);
+        intro.onexit(() => {
+            localStorage.setItem('has_seen_onboarding', 'true');
+            isRunning.current = false;
+        });
 
         setTimeout(() => {
             intro.start();
-        }, 500);
+        }, 1000);
     };
 
     return null; 

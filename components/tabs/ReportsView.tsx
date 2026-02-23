@@ -80,7 +80,7 @@ export const ReportsView: React.FC<ReportsViewProps> = () => {
                 }
             });
 
-            setReport(response.text || '');
+            setReport(response.text);
 
         } catch (e) {
             console.error("Error generating report:", e);

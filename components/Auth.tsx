@@ -24,13 +24,19 @@ export const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token' | 'verify_email'>('landing');
+  const [emailSentAutomatically, setEmailSentAutomatically] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (view === 'enter_token') {
       inputRefs.current[0]?.focus();
     }
-  }, [view]);
+    
+    if (view === 'verify_email' && !emailSentAutomatically) {
+      handleResendEmail();
+      setEmailSentAutomatically(true);
+    }
+  }, [view, emailSentAutomatically]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -97,6 +103,27 @@ export const Auth: React.FC = () => {
     }
 
     setView('verify_email');
+    setLoading(false);
+  };
+
+  const handleResendEmail = async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      }
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage(`Novo link enviado para ${email}.`);
+    }
     setLoading(false);
   };
 
@@ -242,7 +269,7 @@ export const Auth: React.FC = () => {
               <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 animate-bounce-slow">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
               </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white border-4 border-white dark:border-black">
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-black dark:bg-white rounded-full flex items-center justify-center text-white dark:text-black border-4 border-white dark:border-black">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </div>
@@ -256,10 +283,10 @@ export const Auth: React.FC = () => {
             </div>
 
             <p className="text-gray-500 dark:text-gray-400 mt-6 leading-relaxed">
-              Por favor, clique no botão <span className="text-green-600 font-bold">"Entrar no FitMind"</span> no email que enviamos para ativar sua conta.
+              Por favor, clique no botão <span className="text-blue-600 dark:text-blue-400 font-bold">"Entrar no FitMind"</span> no email que enviamos para ativar sua conta.
             </p>
             
-            <div className="mt-10 space-y-4">
+            <div className="mt-10 space-y-6">
               <button 
                 onClick={() => window.location.reload()} 
                 className="w-full py-4 px-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all hover:opacity-90"
@@ -267,35 +294,34 @@ export const Auth: React.FC = () => {
                 Já confirmei meu email
               </button>
               
-              <div className="pt-4 flex flex-col gap-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Não recebeu o email?</p>
+              <div className="pt-2 flex flex-col gap-3">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Não recebeu o email ou o link expirou?</p>
                 <button 
-                  onClick={async () => {
-                    setLoading(true);
-                    const { error } = await supabase.auth.resend({
-                      type: 'signup',
-                      email: email,
-                      options: {
-                        emailRedirectTo: window.location.origin,
-                      }
-                    });
-                    setLoading(false);
-                    if (error) {
-                      setError(error.message);
-                    } else {
-                      addToast("Email reenviado com sucesso!", "success");
-                    }
-                  }}
+                  onClick={handleResendEmail}
                   disabled={loading}
-                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {loading ? 'Reenviando...' : 'Reenviar link de confirmação'}
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-900 dark:border-gray-600 dark:border-t-white rounded-full animate-spin"></div>
+                      Enviando...
+                    </>
+                  ) : 'Reenviar link de confirmação'}
                 </button>
+                {message && view === 'verify_email' && (
+                  <p className="text-blue-600 dark:text-blue-400 text-sm font-medium animate-fade-in flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    {message}
+                  </p>
+                )}
+                {error && view === 'verify_email' && (
+                  <p className="text-red-500 text-sm animate-shake">{error}</p>
+                )}
               </div>
 
               <button 
-                onClick={() => setView('signup')} 
-                className="w-full py-3 px-4 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                onClick={() => { setView('signup'); setEmailSentAutomatically(false); setError(null); setMessage(null); }} 
+                className="w-full py-2 px-4 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-sm"
               >
                 Usar outro email
               </button>

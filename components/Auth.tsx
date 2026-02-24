@@ -97,11 +97,13 @@ export const Auth: React.FC = () => {
     });
 
     if (signUpError) {
+      console.error("Erro no SignUp:", signUpError);
       setError(signUpError.message);
       setLoading(false);
       return;
     }
 
+    console.log("SignUp realizado com sucesso, aguardando confirmação.");
     setView('verify_email');
     setLoading(false);
   };
@@ -111,6 +113,7 @@ export const Auth: React.FC = () => {
     setError(null);
     setMessage(null);
 
+    console.log("Tentando reenviar email para:", email);
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -120,8 +123,10 @@ export const Auth: React.FC = () => {
     });
 
     if (error) {
+      console.error("Erro ao reenviar email:", error);
       setError(error.message);
     } else {
+      console.log("Email de reenvio disparado com sucesso.");
       setMessage(`Novo link enviado para ${email}.`);
     }
     setLoading(false);

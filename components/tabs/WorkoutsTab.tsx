@@ -987,7 +987,7 @@ export const WorkoutsTab: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-black pb-28 animate-fade-in font-sans">
             {/* Header */}
-            <div className="px-6 pt-4 pb-2 sticky top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-xl">
+            <div id="tour-workouts-main" className="px-6 pt-4 pb-2 sticky top-0 z-30 bg-gray-50/95 dark:bg-black/95 backdrop-blur-xl">
                 <div className="flex justify-between items-end mb-6">
                     <div>
                         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Treinos</h1>

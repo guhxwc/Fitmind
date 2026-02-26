@@ -217,7 +217,7 @@ export const SettingsTab: React.FC = () => {
 
     return (
         <div className="px-5 pb-24 min-h-screen animate-fade-in">
-            <header className="mb-8 mt-4 flex justify-between items-start">
+            <header id="tour-settings-main" className="mb-8 mt-4 flex justify-between items-start">
                 <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ajustes</h1>
                 <StreakBadge />
             </header>
@@ -272,7 +272,7 @@ export const SettingsTab: React.FC = () => {
                 <SettingsItem 
                     icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><TargetIcon className="w-4 h-4"/></div>}
                     label="Metas de peso" 
-                    onClick={() => navigate('/settings/account')} 
+                    onClick={() => navigate('/settings/weight-goals')} 
                 />
                 <SettingsItem 
                     icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><SettingsIcon className="w-4 h-4"/></div>}

@@ -90,6 +90,7 @@ export interface Meal {
   id: string;
   name: string;
   time: string;
+  type?: 'Café da manhã' | 'Almoço' | 'Jantar' | 'Lanche';
   calories: number;
   protein: number;
 }

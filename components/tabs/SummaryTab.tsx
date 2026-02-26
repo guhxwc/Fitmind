@@ -4,13 +4,15 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, LunchIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, LunchIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon, CalendarIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
 import { ProFeatureModal } from '../ProFeatureModal';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { SideEffectModal } from './SideEffectModal';
+import { RegisterWeightModal } from '../RegisterWeightModal';
+import { DatePickerModal } from '../core/DatePickerModal';
 import type { Meal, SideEffect, SideEffectEntry } from '../../types';
 import { TourGuide } from '../core/TourGuide';
 
@@ -116,7 +118,7 @@ const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: numbe
     </div>
 );
 
-const WeightCard: React.FC = () => {
+const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
     const { userData, setUserData, setWeightHistory } = useAppContext();
     const debounceTimer = useRef<number | null>(null);
 
@@ -165,7 +167,7 @@ const WeightCard: React.FC = () => {
                      <MinusIcon className="w-6 h-6" />
                  </button>
                  
-                 <div>
+                 <div onClick={onOpenModal} className="cursor-pointer active:scale-95 transition-transform">
                      <span className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tighter">{userData.weight.toFixed(1).replace('.', ',')}</span>
                      <span className="text-base font-semibold text-gray-400 ml-1">kg</span>
                  </div>
@@ -231,11 +233,13 @@ const DailyRecordItem: React.FC<{
 );
 
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory } = useAppContext();
+  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory } = useAppContext();
   const navigate = useNavigate();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   
@@ -278,6 +282,7 @@ export const SummaryTab: React.FC = () => {
   const handleAddMeal = (newMealData: Omit<Meal, 'id' | 'time'>) => {
     const newMeal: Meal = {
         ...newMealData,
+        type: selectedMealType as any,
         id: new Date().toISOString(),
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     };
@@ -304,18 +309,35 @@ export const SummaryTab: React.FC = () => {
     if (error) console.error("Error saving side effects:", error);
   };
 
-  const getMealStats = (startTime: number, endTime: number) => {
+  const handleAddWeight = async (newWeight: number) => {
+      if(!userData) return;
+      const { data } = await supabase.from('weight_history').insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight }).select();
+      if(data) {
+          setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+          await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
+          setUserData(prev => prev ? ({ ...prev, weight: newWeight }) : null);
+          setIsWeightModalOpen(false);
+          updateStreak();
+      }
+  };
+
+  const getMealStats = (type: string, startTime: number, endTime: number) => {
       const filteredMeals = meals.filter(m => {
+          if (m.type) return m.type === type;
+          // Fallback para refeições antigas sem o campo 'type'
           const hour = parseInt(m.time.split(':')[0], 10);
+          if (type === 'Lanche') {
+              return (hour >= 15 && hour < 18) || (hour >= 0 && hour < 5) || (hour >= 22 && hour < 24);
+          }
           return hour >= startTime && hour < endTime;
       });
       return filteredMeals.reduce((sum, m) => sum + m.calories, 0);
   };
 
-  const breakfastCals = getMealStats(5, 11);
-  const lunchCals = getMealStats(11, 15);
-  const snackCals = getMealStats(15, 18) + getMealStats(0, 5) + getMealStats(22, 24);
-  const dinnerCals = getMealStats(18, 22);
+  const breakfastCals = getMealStats('Café da manhã', 5, 11);
+  const lunchCals = getMealStats('Almoço', 11, 15);
+  const snackCals = getMealStats('Lanche', 15, 18);
+  const dinnerCals = getMealStats('Jantar', 18, 22);
 
   const dailyGoal = userData.goals.calories;
   const breakfastGoal = Math.round(dailyGoal * 0.20);
@@ -324,7 +346,11 @@ export const SummaryTab: React.FC = () => {
   const snackGoal = Math.round(dailyGoal * 0.15);
 
   // Aggregate Today's History
-  const todayStr = new Date().toISOString().split('T')[0];
+  const offset = selectedDate.getTimezoneOffset() * 60000;
+  const localISOTime = (new Date(selectedDate.getTime() - offset)).toISOString().slice(0, -1);
+  const todayStr = localISOTime.split('T')[0];
+  const isToday = new Date().toDateString() === selectedDate.toDateString();
+  
   const formatTime = (dateStr: string) => {
       if(dateStr.length === 5) return dateStr; // HH:MM
       return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -373,15 +399,21 @@ export const SummaryTab: React.FC = () => {
   }, [applicationHistory, weightHistory, sideEffects, workoutHistory, todayStr]);
 
   return (
-    <div className="px-5 space-y-6 animate-fade-in relative pb-24">
-      {/* Tour Guide Logic Included Here */}
-      <TourGuide />
-
+    <div className="px-5 space-y-6 animate-fade-in relative">
       {/* Header */}
       <header className="flex justify-between items-end pt-4">
         <div>
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
+            <div 
+                id="tour-calendar"
+                onClick={() => setIsDatePickerOpen(true)}
+                className="relative inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full mb-2 cursor-pointer active:scale-95 transition-transform"
+            >
+                <CalendarIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
+                    {isToday ? 'Hoje' : selectedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                </span>
+            </div>
+            <h1 id="tour-summary-header" className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
         </div>
         <div className="flex items-center gap-3">
             <div id="tour-streak">
@@ -468,7 +500,7 @@ export const SummaryTab: React.FC = () => {
 
           {/* Weight Control */}
           <div className="col-span-2">
-              <WeightCard />
+              <WeightCard onOpenModal={() => setIsWeightModalOpen(true)} />
           </div>
       </div>
       
@@ -549,6 +581,7 @@ export const SummaryTab: React.FC = () => {
       {/* Quick Actions List */}
       <div className="space-y-3 pt-4">
           <QuickActionRow 
+              id="tour-quick-log"
               icon={<UtensilsIcon className="w-5 h-5" />} 
               label="Registrar Refeição" 
               onClick={() => setIsMealModalOpen(true)}
@@ -638,6 +671,22 @@ export const SummaryTab: React.FC = () => {
             initialEntry={sideEffects.find(se => se.date === new Date().toISOString().split('T')[0])}
             onClose={() => setIsSideEffectModalOpen(false)} 
             onSave={handleSaveSideEffects} 
+          />
+      )}
+      
+      {isWeightModalOpen && (
+          <RegisterWeightModal 
+            onClose={() => setIsWeightModalOpen(false)} 
+            onSave={handleAddWeight} 
+          />
+      )}
+
+      {isDatePickerOpen && (
+          <DatePickerModal
+              initialDate={selectedDate}
+              maxDate={new Date()}
+              onSelect={(date) => setSelectedDate(date)}
+              onClose={() => setIsDatePickerOpen(false)}
           />
       )}
       

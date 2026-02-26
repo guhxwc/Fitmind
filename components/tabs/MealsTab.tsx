@@ -220,7 +220,7 @@ export const MealsTab: React.FC = () => {
     <div className="pb-24 min-h-screen bg-ios-bg dark:bg-black animate-fade-in flex flex-col">
       
       {/* Top Rounded Navigation */}
-      <div className="px-4 pt-4 pb-2 sticky top-0 z-30 bg-ios-bg/95 dark:bg-black/95 backdrop-blur-xl">
+      <div id="tour-diet-main" className="px-4 pt-4 pb-2 sticky top-0 z-30 bg-ios-bg/95 dark:bg-black/95 backdrop-blur-xl">
           <div className="flex justify-between items-center mb-3">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white pl-2">Alimentação</h1>
               <StreakBadge />

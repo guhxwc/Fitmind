@@ -431,7 +431,7 @@ export const ProgressTab: React.FC = () => {
 
   return (
     <div className="px-5 pb-24 animate-fade-in min-h-screen">
-      <header className="pt-4 mb-8 flex justify-between items-end">
+      <header id="tour-progress-main" className="pt-4 mb-8 flex justify-between items-end">
         <div>
             <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Progresso</p>
             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Saúde</h1>

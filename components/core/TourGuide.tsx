@@ -51,72 +51,95 @@ export const TourGuide: React.FC = () => {
                 intro: 'Seu assistente completo para acompanhar seu tratamento GLP-1 e evolução. Vamos conhecer o app!',
             },
             {
+                element: '#tour-calendar',
+                title: 'Calendário',
+                intro: 'Navegue entre os dias para ver seu histórico ou planejar o futuro.',
+                position: 'bottom'
+            },
+            {
+                element: '#tour-summary-header',
+                title: 'Resumo Diário',
+                intro: 'Aqui você tem uma visão geral do seu dia, com as principais métricas e ações.',
+                position: 'bottom'
+            },
+            {
+                element: '#tour-streak',
+                title: 'Sua Constância',
+                intro: 'Acompanhe quantos dias seguidos você está focado no seu objetivo. Não quebre o ciclo!',
+                position: 'bottom'
+            },
+            {
                 element: '#tour-weight-card',
                 title: 'Meta de Peso',
-                intro: 'Aqui você acompanha seu peso atual em relação à sua meta e registra variações.',
+                intro: 'Acompanhe seu peso atual em relação à sua meta e registre variações rapidamente.',
                 position: 'bottom'
             },
             {
                 element: '#tour-nutrition',
                 title: 'Nutrição Diária',
-                intro: 'Monitore sua ingestão de proteínas e hidratação, essenciais para o tratamento.',
+                intro: 'Monitore sua ingestão de proteínas e hidratação, pilares fundamentais do tratamento.',
                 position: 'bottom'
             },
             {
                 element: '#tour-smartlog',
-                title: 'Registro Rápido',
-                intro: 'Use a IA para registrar refeições apenas descrevendo ou tirando foto.',
+                title: 'Registro Inteligente',
+                intro: 'Use nossa IA para registrar refeições apenas descrevendo o que comeu. Simples assim!',
                 position: 'bottom'
             },
             {
-                element: '#tour-medication',
-                title: 'Tratamento',
-                intro: 'Visualize sua próxima dose e mantenha o controle do cronograma.',
+                element: '#tour-quick-log',
+                title: 'Ações Rápidas',
+                intro: 'Atalhos diretos para registrar refeições, atividades e efeitos colaterais.',
                 position: 'top'
             },
             {
-                element: '#nav-meals',
-                title: 'Dieta e Jejum',
-                intro: 'Nesta aba, acesse seu plano alimentar e controle seus jejuns.',
-                position: 'top'
+                element: '#tour-fab',
+                title: 'Menu de Ações',
+                intro: 'Acesse rapidamente as funções mais importantes do app de qualquer lugar.',
+                position: 'left'
             },
             {
-                element: '#nav-applications',
-                title: 'Doses e Níveis',
-                intro: 'Histórico completo de aplicações e estimativa do nível da medicação no corpo.',
-                position: 'top'
+                element: '#tour-doses-main',
+                title: 'Protocolo e Doses',
+                intro: 'Gerencie seu cronograma de aplicações e acompanhe os níveis da medicação no seu corpo.',
+                position: 'bottom',
+                route: '/applications'
             },
             {
-                element: '#tour-side-effects-btn',
-                title: 'Efeitos Colaterais',
-                intro: 'Registre sintomas rapidamente para receber dicas de alívio.',
-                position: 'top'
+                element: '#tour-diet-main',
+                title: 'Alimentação e Jejum',
+                intro: 'Acesse seu plano alimentar personalizado e controle seus períodos de jejum intermitente.',
+                position: 'bottom',
+                route: '/meals'
             },
             {
-                element: '#nav-progress',
-                title: 'Resultados e Gráficos',
-                intro: 'Acompanhe sua curva de peso, fotos de progresso e estatísticas corporais.',
-                position: 'top'
+                element: '#tour-workouts-main',
+                title: 'Treinos Inteligentes',
+                intro: 'Seu plano de exercícios adaptativo, focado em manter sua massa muscular durante o processo.',
+                position: 'bottom',
+                route: '/workouts'
             },
             {
-                element: '#tour-daily-history',
-                title: 'Histórico de Registros',
-                intro: 'Tudo o que você fez hoje aparece aqui: refeições, treinos e doses.',
-                position: 'top'
+                element: '#tour-progress-main',
+                title: 'Evolução Corporal',
+                intro: 'Visualize sua jornada através de gráficos de peso, medidas e fotos de progresso.',
+                position: 'bottom',
+                route: '/progress'
             },
             {
-                element: '#nav-settings',
+                element: '#tour-settings-main',
                 title: 'Configurações',
-                intro: 'Ajuste suas metas, lembretes e dados da conta.',
-                position: 'top'
+                intro: 'Personalize suas metas, lembretes e gerencie sua conta.',
+                position: 'bottom',
+                route: '/settings'
             },
             {
-                title: 'Pronto para começar!',
-                intro: 'Agora você conhece o FitMind. Registre sua primeira atividade e comece sua jornada!',
+                title: 'Tudo Pronto!',
+                intro: 'Agora você está pronto para transformar sua saúde com o FitMind. Vamos começar?',
             }
         ];
 
-        // 2. PRO Steps (No welcome text, direct to features)
+        // 2. PRO Steps
         const proSteps = [
             {
                 element: '#tour-smartlog',
@@ -155,27 +178,47 @@ export const TourGuide: React.FC = () => {
             const windowHeight = window.innerHeight || document.documentElement.clientHeight;
             const windowWidth = window.innerWidth || document.documentElement.clientWidth;
             
-            // Strict 100% visibility check
             return (
-                rect.top >= 0 &&
+                rect.top >= -50 && // Allow slightly off-screen top if we're scrolling
                 rect.left >= 0 &&
-                rect.bottom <= windowHeight &&
+                rect.bottom <= windowHeight + 50 &&
                 rect.right <= windowWidth
             );
         };
 
+        const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement | null> => {
+            return new Promise((resolve) => {
+                const startTime = Date.now();
+                const check = () => {
+                    const el = document.querySelector(selector) as HTMLElement;
+                    // Ensure it's rendered, has size, and is not hidden
+                    if (el && el.offsetParent !== null && el.getBoundingClientRect().width > 0) {
+                        resolve(el);
+                    } else if (Date.now() - startTime > timeout) {
+                        resolve(null);
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                };
+                check();
+            });
+        };
+
         const scrollAndResolve = (el: HTMLElement, resolve: () => void) => {
+            const scrollContainer = document.querySelector('main.flex-grow');
+            
             const performScroll = () => {
-                if (isFullyVisible(el)) {
-                    intro.refresh();
-                    resolve();
-                    return;
+                // If element is near the top of the page, scroll to absolute top
+                const rect = el.getBoundingClientRect();
+                
+                // If the element is within the first 300px of the document or its container
+                if (rect.top < 300 && scrollContainer) {
+                    scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
 
-                // Use smooth scroll to center the element
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Polling to detect when scroll stops and element is visible
+                // Polling to detect when scroll stops
                 let lastTop = el.getBoundingClientRect().top;
                 let sameCount = 0;
                 let startTime = Date.now();
@@ -186,35 +229,32 @@ export const TourGuide: React.FC = () => {
                     
                     if (isVisible) {
                         intro.refresh();
-                        setTimeout(resolve, 200); // Stability buffer
+                        setTimeout(resolve, 400); // Stability buffer
                         return;
                     }
                     
-                    // Timeout after 3 seconds to avoid infinite loop
                     if (Date.now() - startTime > 3000) {
+                        // Force jump if smooth scroll fails
+                        if (rect.top < 300 && scrollContainer) {
+                            scrollContainer.scrollTo({ top: 0, behavior: 'auto' });
+                        } else {
+                            el.scrollIntoView({ behavior: 'auto', block: 'center' });
+                        }
                         intro.refresh();
-                        resolve();
+                        setTimeout(resolve, 200);
                         return;
                     }
 
-                    // Check if scroll position has stabilized
-                    if (Math.abs(rect.top - lastTop) < 0.5) {
+                    if (Math.abs(rect.top - lastTop) < 1) {
                         sameCount++;
                     } else {
                         sameCount = 0;
                         lastTop = rect.top;
                     }
 
-                    if (sameCount > 10) { // Scroll likely stopped
-                        // If still not visible after scroll stops, force jump (fallback)
-                        if (!isVisible) {
-                             el.scrollIntoView({ behavior: 'auto', block: 'center' });
-                             intro.refresh();
-                             setTimeout(resolve, 100);
-                        } else {
-                             intro.refresh();
-                             resolve();
-                        }
+                    if (sameCount > 20) { 
+                        intro.refresh();
+                        setTimeout(resolve, 200);
                     } else {
                         requestAnimationFrame(checkScroll);
                     }
@@ -222,95 +262,60 @@ export const TourGuide: React.FC = () => {
                 requestAnimationFrame(checkScroll);
             };
 
-            // 1. Handle specific collapsible sections (Accordion/Expandable)
-            // Check if element is inside a collapsed section
-            const collapsedParent = el.closest('[aria-expanded="false"], .collapsed'); // Generic check
+            // Handle specific collapsible sections
+            const collapsedParent = el.closest('[aria-expanded="false"], .collapsed');
             if (collapsedParent) {
                  const toggle = collapsedParent.querySelector('button, [role="button"]');
                  if (toggle instanceof HTMLElement) {
                      toggle.click();
-                     setTimeout(() => scrollAndResolve(el, resolve), 300); // Retry after expansion
+                     setTimeout(() => scrollAndResolve(el, resolve), 400);
                      return;
                  }
-            }
-
-            // Specific for this app's SummaryTab "Ver mais"
-            if (el.id === 'tour-daily-history' || el.closest('#tour-daily-history')) {
-                const section = document.getElementById('tour-daily-history');
-                if (section) {
-                    const buttons = Array.from(section.querySelectorAll('button'));
-                    const verMaisBtn = buttons.find(b => b.innerText.includes('Ver mais'));
-                    
-                    if (verMaisBtn) {
-                        verMaisBtn.click();
-                        setTimeout(performScroll, 400); // Wait for expansion
-                        return;
-                    }
-                }
-            }
-
-            // 2. Handle generic hidden elements (offsetParent === null usually means hidden)
-            if (el.offsetParent === null) {
-                let parent = el.parentElement;
-                while (parent && parent !== document.body) {
-                    // Try to find a toggle button in the parent chain
-                    const buttons = Array.from(parent.querySelectorAll('button'));
-                    const toggle = buttons.find(b => 
-                        b.innerText.includes('Ver mais') || 
-                        b.innerText.includes('Expandir') ||
-                        b.innerText.includes('Mostrar') ||
-                        b.getAttribute('aria-expanded') === 'false'
-                    );
-
-                    if (toggle) {
-                        toggle.click();
-                        setTimeout(() => scrollAndResolve(el, resolve), 400); // Retry
-                        return;
-                    }
-                    parent = parent.parentElement;
-                }
             }
 
             performScroll();
         };
 
         intro.onbeforechange(function(this: any, targetElement: HTMLElement) {
-            return new Promise<void>((resolve) => {
-                const currentStepIndex = this._currentStep;
-                const currentStepData = steps[currentStepIndex];
-                
-                if (!currentStepData) {
-                    resolve();
+            const currentStepIndex = this._currentStep;
+            const currentStepData = steps[currentStepIndex] as any;
+            
+            if (!currentStepData) return Promise.resolve();
+            
+            const elementSelector = currentStepData.element;
+            const targetRoute = currentStepData.route;
+
+            return new Promise<void>(async (resolve) => {
+                // 1. Handle route changes
+                if (targetRoute && window.location.pathname !== targetRoute) {
+                    navigate(targetRoute);
+                    
+                    // Wait for route change and element to appear
+                    const el = await waitForElement(elementSelector);
+                    if (el) {
+                        scrollAndResolve(el, resolve);
+                    } else {
+                        // Skip step if element never appears on the new page
+                        this.nextStep();
+                        resolve();
+                    }
                     return;
                 }
-                
-                const elementSelector = currentStepData.element;
 
-                // If the element is supposed to be on the home page, ensure we are there
-                if (elementSelector && typeof elementSelector === 'string' && elementSelector.startsWith('#tour-')) {
-                    if (window.location.pathname !== '/') {
-                        navigate('/');
-                        setTimeout(() => {
-                            const el = document.querySelector(elementSelector) as HTMLElement;
-                            if (el) {
-                                scrollAndResolve(el, resolve);
-                            } else {
-                                resolve();
-                            }
-                        }, 300);
-                        return;
+                // 2. If element is missing but specified, try to wait for it
+                if (!targetElement && elementSelector) {
+                    const el = await waitForElement(elementSelector);
+                    if (el) {
+                        scrollAndResolve(el, resolve);
+                    } else {
+                        // Skip step if element never appears
+                        this.nextStep();
+                        resolve();
                     }
+                    return;
                 }
 
-                if (!targetElement && elementSelector && typeof elementSelector === 'string') {
-                     // Try to find it again just in case
-                     const el = document.querySelector(elementSelector) as HTMLElement;
-                     if (el) {
-                         scrollAndResolve(el, resolve);
-                         return;
-                     }
-                }
-
+                // 3. If element exists, ensure it's scrolled into view
                 if (targetElement) {
                     scrollAndResolve(targetElement, resolve);
                 } else {

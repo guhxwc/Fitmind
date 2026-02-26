@@ -27,11 +27,11 @@ const QuizOption: React.FC<{onClick: () => void, isSelected: boolean, children: 
         onClick={onClick}
         className={`w-full text-left p-4 my-2 rounded-xl border-2 transition-all duration-200 ${
             isSelected 
-                ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' 
+                ? 'bg-black dark:bg-white border-black dark:border-white' 
                 : 'bg-gray-100 dark:bg-gray-800 border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
         }`}
     >
-        <span className="text-lg font-medium text-gray-900 dark:text-gray-200">{children}</span>
+        <span className={`text-lg font-medium ${isSelected ? 'text-white dark:text-black' : 'text-gray-900 dark:text-gray-200'}`}>{children}</span>
     </button>
 )
 

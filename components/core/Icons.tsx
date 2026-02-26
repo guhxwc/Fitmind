@@ -59,7 +59,17 @@ export const UtensilsIcon: React.FC<{className?: string}> = ({className}) => (
   </svg>
 );
 export const DumbbellIcon: React.FC<{className?: string}> = ({className}) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m6 2 4 4"></path><path d="m3 10 4 4"></path><path d="m21 14-4-4"></path></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" className={className} fill="currentColor">
+    <g>
+      <rect x="110" y="228" width="292" height="56" />
+      <rect x="110" y="96" width="56" height="320" rx="28" />
+      <rect x="46" y="146" width="48" height="220" rx="24" />
+      <rect x="10" y="206" width="20" height="100" rx="10" />
+      <rect x="346" y="96" width="56" height="320" rx="28" />
+      <rect x="418" y="146" width="48" height="220" rx="24" />
+      <rect x="482" y="206" width="20" height="100" rx="10" />
+    </g>
+  </svg>
 );
 export const ChartLineIcon: React.FC<{className?: string}> = ({className}) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
@@ -126,7 +136,14 @@ export const SoupIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="24" height="24" className={className}>
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="1.5" dy="1.5" stdDeviation="2" floodColor="#000000" floodOpacity="0.35" />
+            </filter>
+        </defs>
+        <path d="M 10 50 C 40 50, 50 40, 50 10 C 50 40, 60 50, 90 50 C 60 50, 50 60, 50 90 C 50 60, 40 50, 10 50 Z" fill="currentColor" filter="url(#shadow)" />
+    </svg>
 );
 
 export const ChevronRightIcon: React.FC<{ className?: string }> = ({ className }) => (

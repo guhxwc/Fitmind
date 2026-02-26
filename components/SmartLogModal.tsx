@@ -96,6 +96,8 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+      const now = new Date();
+      const currentTimeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
       const schema = {
         type: Type.OBJECT,
@@ -110,10 +112,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
                 protein: { type: Type.NUMBER },
                 meal_type: { 
                   type: Type.STRING, 
-                  description: "Tipo da refeição: 'Café da manhã', 'Almoço', 'Jantar' ou 'Lanche'. Inferir do contexto (ex: 'almocei' -> Almoço) ou horário mencionado (ex: 'meio dia' -> Almoço, '22h' -> Jantar)." 
+                  description: "Tipo da refeição: 'Café da manhã', 'Almoço', 'Jantar' ou 'Lanche'." 
+                },
+                time: {
+                  type: Type.STRING,
+                  description: "Horário da refeição no formato HH:MM. Se o usuário não mencionar, use um horário padrão baseado no tipo: Café (08:00), Almoço (12:30), Jantar (20:00), Lanche (horário atual ou 16:00)."
                 }
               },
-              required: ['name', 'calories', 'protein', 'meal_type'],
+              required: ['name', 'calories', 'protein', 'meal_type', 'time'],
             },
           },
           water_liters: { type: Type.NUMBER, description: "Amount of water in liters to ADD to current total. E.g., 0.5" },
@@ -124,16 +130,35 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
 
       const prompt = `
         Analise a entrada do usuário (texto ou áudio) sobre sua ingestão alimentar, água ou peso.
+        Horário atual do sistema: ${currentTimeStr}
+
         Extraia os dados estruturados.
         Para alimentos, estime calorias e proteínas se não especificado.
         Para água, converta para litros.
         Para peso, extraia o valor em kg.
         
-        REGRAS DE TIPO DE REFEIÇÃO:
-        - Se o usuário disser "almocei" ou mencionar horários próximos ao meio-dia (11h-14h), o tipo é "Almoço".
-        - Se disser "jantei" ou horários noturnos (18h-23h), o tipo é "Jantar".
-        - Se disser "café da manhã" ou horários matinais (5h-10h), o tipo é "Café da manhã".
-        - Caso contrário, use "Lanche".
+        REGRAS DE TIPO DE REFEIÇÃO (meal_type):
+        1. VERBOS E PALAVRAS-CHAVE:
+           - "Almoçar", "almocei", "almoçamos", "almoço": Almoço.
+           - "Jantar", "jantei", "jantamos", "janta": Jantar.
+           - "Café da manhã", "tomei café", "desjejum": Café da manhã.
+           - "Lanche", "lanchei", "comi um lanche", "belisquei": Lanche.
+        
+        2. INFERÊNCIA POR HORÁRIO:
+           - Se o usuário mencionar um horário, use-o para classificar.
+           - Se não mencionar, use o horário atual (${currentTimeStr}) para inferir se não houver verbo:
+             - 05:00 - 10:30: Café da manhã
+             - 11:00 - 15:00: Almoço
+             - 18:00 - 23:00: Jantar
+             - Outros: Lanche
+        
+        3. HORÁRIO PADRÃO (campo time):
+           - Se o usuário disser "agora", use ${currentTimeStr}.
+           - Se o usuário não especificar horário, use:
+             - Café da manhã -> 08:30
+             - Almoço -> 12:30
+             - Jantar -> 20:00
+             - Lanche -> ${currentTimeStr}
       `;
 
       let contents: any;
@@ -165,8 +190,9 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
               name: m.name,
               calories: m.calories,
               protein: m.protein,
+              type: m.meal_type,
               id: new Date().toISOString() + Math.random(),
-              time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              time: m.time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           }));
           setMeals(prev => [...prev, ...newMeals]);
       }

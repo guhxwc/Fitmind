@@ -185,10 +185,10 @@ export const ApplicationTab: React.FC = () => {
   }
 
   return (
-    <div className="p-5 space-y-6 animate-fade-in pb-32">
+    <div className="p-5 space-y-6 animate-fade-in">
       
       {/* 1. Header Minimalista */}
-      <header className="flex justify-between items-center py-2">
+      <header id="tour-doses-main" className="flex justify-between items-center py-2">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Protocolo</h1>
         <StreakBadge />
       </header>

@@ -26,6 +26,8 @@ interface AppContextType {
   setDailyNotes: React.Dispatch<React.SetStateAction<DailyNote[]>>;
   sideEffects: SideEffectEntry[];
   setSideEffects: React.Dispatch<React.SetStateAction<SideEffectEntry[]>>;
+  selectedDate: Date;
+  setSelectedDate: React.Dispatch<React.SetStateAction<Date>>;
   meals: Meal[];
   setMeals: React.Dispatch<React.SetStateAction<Meal[]>>;
   quickAddProtein: number;
@@ -55,6 +57,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [dailyNotes, setDailyNotes] = useState<DailyNote[]>([]);
   const [sideEffects, setSideEffects] = useState<SideEffectEntry[]>([]);
   
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [meals, setMeals] = useState<Meal[]>([]);
   const [quickAddProtein, setQuickAddProtein] = useState(0);
   const [currentWater, setCurrentWater] = useState(0);
@@ -132,7 +135,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     try {
         const userId = currentSession.user.id;
-        const todayStr = new Date().toISOString().split('T')[0];
+        // Adjust date to local timezone string to avoid UTC shift issues
+        const offset = selectedDate.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(selectedDate.getTime() - offset)).toISOString().slice(0, -1);
+        const selectedDateStr = localISOTime.split('T')[0];
 
         const [
           profileRes,
@@ -151,7 +157,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
             supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
-            supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', todayStr).limit(1).maybeSingle(),
+            supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', selectedDateStr).limit(1).maybeSingle(),
             supabase.from('daily_notes').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false })
         ]);
@@ -231,6 +237,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!isInitialLoad.current && session) {
+        fetchData();
+    }
+  }, [selectedDate]);
+
   const unlockPro = async () => {
       if(userData) {
           const { error } = await supabase.from('profiles').update({ 
@@ -256,7 +268,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     debounceTimeoutRef.current = window.setTimeout(async () => {
       try {
-          const todayStr = new Date().toISOString().split('T')[0];
+          const offset = selectedDate.getTimezoneOffset() * 60000;
+          const localISOTime = (new Date(selectedDate.getTime() - offset)).toISOString().slice(0, -1);
+          const selectedDateStr = localISOTime.split('T')[0];
           
           let targetId = dailyRecordIdRef.current;
           if (!targetId) {
@@ -264,7 +278,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 .from('daily_records')
                 .select('id')
                 .eq('user_id', userData.id)
-                .eq('date', todayStr)
+                .eq('date', selectedDateStr)
                 .maybeSingle();
               
               if (existing) {
@@ -275,7 +289,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
           const payload = {
               user_id: userData.id,
-              date: todayStr,
+              date: selectedDateStr,
               meals: meals,
               quick_add_protein_grams: quickAddProtein,
               water_liters: currentWater
@@ -352,6 +366,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setDailyNotes,
       sideEffects,
       setSideEffects,
+      selectedDate,
+      setSelectedDate,
       meals,
       setMeals,
       quickAddProtein,
@@ -391,6 +407,8 @@ export const useAppContext = () => {
         setDailyNotes: () => {},
         sideEffects: [],
         setSideEffects: () => {},
+        selectedDate: new Date(),
+        setSelectedDate: () => {},
         meals: [],
         setMeals: () => {},
         quickAddProtein: 0,

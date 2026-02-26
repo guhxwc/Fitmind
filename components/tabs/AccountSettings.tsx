@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
-import { ChevronRightIcon, CameraIcon, XMarkIcon } from '../core/Icons';
+import { ChevronRightIcon, CameraIcon, XMarkIcon, ScaleIcon, RulerIcon, CakeIcon, GenderIcon, MailIcon, PersonStandingIcon, SettingsIcon } from '../core/Icons';
 import Portal from '../core/Portal';
 
 // --- UI Components ---
@@ -12,31 +12,35 @@ import Portal from '../core/Portal';
 const ListGroup: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
         {title && (
-            <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide ml-1">
+            <h3 className="px-4 mb-2 text-[15px] font-semibold text-gray-400 dark:text-gray-500 ml-1">
                 {title}
             </h3>
         )}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-[18px] overflow-hidden shadow-sm border border-gray-200/50 dark:border-gray-800">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] overflow-hidden shadow-sm">
             {children}
         </div>
     </div>
 );
 
 const ListItem: React.FC<{ 
+    icon?: React.ReactNode;
     label: string; 
-    value: string; 
+    value?: string; 
     onClick?: () => void; 
     isLast?: boolean;
-}> = ({ label, value, onClick, isLast }) => (
+}> = ({ icon, label, value, onClick, isLast }) => (
     <button 
         onClick={onClick}
         disabled={!onClick}
-        className={`w-full flex items-center justify-between pl-4 pr-4 py-3.5 bg-white dark:bg-[#1C1C1E] active:bg-gray-50 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+        className="w-full flex items-center pl-4 bg-white dark:bg-[#1C1C1E] active:bg-gray-50 dark:active:bg-gray-800 transition-colors relative"
     >
-        <span className="text-[17px] text-gray-900 dark:text-white font-medium">{label}</span>
-        <div className="flex items-center gap-2">
-            <span className="text-[17px] text-gray-500 dark:text-gray-400">{value}</span>
-            {onClick && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 opacity-70" />}
+        {icon && <div className="mr-4 flex-shrink-0 w-6 flex items-center justify-center">{icon}</div>}
+        <div className={`flex-grow flex items-center justify-between pr-4 py-4 ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''} overflow-hidden`}>
+            <span className="text-[17px] text-gray-900 dark:text-white font-medium whitespace-nowrap flex-shrink-0">{label}</span>
+            <div className="flex items-center gap-2 overflow-hidden ml-4 justify-end">
+                {value && <span className="text-[17px] text-gray-400 dark:text-gray-500 truncate">{value}</span>}
+                {onClick && <ChevronRightIcon className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />}
+            </div>
         </div>
     </button>
 );
@@ -221,68 +225,62 @@ export const AccountSettings: React.FC = () => {
         <div className="min-h-screen bg-[#F2F2F7] dark:bg-black font-sans pb-24 animate-fade-in">
             {/* Navbar Style Header */}
             <div className="sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800">
-                <div className="px-4 h-14 flex items-center justify-between max-w-md mx-auto">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-blue-500 hover:text-blue-600 font-medium text-[17px] flex items-center gap-1">
-                        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5"><path d="M11.67 1.86998L9.9 0.0999756L0 9.99998L9.9 19.9L11.67 18.13L3.54 9.99998L11.67 1.86998Z" fill="currentColor"/></svg>
-                        Ajustes
-                    </button>
-                    <h1 className="font-semibold text-[17px] text-gray-900 dark:text-white">Minha Conta</h1>
-                    <div className="w-16"></div>
+                <div className="px-4 h-14 flex items-center justify-between max-w-md mx-auto relative">
+                    <div className="flex-1 flex justify-start z-10">
+                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-blue-500 hover:text-blue-600 font-medium text-[17px] flex items-center gap-1">
+                            <svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5"><path d="M11.67 1.86998L9.9 0.0999756L0 9.99998L9.9 19.9L11.67 18.13L3.54 9.99998L11.67 1.86998Z" fill="currentColor"/></svg>
+                            Ajustes
+                        </button>
+                    </div>
+                    <h1 className="absolute left-0 right-0 text-center font-semibold text-[17px] text-gray-900 dark:text-white pointer-events-none">Minha Conta</h1>
+                    <div className="flex-1 flex justify-end z-10"></div>
                 </div>
             </div>
 
             <div className="max-w-md mx-auto px-4 pt-8">
                 
-                {/* Profile Header */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="relative group cursor-pointer" onClick={() => handleOpenEdit('Editar Nome', 'name', userData.name, 'text')}>
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center text-4xl font-bold text-gray-500 dark:text-gray-300 shadow-md">
-                            {userData.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="absolute bottom-0 right-0 bg-blue-500 p-1.5 rounded-full border-2 border-[#F2F2F7] dark:border-black text-white shadow-sm">
-                            <CameraIcon className="w-3.5 h-3.5" />
-                        </div>
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-4 tracking-tight">{userData.name}</h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{session.user.email}</p>
-                </div>
-
                 {/* Personal Info Group */}
-                <ListGroup title="Informações Pessoais">
+                <ListGroup title="Dados gerais">
                     <ListItem 
-                        label="Nome" 
-                        value={userData.name} 
-                        onClick={() => handleOpenEdit('Editar Nome', 'name', userData.name, 'text')} 
+                        icon={<ScaleIcon className="w-6 h-6 text-orange-400" />}
+                        label="Peso" 
+                        value={`${userData.weight} kg`} 
+                        onClick={() => handleOpenEdit('Peso Atual', 'weight', userData.weight, 'number', undefined, 'kg')} 
                     />
                     <ListItem 
-                        label="Gênero" 
-                        value={userData.gender} 
-                        onClick={() => handleOpenEdit('Gênero', 'gender', userData.gender, 'select', ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])} 
-                    />
-                    <ListItem 
-                        label="Data de Nascimento" 
-                        value={formatDate(userData.birthDate)} 
-                        onClick={() => handleOpenEdit('Data de Nascimento', 'birth_date', userData.birthDate || '', 'date')} 
-                        isLast
-                    />
-                </ListGroup>
-
-                {/* Body Metrics Group */}
-                <ListGroup title="Medidas Corporais">
-                    <ListItem 
+                        icon={<RulerIcon className="w-6 h-6 text-blue-500" />}
                         label="Altura" 
                         value={`${userData.height} cm`} 
                         onClick={() => handleOpenEdit('Atualizar Altura', 'height', userData.height, 'number', undefined, 'cm')} 
                     />
                     <ListItem 
-                        label="Peso Inicial" 
-                        value={`${userData.startWeight} kg`} 
-                        onClick={() => handleOpenEdit('Peso Inicial', 'start_weight', userData.startWeight, 'number', undefined, 'kg')} 
+                        icon={<CakeIcon className="w-6 h-6 text-red-400" />}
+                        label="Aniversário" 
+                        value={formatDate(userData.birthDate)} 
+                        onClick={() => handleOpenEdit('Data de Nascimento', 'birth_date', userData.birthDate || '', 'date')} 
                     />
                     <ListItem 
-                        label="Meta de Peso" 
-                        value={`${userData.targetWeight} kg`} 
-                        onClick={() => handleOpenEdit('Meta de Peso', 'target_weight', userData.targetWeight, 'number', undefined, 'kg')} 
+                        icon={<GenderIcon className="w-6 h-6 text-purple-600" />}
+                        label="Gênero" 
+                        value={userData.gender} 
+                        onClick={() => handleOpenEdit('Gênero', 'gender', userData.gender, 'select', ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])} 
+                    />
+                    <ListItem 
+                        icon={<MailIcon className="w-6 h-6 text-blue-400" />}
+                        label="Dados pessoais" 
+                        value={session.user.email} 
+                        onClick={() => navigate('/settings/personal-data')} 
+                    />
+                    <ListItem 
+                        icon={<PersonStandingIcon className="w-6 h-6 text-green-500" />}
+                        label="Nível de Atividade" 
+                        value={userData.activityLevel} 
+                        onClick={() => handleOpenEdit('Nível de Atividade', 'activityLevel', userData.activityLevel, 'select', ['Sedentário', 'Levemente ativo', 'Moderadamente ativo', 'Ativo', 'Muito ativo'])} 
+                    />
+                    <ListItem 
+                        icon={<SettingsIcon className="w-6 h-6 text-blue-500" />}
+                        label="Configurações iniciais" 
+                        onClick={() => navigate('/settings/initial-setup')} 
                         isLast
                     />
                 </ListGroup>

@@ -10,6 +10,8 @@ import { SettingsTab } from './tabs/SettingsTab';
 import { AccountSettings } from './tabs/AccountSettings';
 import { TreatmentSettings } from './tabs/TreatmentSettings'; 
 import { LifestyleGoals } from './tabs/LifestyleGoals'; 
+import { WeightGoals } from './tabs/WeightGoals';
+import { PersonalData } from './tabs/PersonalData';
 import { ApplicationTab } from './tabs/ApplicationTab';
 import { BottomNav } from './core/BottomNav';
 import { HelpTab } from './tabs/HelpTab';
@@ -22,6 +24,7 @@ import { supabase } from '../supabaseClient';
 import type { Meal } from '../types';
 import { useToast } from './ToastProvider';
 import { NotificationManager } from './NotificationManager';
+import { TourGuide } from './core/TourGuide';
 
 export const MainApp: React.FC = () => {
   const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData } = useAppContext();
@@ -155,7 +158,8 @@ export const MainApp: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-ios-bg dark:bg-ios-dark-bg max-w-md mx-auto shadow-2xl overflow-hidden relative">
       <NotificationManager />
-      <main className="flex-grow overflow-y-auto hide-scrollbar pb-28 pt-safe-top">
+      <TourGuide />
+      <main className="flex-grow overflow-y-auto hide-scrollbar pb-40 pt-safe-top">
         <Routes>
           <Route path="/" element={<SummaryTab />} />
           <Route path="/applications" element={<ApplicationTab />} />
@@ -164,8 +168,10 @@ export const MainApp: React.FC = () => {
           <Route path="/progress" element={<ProgressTab />} />
           <Route path="/settings" element={<SettingsTab />} />
           <Route path="/settings/account" element={<AccountSettings />} />
+          <Route path="/settings/personal-data" element={<PersonalData />} />
           <Route path="/settings/treatment" element={<TreatmentSettings />} /> 
           <Route path="/settings/lifestyle" element={<LifestyleGoals />} /> 
+          <Route path="/settings/weight-goals" element={<WeightGoals />} />
           <Route path="/settings/help" element={<HelpTab />} />
           <Route path="/settings/privacy" element={<PrivacySettings />} />
           <Route path="*" element={<Navigate to="/" />} />

@@ -448,7 +448,7 @@ export const ProgressTab: React.FC = () => {
       {view === 'overview' ? (
           <div className="space-y-6">
               {/* Painel Principal de Métricas */}
-              <div className="grid grid-cols-2 gap-3">
+              <div id="tour-progress-cards" className="grid grid-cols-2 gap-3">
                   <StatCard 
                     icon={<ScaleIcon className="w-6 h-6 text-blue-500"/>} 
                     label="Peso Atual" 
@@ -471,6 +471,7 @@ export const ProgressTab: React.FC = () => {
                     color="bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-900"
                   />
                   <div 
+                    id="tour-log-weight"
                     onClick={() => setIsWeightModalOpen(true)}
                     className="p-4 rounded-[24px] border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-all active:scale-95"
                   >

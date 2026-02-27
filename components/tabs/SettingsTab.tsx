@@ -208,13 +208,6 @@ export const SettingsTab: React.FC = () => {
         navigate('/auth');
     };
 
-    const handleRestartTour = () => {
-        // Limpa o indicador de que o tour já foi visto
-        localStorage.removeItem('has_seen_onboarding');
-        // Redireciona para a home, onde o TourGuide verificará o localStorage e iniciará o tour
-        navigate('/');
-    };
-
     return (
         <div className="px-5 pb-24 min-h-screen animate-fade-in">
             <header id="tour-settings-main" className="mb-8 mt-4 flex justify-between items-start">
@@ -236,6 +229,7 @@ export const SettingsTab: React.FC = () => {
                 {userData.isPro && <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>}
             </div>
 
+            <div id="tour-settings-features">
             <SettingsGroup title="Conta">
                  <SettingsItem 
                     icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
@@ -287,11 +281,6 @@ export const SettingsTab: React.FC = () => {
 
             <SettingsGroup title="OUTROS">
                 <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><PlayCircleIcon className="w-5 h-5"/></div>}
-                    label="Ver tutorial" 
-                    onClick={handleRestartTour} 
-                />
-                <SettingsItem 
                     icon={<div className="text-black dark:text-white"><ChatBubbleIcon className="w-5 h-5"/></div>}
                     label="Suporte" 
                     onClick={() => navigate('/settings/help')} 
@@ -318,6 +307,7 @@ export const SettingsTab: React.FC = () => {
                     isLast
                 />
             </SettingsGroup>
+            </div>
             
             <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.4 • Feito com ❤️</p>
 

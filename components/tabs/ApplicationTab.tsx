@@ -230,7 +230,7 @@ export const ApplicationTab: React.FC = () => {
       </div>
 
       {/* 4. Action Control Panel (Log Dose) - UNIFIED CARD VERTICAL STACK */}
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 shadow-soft border border-gray-100 dark:border-white/5 space-y-6">
+      <div id="tour-log-dose" className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 shadow-soft border border-gray-100 dark:border-white/5 space-y-6">
           <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Registrar Aplicação</h2>

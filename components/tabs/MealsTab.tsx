@@ -70,7 +70,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <button onClick={handleCalorieCamClick} className="bg-blue-500 text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-transform relative overflow-hidden group">
+                <button id="tour-calorie-cam" onClick={handleCalorieCamClick} className="bg-blue-500 text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 shadow-lg shadow-blue-500/30 active:scale-95 transition-transform relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent skew-x-12 translate-x-[-150%] group-hover:animate-[shimmer_1s_infinite]"></div>
                     {!userData?.isPro && <div className="absolute top-2 right-2 bg-white text-blue-500 text-[10px] px-1.5 rounded font-bold shadow-sm flex items-center gap-1"><LockIcon className="w-2.5 h-2.5"/> PRO</div>}
                     <div className="bg-white/20 p-2 rounded-full"><DietIcon className="w-6 h-6" /></div>

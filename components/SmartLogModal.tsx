@@ -1,20 +1,21 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { useAppContext } from './AppContext';
 import Portal from './core/Portal';
-import { SparklesIcon, CheckCircleIcon, MicrophoneIcon, KeyboardIcon, CameraIcon, XMarkIcon, ArrowPathIcon, ChevronLeftIcon } from './core/Icons';
+import { SparklesIcon, CheckCircleIcon, MicrophoneIcon, KeyboardIcon, CameraIcon, XMarkIcon, ArrowPathIcon, ChevronLeftIcon, LockIcon } from './core/Icons';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { CalorieCamModal } from './tabs/CalorieCamModal';
+import { ManualMealModal } from './tabs/ManualMealModal';
 
 interface SmartLogModalProps {
   onClose: () => void;
+  initialMealType?: string;
 }
 
-type LogMode = 'menu' | 'type' | 'voice' | 'camera';
+type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'manual';
 
-export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
+export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType }) => {
   const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData } = useAppContext();
   const { addToast } = useToast();
   const [mode, setMode] = useState<LogMode>('menu');
@@ -95,95 +96,31 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
     setIsProcessing(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
       const now = new Date();
       const currentTimeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      const schema = {
-        type: Type.OBJECT,
-        properties: {
-          meals: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                calories: { type: Type.NUMBER },
-                protein: { type: Type.NUMBER },
-                meal_type: { 
-                  type: Type.STRING, 
-                  description: "Tipo da refeição: 'Café da manhã', 'Almoço', 'Jantar' ou 'Lanche'." 
-                },
-                time: {
-                  type: Type.STRING,
-                  description: "Horário da refeição no formato HH:MM. Se o usuário não mencionar, use um horário padrão baseado no tipo: Café (08:00), Almoço (12:30), Jantar (20:00), Lanche (horário atual ou 16:00)."
-                }
-              },
-              required: ['name', 'calories', 'protein', 'meal_type', 'time'],
-            },
-          },
-          water_liters: { type: Type.NUMBER, description: "Amount of water in liters to ADD to current total. E.g., 0.5" },
-          weight_kg: { type: Type.NUMBER, description: "New weight in kg, if mentioned." },
-        },
-        required: ['meals', 'water_liters'],
-      };
-
-      const prompt = `
-        Analise a entrada do usuário (texto ou áudio) sobre sua ingestão alimentar, água ou peso.
-        Horário atual do sistema: ${currentTimeStr}
-
-        Extraia os dados estruturados.
-        Para alimentos, estime calorias e proteínas se não especificado.
-        Para água, converta para litros.
-        Para peso, extraia o valor em kg.
-        
-        REGRAS DE TIPO DE REFEIÇÃO (meal_type):
-        1. VERBOS E PALAVRAS-CHAVE:
-           - "Almoçar", "almocei", "almoçamos", "almoço": Almoço.
-           - "Jantar", "jantei", "jantamos", "janta": Jantar.
-           - "Café da manhã", "tomei café", "desjejum": Café da manhã.
-           - "Lanche", "lanchei", "comi um lanche", "belisquei": Lanche.
-        
-        2. INFERÊNCIA POR HORÁRIO:
-           - Se o usuário mencionar um horário, use-o para classificar.
-           - Se não mencionar, use o horário atual (${currentTimeStr}) para inferir se não houver verbo:
-             - 05:00 - 10:30: Café da manhã
-             - 11:00 - 15:00: Almoço
-             - 18:00 - 23:00: Jantar
-             - Outros: Lanche
-        
-        3. HORÁRIO PADRÃO (campo time):
-           - Se o usuário disser "agora", use ${currentTimeStr}.
-           - Se o usuário não especificar horário, use:
-             - Café da manhã -> 08:30
-             - Almoço -> 12:30
-             - Jantar -> 20:00
-             - Lanche -> ${currentTimeStr}
-      `;
-
-      let contents: any;
+      let payload: any;
       if (source === 'text') {
-        contents = `${prompt}\n\nTexto do usuário: "${input}"`;
+        payload = {
+          type: 'text',
+          input: input,
+          currentTime: currentTimeStr
+        };
       } else {
         const base64Audio = await blobToBase64(audioBlob!);
-        contents = {
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: audioBlob!.type, data: base64Audio } }
-          ]
+        payload = {
+          type: 'audio',
+          audio: base64Audio,
+          mimeType: audioBlob!.type,
+          currentTime: currentTimeStr
         };
       }
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: contents,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: schema,
-        },
+      const { data: result, error } = await supabase.functions.invoke('gemini-nutrition', {
+        body: payload
       });
 
-      const result = JSON.parse(response.text || '{}');
+      if (error) throw error;
       
       if (result.meals && result.meals.length > 0) {
           const newMeals = result.meals.map((m: any) => ({
@@ -239,6 +176,22 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
     return (
       <CalorieCamModal 
         onClose={onClose} 
+        initialMealType={initialMealType}
+        onAddMeal={(meal) => {
+          setMeals(prev => [...prev, { ...meal, id: Date.now().toString(), time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }]);
+          updateStreak();
+          addToast('Refeição adicionada!', 'success');
+          onClose();
+        }} 
+      />
+    );
+  }
+
+  if (mode === 'manual') {
+    return (
+      <ManualMealModal 
+        onClose={onClose} 
+        initialMealType={initialMealType}
         onAddMeal={(meal) => {
           setMeals(prev => [...prev, { ...meal, id: Date.now().toString(), time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }]);
           updateStreak();
@@ -268,22 +221,57 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
 
                 <div className="grid grid-cols-1 gap-4 mb-4">
                   <button 
-                    onClick={() => setMode('type')}
+                    onClick={() => setMode('manual')}
                     className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
                   >
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
                       <KeyboardIcon className="w-6 h-6" />
                     </div>
                     <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">Digitar</p>
+                      <p className="font-bold text-gray-900 dark:text-white">Manual</p>
+                      <p className="text-xs text-gray-500">Preencha os dados da refeição</p>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      if (userData?.isPro) {
+                        setMode('type');
+                      } else {
+                        addToast("Recurso exclusivo para assinantes PRO", "info");
+                      }
+                    }}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                  >
+                    {!userData?.isPro && (
+                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                      </div>
+                    )}
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <SparklesIcon className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-gray-900 dark:text-white">Digitar (IA)</p>
                       <p className="text-xs text-gray-500">Escreva naturalmente o que comeu</p>
                     </div>
                   </button>
 
                   <button 
-                    onClick={() => setMode('voice')}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                    onClick={() => {
+                      if (userData?.isPro) {
+                        setMode('voice');
+                      } else {
+                        addToast("Recurso exclusivo para assinantes PRO", "info");
+                      }
+                    }}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
                   >
+                    {!userData?.isPro && (
+                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                      </div>
+                    )}
                     <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
                       <MicrophoneIcon className="w-6 h-6" />
                     </div>
@@ -294,9 +282,20 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose }) => {
                   </button>
 
                   <button 
-                    onClick={() => setMode('camera')}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                    onClick={() => {
+                      if (userData?.isPro) {
+                        setMode('camera');
+                      } else {
+                        addToast("Recurso exclusivo para assinantes PRO", "info");
+                      }
+                    }}
+                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
                   >
+                    {!userData?.isPro && (
+                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                      </div>
+                    )}
                     <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
                       <CameraIcon className="w-6 h-6" />
                     </div>

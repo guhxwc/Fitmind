@@ -14,7 +14,6 @@ import { SideEffectModal } from './SideEffectModal';
 import { RegisterWeightModal } from '../RegisterWeightModal';
 import { DatePickerModal } from '../core/DatePickerModal';
 import type { Meal, SideEffect, SideEffectEntry } from '../../types';
-import { TourGuide } from '../core/TourGuide';
 
 const DonutCard: React.FC<{ 
     icon: React.ReactNode; 
@@ -603,7 +602,7 @@ export const SummaryTab: React.FC = () => {
           <QuickActionRow 
               icon={<SettingsIcon className="w-5 h-5" />} 
               label="Configurações de Metas" 
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/settings/lifestyle')}
               colorClass="text-black dark:text-white"
           />
       </div>
@@ -654,10 +653,9 @@ export const SummaryTab: React.FC = () => {
       </section>
 
       {isMealModalOpen && (
-        <ManualMealModal
-            initialName={selectedMealType}
+        <SmartLogModal
+            initialMealType={selectedMealType}
             onClose={() => setIsMealModalOpen(false)}
-            onAddMeal={handleAddMeal}
         />
       )}
 

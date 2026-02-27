@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
+import { motion, AnimatePresence } from "framer-motion";
+import { Syringe, Dumbbell, TrendingUp, Apple } from "lucide-react";
 
 // A simple Google icon component
 const GoogleIcon = () => (
@@ -13,6 +15,162 @@ const GoogleIcon = () => (
     </svg>
 );
 
+
+const AuthAnimation = () => {
+  const [step, setStep] = useState(0);
+
+  // Roteiro de animação com os novos tempos (mais rápido nos ícones, normal no retorno)
+  const sequence = [
+    { duration: 2500 }, // 0: Intro (FitMind no centro - Velocidade normal)
+    {
+      icon: Syringe,
+      title: "Controle suas doses",
+      sub: "Nunca mais esqueça de tomar suas doses.",
+      duration: 2200, // Mais rápido
+    }, // 1: Seringa
+    {
+      icon: Dumbbell,
+      title: "Proteja seus músculos",
+      sub: "Perca gordura sem perder massa muscular.",
+      duration: 2200, // Mais rápido
+    }, // 2: Alter
+    {
+      icon: TrendingUp,
+      title: "Acompanhe seu progresso",
+      sub: "",
+      duration: 1800, // Bem rápido
+    }, // 3: Gráfico
+    {
+      icon: Apple,
+      title: "Otimize sua dieta",
+      sub: "",
+      duration: 1800, // Bem rápido
+    }, // 4: Maçã
+    { duration: 2800 }, // 5: Partículas e descida da Logo (Retorna à velocidade normal/suave)
+  ];
+
+  // Controlador de tempo do loop
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setStep((prev) => (prev + 1) % sequence.length);
+    }, sequence[step].duration);
+
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  const CurrentIcon = sequence[step]?.icon;
+
+  return (
+    <div className="relative flex flex-col items-center justify-center w-full h-[400px] overflow-hidden font-sans text-black dark:text-white mb-4">
+      
+      {/* ====================================================
+        TEXTO "FitMind" (Logo Topo / Centro)
+        ==================================================== 
+      */}
+      <motion.div
+        animate={{
+          y: step === 0 ? 0 : step === 5 ? 0 : -180,
+          scale: step === 0 ? 1.5 : step === 5 ? 0.5 : 0.8,
+          opacity: step === 5 ? 0 : 1,
+        }}
+        transition={{ 
+          duration: step === 0 || step === 5 ? 1.2 : 0.6, // Mais suave ao descer/aparecer, mais rápido ao subir
+          ease: "easeInOut" 
+        }}
+        className="absolute z-10 flex text-black dark:text-white text-5xl cursor-default"
+      >
+        <span className="font-black tracking-tighter">Fit</span>
+        <span className="font-light tracking-tight">Mind</span>
+      </motion.div>
+
+      {/* ====================================================
+        ÍCONES E TEXTOS CENTRAIS (Passos 1 a 4)
+        ==================================================== 
+      */}
+      <div className="relative flex flex-col items-center justify-center w-full max-w-lg mt-10 h-80">
+        <AnimatePresence mode="popLayout">
+          {step > 0 && step < 5 && CurrentIcon && (
+            <motion.div
+              key={`icon-${step}`}
+              initial={{ scale: 0.2, rotate: -90, opacity: 0, filter: "blur(8px)" }}
+              animate={{ scale: 1, rotate: 0, opacity: 1, filter: "blur(0px)" }}
+              exit={{
+                scale: 0.2,
+                rotate: 90,
+                opacity: 0,
+                filter: "blur(8px)",
+                position: "absolute",
+              }}
+              transition={{ type: "spring", stiffness: 250, damping: 25 }} // Mola um pouquinho mais rígida pra ser mais rápido
+              className="absolute top-0 flex justify-center"
+            >
+              <CurrentIcon size={120} strokeWidth={1} className="text-black dark:text-white" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence mode="popLayout">
+          {step > 0 && step < 5 && (
+            <motion.div
+              key={`text-${step}`}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0, position: "absolute" }}
+              transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }} // Textos entram mais rápido também
+              className="absolute top-40 text-center flex flex-col items-center px-6 w-full"
+            >
+              <h2 className="text-3xl md:text-3xl font-extrabold tracking-tight text-black dark:text-white mb-4">
+                {sequence[step].title}
+              </h2>
+              {sequence[step].sub && (
+                <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium max-w-sm leading-snug">
+                  {sequence[step].sub}
+                </p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ====================================================
+        PARTÍCULAS DE LUZ (Passo 5 - Dissolução suave)
+        ==================================================== 
+      */}
+      <AnimatePresence>
+        {step === 5 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, rotate: [0, 180, 360] }}
+            exit={{ opacity: 0 }}
+            transition={{
+              rotate: { duration: 2.5, ease: "easeInOut" }, // Rotação mais suave
+              opacity: { duration: 0.4 }
+            }}
+            className="absolute z-40 w-40 h-40 flex items-center justify-center"
+          >
+            {[0, 90, 180, 270].map((angle, i) => (
+              <motion.div
+                key={i}
+                initial={{ x: 0, y: 0, scale: 0 }}
+                animate={{
+                  x: [0, Math.cos((angle * Math.PI) / 180) * 100, 0],
+                  y: [0, Math.sin((angle * Math.PI) / 180) * 100, 0],
+                  scale: [0, 1.5, 1, 0],
+                }}
+                transition={{ duration: 2.5, ease: "easeInOut" }} // Partículas acompanham o tempo relaxado
+                className="absolute w-4 h-4 bg-black dark:bg-white rounded-full"
+                style={{
+                  boxShadow: "0 0 20px 5px rgba(0, 0, 0, 0.4)",
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+    </div>
+  );
+}
 
 export const Auth: React.FC = () => {
   const { addToast } = useToast();
@@ -379,14 +537,8 @@ export const Auth: React.FC = () => {
     case 'landing':
     default:
       return (
-        <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black">
-          <div className="text-center mb-10">
-            <div className="w-20 h-20 bg-gray-900 dark:bg-gray-100 rounded-3xl mb-4 flex items-center justify-center mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Bem-vindo ao FitMind</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">Sua jornada de saúde começa aqui.</p>
-          </div>
+        <div className="h-screen flex flex-col justify-center p-8 pb-32 bg-white dark:bg-black">
+          <AuthAnimation />
 
           <div className="space-y-4">
             <button

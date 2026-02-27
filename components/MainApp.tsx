@@ -17,7 +17,7 @@ import { BottomNav } from './core/BottomNav';
 import { HelpTab } from './tabs/HelpTab';
 import { PrivacySettings } from './tabs/PrivacySettings';
 import { FloatingActionMenu } from './core/FloatingActionMenu';
-import { ManualMealModal } from './tabs/ManualMealModal';
+import { SmartLogModal } from './SmartLogModal';
 import { RegisterWeightModal } from './RegisterWeightModal';
 import { SideEffectModal } from './tabs/SideEffectModal';
 import { supabase } from '../supabaseClient';
@@ -180,9 +180,8 @@ export const MainApp: React.FC = () => {
       <BottomNav />
 
       {isMealModalOpen && (
-          <ManualMealModal 
+          <SmartLogModal 
             onClose={() => setIsMealModalOpen(false)} 
-            onAddMeal={handleAddMeal} 
           />
       )}
       {isWeightModalOpen && (

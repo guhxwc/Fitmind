@@ -46,8 +46,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   const [step, setStep] = useState(() => {
     if (initialStep !== undefined) return initialStep;
     const savedStep = localStorage.getItem('onboarding_step');
-    // If there's a saved step and it's not the welcome screen, force to final plan (index 28)
-    if (savedStep && parseInt(savedStep, 10) > 0) return 28;
+    if (savedStep) return parseInt(savedStep, 10);
     return 0;
   });
 
@@ -72,7 +71,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
           root.scrollTo(0, 0);
       }
       window.scrollTo(0, 0);
-  }, [step, initialStep]);
+  }, [step, initialStep, userData]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => Math.max(0, prev - 1));
@@ -182,8 +181,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
         key="final" 
         onNext={handleFinalStepNext} 
         onBack={() => {
-            // Prevent going back if forced to this step
-            if (initialStep !== undefined) return;
             setStep(prev => prev - 2); // Skip StepAnalyzing
         }} 
         data={userData} 

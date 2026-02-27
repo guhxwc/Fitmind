@@ -12,14 +12,21 @@ const GoalInput: React.FC<{
     unit?: string;
     onChange: (val: number) => void;
 }> = ({ label, value, unit, onChange }) => (
-    <div className="flex flex-col bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{label} {unit && `(${unit})`}</label>
-        <input 
-            type="number"
-            value={value}
-            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-            className="bg-transparent text-xl font-bold text-gray-900 dark:text-white outline-none w-full placeholder-gray-300"
-        />
+    <div className="group">
+        <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 ml-1 block">{label}</label>
+        <div className="relative">
+            <input 
+                type="number"
+                value={value}
+                onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+                className="w-full bg-gray-50 dark:bg-gray-800/40 rounded-2xl px-4 py-3.5 text-xl font-bold text-gray-900 dark:text-white outline-none border border-transparent focus:border-blue-500/30 focus:bg-white dark:focus:bg-gray-800 transition-all"
+            />
+            {unit && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 dark:text-gray-600">
+                    {unit}
+                </span>
+            )}
+        </div>
     </div>
 );
 
@@ -83,120 +90,67 @@ export const LifestyleGoals: React.FC = () => {
                 {/* Metas de Peso */}
                 <section>
                     <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Metas de Peso</h2>
-                    <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-[32px] shadow-sm border border-gray-100 dark:border-gray-800 space-y-8">
                         
                         {/* Peso Meta */}
                         <div>
-                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Peso Meta (kg)</label>
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 ml-1 block">Peso Meta</label>
                             <div className="relative">
                                 <input 
                                     type="number"
                                     value={targetWeight}
                                     onChange={(e) => setTargetWeight(parseFloat(e.target.value) || 0)}
-                                    className="w-full bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-4 text-3xl font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    className="w-full bg-gray-50 dark:bg-gray-800/40 rounded-2xl px-5 py-5 text-4xl font-black text-gray-900 dark:text-white outline-none border border-transparent focus:border-blue-500/30 focus:bg-white dark:focus:bg-gray-800 transition-all tracking-tighter"
                                 />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">kg</span>
+                                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 dark:text-gray-600">kg</span>
                             </div>
-                            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
-                                Este é o peso que você deseja atingir ao final da sua jornada.
-                            </p>
                         </div>
-
-                        <div className="h-px bg-gray-100 dark:bg-gray-800 w-full"></div>
 
                         {/* Velocidade */}
                         <div>
-                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 block">
-                                Escolha a velocidade que deseja perder peso
+                            <label className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 ml-1 block">
+                                Velocidade de Perda
                             </label>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 {paceOptions.map(pace => (
                                     <button
                                         key={pace}
                                         onClick={() => setWeeklyPace(pace)}
-                                        className={`py-3 px-2 rounded-xl text-sm font-bold transition-all border ${
+                                        className={`py-4 px-2 rounded-2xl text-sm font-bold transition-all border ${
                                             weeklyPace === pace
-                                            ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-md'
-                                            : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'
+                                            ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-lg shadow-black/10 dark:shadow-white/5'
+                                            : 'bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'
                                         }`}
                                     >
                                         {pace} kg / semana
                                     </button>
                                 ))}
                             </div>
-                            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-3 font-medium text-center">
-                                Perder peso de forma gradual (0.25-0.5 kg/semana) é mais sustentável a longo prazo.
-                            </p>
                         </div>
-
-                        {/* Warning */}
-                        <div className="bg-yellow-50 dark:bg-yellow-900/10 p-3 rounded-xl border border-yellow-100 dark:border-yellow-900/30 flex gap-3 items-start">
-                            <span className="text-lg">⚠️</span>
-                            <p className="text-[11px] text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium">
-                                Sempre consulte seu médico antes de definir metas agressivas de perda de peso.
-                            </p>
-                        </div>
-
                     </div>
                 </section>
 
                 {/* Nutrição */}
                 <section>
                     <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Nutrição Diária</h2>
-                    <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-[32px] shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
                         <GoalInput 
-                            label="Proteínas" 
-                            value={goals.protein} 
-                            unit="g" 
-                            onChange={(v) => handleChange('protein', v)} 
-                        />
-                        <GoalInput 
-                            label="Fibras" 
-                            value={goals.fiber || 0} 
-                            unit="g" 
-                            onChange={(v) => handleChange('fiber', v)} 
-                        />
-                        <GoalInput 
-                            label="Água" 
+                            label="Meta de Água" 
                             value={goals.water} 
                             unit="ml" 
                             onChange={(v) => handleChange('water', v)} 
                         />
                         <GoalInput 
-                            label="Calorias" 
+                            label="Meta de Proteínas" 
+                            value={goals.protein} 
+                            unit="g" 
+                            onChange={(v) => handleChange('protein', v)} 
+                        />
+                        <GoalInput 
+                            label="Meta de Calorias" 
                             value={goals.calories} 
                             unit="kcal" 
                             onChange={(v) => handleChange('calories', v)} 
-                        />
-                        <GoalInput 
-                            label="Carboidratos" 
-                            value={goals.carbs || 0} 
-                            unit="g" 
-                            onChange={(v) => handleChange('carbs', v)} 
-                        />
-                        <GoalInput 
-                            label="Gorduras" 
-                            value={goals.fats || 0} 
-                            unit="g" 
-                            onChange={(v) => handleChange('fats', v)} 
-                        />
-                    </div>
-                </section>
-
-                {/* Atividade Física */}
-                <section>
-                    <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Atividade Física</h2>
-                    <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-4">
-                        <GoalInput 
-                            label="Passos" 
-                            value={goals.steps || 0} 
-                            onChange={(v) => handleChange('steps', v)} 
-                        />
-                        <GoalInput 
-                            label="Exercício" 
-                            value={goals.exerciseMinutes || 0} 
-                            unit="min" 
-                            onChange={(v) => handleChange('exerciseMinutes', v)} 
                         />
                     </div>
                 </section>
@@ -205,21 +159,24 @@ export const LifestyleGoals: React.FC = () => {
                 <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 flex gap-3">
                     <div className="text-xl">💡</div>
                     <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed font-medium">
-                        Estas metas são usadas para acompanhar seu progresso diário e calcular suas estatísticas. Ajuste conforme orientação do seu nutricionista.
+                        Estas metas são usadas para acompanhar seu progresso diário e calcular suas estatísticas. Ajuste conforme orientação profissional.
                     </p>
                 </div>
 
             </div>
 
             {/* Save Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white/90 dark:bg-black/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 z-[100]">
+            <div className="px-4 pt-4 pb-12 mt-4">
                 <button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="w-full max-w-md mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-70"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-70"
                 >
                     {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
+                <p className="text-center text-[11px] text-gray-400 mt-4 px-6">
+                    Suas metas serão sincronizadas com todos os seus dispositivos.
+                </p>
             </div>
         </div>
     );

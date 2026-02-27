@@ -16,6 +16,7 @@
     "clsx": "^2.1.0",
     "firebase": "^10.7.1",
     "framer-motion": "^12.34.3",
+    "lucide-react": "^0.575.0",
     "motion": "^12.34.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

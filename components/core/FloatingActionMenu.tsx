@@ -58,7 +58,7 @@ export const FloatingActionMenu: React.FC<FloatingActionMenuProps> = ({ onAction
             />
 
             {/* Menu Items */}
-            <div className={`fixed bottom-28 right-5 z-[70] flex flex-col items-end pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
+            <div className={`fixed bottom-40 right-5 z-[70] flex flex-col-reverse items-end pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
                 {isOpen && (
                     <>
                         <ActionButton 

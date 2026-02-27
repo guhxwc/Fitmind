@@ -309,7 +309,7 @@ export const SettingsTab: React.FC = () => {
             </SettingsGroup>
             </div>
             
-            <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind v1.0.4 • Feito com ❤️</p>
+            <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind Health Technologies</p>
 
             {showSubPage && (
                 <SubscriptionPage 

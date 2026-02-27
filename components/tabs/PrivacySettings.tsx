@@ -11,7 +11,9 @@ import {
     ShieldIcon, 
     DocumentIcon, 
     FaceIdIcon, 
-    TrashIcon 
+    TrashIcon,
+    MailIcon,
+    StarIcon
 } from '../core/Icons';
 
 // --- UI Components ---
@@ -31,15 +33,17 @@ const GroupContainer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const ActionItem: React.FC<{ 
     icon: React.ReactNode; 
     label: string; 
-    onClick: () => void;
+    value?: string;
+    onClick?: () => void;
     isDestructive?: boolean;
     colorClass: string;
     isLast?: boolean;
-}> = ({ icon, label, onClick, isDestructive, colorClass, isLast }) => (
+}> = ({ icon, label, value, onClick, isDestructive, colorClass, isLast }) => (
     <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
         <button 
             onClick={onClick}
-            className={`w-full flex items-center justify-between py-3.5 pr-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+            disabled={!onClick}
+            className={`w-full flex items-center justify-between py-3.5 pr-4 ${onClick ? 'active:bg-gray-50 dark:active:bg-gray-800 cursor-pointer' : 'cursor-default'} transition-colors ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
         >
             <div className="flex items-center gap-3">
                 <div className={`p-1.5 rounded-md text-white ${colorClass}`}>
@@ -49,7 +53,10 @@ const ActionItem: React.FC<{
                     {label}
                 </span>
             </div>
-            {!isDestructive && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+            <div className="flex items-center gap-2">
+                {value && <span className="text-[17px] text-gray-500 dark:text-gray-400">{value}</span>}
+                {onClick && !isDestructive && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+            </div>
         </button>
     </div>
 );
@@ -97,18 +104,8 @@ export const PrivacySettings: React.FC = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [isResetting, setIsResetting] = useState(false);
-    
-    // Simulate App Lock state (persisted in local storage for demo)
-    const [isAppLockEnabled, setIsAppLockEnabled] = useState(() => localStorage.getItem('appLockEnabled') === 'true');
 
     if (!userData || !session) return null;
-
-    const handleToggleAppLock = () => {
-        const newState = !isAppLockEnabled;
-        setIsAppLockEnabled(newState);
-        localStorage.setItem('appLockEnabled', String(newState));
-        addToast(newState ? "Bloqueio do App ativado." : "Bloqueio do App desativado.", 'info');
-    };
 
     const handlePasswordReset = async () => {
         if (!session.user.email) return;
@@ -196,51 +193,37 @@ export const PrivacySettings: React.FC = () => {
                 <ProfileHeader userData={userData} email={session.user.email || ''} />
 
                 {/* Proteção */}
-                <GroupTitle title="Proteção" />
+                <GroupTitle title="Segurança" />
                 <GroupContainer>
                     <ActionItem 
                         icon={<KeyIcon className="w-5 h-5"/>}
                         colorClass="bg-blue-500"
-                        label={isResetting ? "Enviando..." : "Alterar Senha"}
+                        label={isResetting ? "Enviando email..." : "Alterar Senha"}
                         onClick={handlePasswordReset}
                     />
-                    <ToggleItem 
-                        icon={<FaceIdIcon className="w-5 h-5"/>}
-                        colorClass="bg-green-500"
-                        label="Bloqueio do App"
-                        isEnabled={isAppLockEnabled}
-                        onToggle={handleToggleAppLock}
-                        isLast
-                    />
-                </GroupContainer>
-
-                {/* Legal */}
-                <GroupTitle title="Legal" />
-                <GroupContainer>
                     <ActionItem 
-                        icon={<DocumentIcon className="w-5 h-5"/>}
+                        icon={<MailIcon className="w-5 h-5"/>}
                         colorClass="bg-gray-500"
-                        label="Termos de Uso"
-                        onClick={() => navigate('/terms')}
-                    />
-                    <ActionItem 
-                        icon={<ShieldIcon className="w-5 h-5"/>}
-                        colorClass="bg-gray-500"
-                        label="Política de Privacidade"
-                        onClick={() => navigate('/privacy')}
+                        label="Email"
+                        value={session.user.email || ''}
                         isLast
                     />
                 </GroupContainer>
 
                 {/* Conta */}
-                <GroupTitle title="Conta" />
+                <GroupTitle title="Gerenciar Conta" />
                 <GroupContainer>
+                    <ActionItem 
+                        icon={<StarIcon className="w-5 h-5"/>}
+                        colorClass="bg-purple-500"
+                        label="Cancelar Assinatura"
+                        onClick={() => addToast("Para cancelar, acesse a loja de aplicativos ou o portal de pagamentos.", "info")}
+                    />
                     <ActionItem 
                         icon={<LogOutIcon className="w-5 h-5"/>}
                         colorClass="bg-gray-500"
                         label="Sair da Conta"
                         onClick={handleLogout}
-                        isDestructive
                     />
                     <ActionItem 
                         icon={<TrashIcon className="w-5 h-5"/>}
@@ -252,9 +235,30 @@ export const PrivacySettings: React.FC = () => {
                     />
                 </GroupContainer>
 
-                <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-8 px-6 leading-relaxed">
-                    A segurança dos seus dados é nossa prioridade. Utilizamos criptografia de ponta a ponta para proteger suas informações de saúde.
-                </p>
+                {/* Legal */}
+                <GroupTitle title="Legal" />
+                <GroupContainer>
+                    <ActionItem 
+                        icon={<ShieldIcon className="w-5 h-5"/>}
+                        colorClass="bg-gray-500"
+                        label="Política de Privacidade"
+                        onClick={() => navigate('/privacy')}
+                    />
+                    <ActionItem 
+                        icon={<DocumentIcon className="w-5 h-5"/>}
+                        colorClass="bg-gray-500"
+                        label="Termos de Uso"
+                        onClick={() => navigate('/terms')}
+                        isLast
+                    />
+                </GroupContainer>
+
+                <div className="mt-12 flex flex-col items-center justify-center opacity-60">
+                    <ShieldIcon className="w-8 h-8 text-gray-400 mb-3" />
+                    <p className="text-center text-xs text-gray-500 dark:text-gray-400 px-6 leading-relaxed max-w-[280px]">
+                        Seus dados de saúde são privados e protegidos com criptografia de ponta a ponta.
+                    </p>
+                </div>
             </div>
         </div>
     );

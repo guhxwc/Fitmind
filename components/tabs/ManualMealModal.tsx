@@ -7,6 +7,7 @@ interface ManualMealModalProps {
   onClose: () => void;
   onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void;
   initialName?: string;
+  initialMealType?: string;
 }
 
 const InputField: React.FC<{
@@ -32,10 +33,13 @@ const InputField: React.FC<{
     </div>
 );
 
-export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAddMeal, initialName = '' }) => {
+export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAddMeal, initialName = '', initialMealType }) => {
   const [name, setName] = useState(initialName);
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
+  const [mealType, setMealType] = useState(initialMealType || 'Almoço');
+
+  const mealTypes = ['Café da manhã', 'Almoço', 'Jantar', 'Lanche'];
 
   const handleSave = () => {
     const caloriesNum = parseInt(calories, 10);
@@ -46,6 +50,7 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
         name: name.trim(),
         calories: caloriesNum,
         protein: proteinNum,
+        type: mealType as any,
       });
       onClose();
     }
@@ -65,6 +70,24 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
           </div>
 
           <div className="flex-grow overflow-y-auto space-y-4">
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Refeição</label>
+                  <div className="grid grid-cols-2 gap-2">
+                      {mealTypes.map(type => (
+                          <button
+                              key={type}
+                              onClick={() => setMealType(type)}
+                              className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                                  mealType === type
+                                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                          >
+                              {type}
+                          </button>
+                      ))}
+                  </div>
+              </div>
               <InputField 
                   label="Nome da Refeição"
                   type="text"

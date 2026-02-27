@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import type { Meal } from '../../types';
 import { CameraIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
 import Portal from '../core/Portal';
+import { supabase } from '../../supabaseClient';
 
 // Helper to convert blob to base64
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -24,20 +24,25 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 interface CalorieCamModalProps {
   onClose: () => void;
   onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void;
+  initialMealType?: string;
 }
 
 interface AnalysisResult {
   foodName: string;
   calories: number;
   protein: number;
+  type?: string;
 }
 
-export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAddMeal }) => {
+export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAddMeal, initialMealType }) => {
   const [stage, setStage] = useState<'capture' | 'analyzing' | 'results'>('capture');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mealType, setMealType] = useState(initialMealType || 'Almoço');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const mealTypes = ['Café da manhã', 'Almoço', 'Jantar', 'Lanche'];
 
   const handleImageUpload = async (file: File | null) => {
     if (!file) return;
@@ -49,35 +54,17 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
 
     try {
       const base64Data = await blobToBase64(file);
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-
-      const schema = {
-        type: Type.OBJECT,
-        properties: {
-          foodName: { type: Type.STRING, description: "O nome do prato ou dos alimentos principais na imagem. Ex: 'Frango grelhado com brócolis'" },
-          calories: { type: Type.NUMBER, description: "Estimativa do total de calorias (kcal) do prato." },
-          protein: { type: Type.NUMBER, description: "Estimativa do total de proteína (em gramas) do prato." },
-        },
-        required: ['foodName', 'calories', 'protein']
-      };
-
-      const prompt = "Analise a imagem desta refeição. Identifique os alimentos, estime o total de calorias (kcal) e o total de proteína (em gramas). Seja realista. Se a imagem não contiver comida, retorne valores nulos.";
       
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: {
-          parts: [
-            { inlineData: { mimeType: file.type, data: base64Data } },
-            { text: prompt }
-          ]
-        },
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: schema,
-        },
+      const { data: result, error } = await supabase.functions.invoke('gemini-nutrition', {
+        body: {
+          type: 'image',
+          image: base64Data,
+          mimeType: file.type
+        }
       });
 
-      const result = JSON.parse(response.text || '{}') as AnalysisResult;
+      if (error) throw error;
+      
       setAnalysisResult(result);
       setStage('results');
 
@@ -99,6 +86,7 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
         name: analysisResult.foodName,
         calories: analysisResult.calories,
         protein: analysisResult.protein,
+        type: mealType as any,
       });
       onClose();
     }
@@ -128,6 +116,26 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
           analysisResult && (
             <div className="animate-fade-in">
               <img src={imageSrc!} alt="Analyzed meal" className="w-full h-56 object-cover rounded-2xl mb-4" />
+              
+              <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Tipo de Refeição</label>
+                  <div className="grid grid-cols-2 gap-2">
+                      {mealTypes.map(type => (
+                          <button
+                              key={type}
+                              onClick={() => setMealType(type)}
+                              className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                                  mealType === type
+                                  ? 'bg-black dark:bg-white text-white dark:text-black'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              }`}
+                          >
+                              {type}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Nome da Refeição</label>
                 <input

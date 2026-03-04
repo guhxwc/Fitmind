@@ -185,14 +185,8 @@ export interface DietQuizAnswers {
 
 export interface DietIngredient {
   id: string; // unique ID for the ingredient in the meal
-  foodId?: number | string; // ID from the database
   name: string;
   amount: string; // e.g., "100g", "1 unidade"
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  fiber?: number;
 }
 
 export interface DietMeal {
@@ -200,15 +194,11 @@ export interface DietMeal {
   name: string; // e.g., "Café da Manhã"
   time: string;
   ingredients: DietIngredient[];
-  totalCalories: number;
-  totalProtein: number;
 }
 
 export interface DietDay {
   day: Weekday;
   meals: DietMeal[];
-  totalCalories: number;
-  totalProtein: number;
 }
 
 export interface DietPlan {

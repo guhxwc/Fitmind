@@ -42,7 +42,6 @@ const IngredientRow: React.FC<{ ingredient: DietIngredient, onSwap: (ing: DietIn
         <p className="font-bold text-gray-900 dark:text-white text-[15px] leading-tight">{ingredient.name}</p>
         <div className="flex items-center gap-2 mt-1.5">
           <span className="text-[10px] font-bold text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded border border-gray-100 dark:border-gray-600 uppercase">{ingredient.amount}</span>
-          <span className="text-xs text-gray-400 font-medium">{Math.round(ingredient.calories)} kcal</span>
         </div>
       </div>
       <button 
@@ -82,7 +81,7 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
         className="p-5 cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl shadow-sm ${colorClass}`}>
                     {icon}
@@ -95,17 +94,6 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
             <div className={`w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 transition-all duration-300 ${isOpen ? 'rotate-90 bg-black dark:bg-white text-white dark:text-black' : ''}`}>
                 <ChevronRight size={18} />
             </div>
-        </div>
-        
-        <div className="flex gap-6 pl-1">
-             <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Energia</span>
-                <span className="text-base font-extrabold text-gray-900 dark:text-white">{Math.round(meal.totalCalories)} <span className="text-xs font-medium opacity-50">kcal</span></span>
-             </div>
-             <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Proteína</span>
-                <span className="text-base font-extrabold text-gray-900 dark:text-white">{Math.round(meal.totalProtein)} <span className="text-xs font-medium opacity-50">g</span></span>
-             </div>
         </div>
       </div>
       
@@ -213,14 +201,8 @@ export const DietPlanView: React.FC = () => {
       
       const newIngredient: DietIngredient = {
           id: Math.random().toString(36).substr(2, 9),
-          foodId: foodItem.id,
           name: foodItem.nome,
-          amount: swappingIngredient.ingredient.amount, // Keep original amount text
-          calories: foodItem.calorias, // Base 100g values
-          protein: foodItem.proteinas,
-          carbs: foodItem.carboidratos,
-          fats: foodItem.gorduras,
-          fiber: foodItem.fibras
+          amount: swappingIngredient.ingredient.amount // Keep original amount text
       };
       confirmSwap(newIngredient);
   };
@@ -315,38 +297,6 @@ export const DietPlanView: React.FC = () => {
 
       {currentDayData ? (
         <div className="space-y-8 px-1">
-           {/* Daily Summary Card */}
-           <div className="bg-black dark:bg-white text-white dark:text-black rounded-[2.5rem] p-8 shadow-2xl shadow-black/20 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-3xl -mr-24 -mt-24 group-hover:scale-110 transition-transform duration-700"></div>
-              
-              <div className="flex justify-between items-start relative z-10">
-                  <div>
-                      <div className="flex items-center gap-2 mb-3 opacity-60">
-                        <Calendar size={14} />
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em]">{selectedDay}</p>
-                      </div>
-                      <h3 className="text-5xl font-extrabold tracking-tighter tabular-nums">{Math.round(currentDayData.totalCalories)} <span className="text-xl font-medium opacity-50 tracking-normal">kcal</span></h3>
-                  </div>
-                  <div className="text-right">
-                      <div className="flex items-center gap-2 justify-end mb-2">
-                        <Flame size={20} className="text-orange-500" fill="currentColor" />
-                        <span className="font-extrabold text-3xl tracking-tighter tabular-nums">{Math.round(currentDayData.totalProtein)}g</span>
-                      </div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Proteína</p>
-                  </div>
-              </div>
-              
-              <div className="mt-10 relative z-10">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">
-                      <span>Meta Diária</span>
-                      <span>75%</span>
-                  </div>
-                  <div className="h-2 w-full bg-white/10 dark:bg-black/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-white dark:bg-black rounded-full w-3/4 shadow-[0_0_15px_rgba(255,255,255,0.4)] dark:shadow-[0_0_15px_rgba(0,0,0,0.1)]"></div>
-                  </div>
-              </div>
-           </div>
-           
            <div className="space-y-5">
                <div className="flex items-center justify-between px-2">
                    <h3 className="font-extrabold text-gray-900 dark:text-white text-xl tracking-tight">Refeições</h3>
@@ -421,10 +371,6 @@ export const DietPlanView: React.FC = () => {
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold mb-1">Original</p>
                                 <p className="font-extrabold text-gray-900 dark:text-white text-lg leading-tight mb-1">{swappingIngredient.ingredient.name}</p>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-bold bg-white dark:bg-gray-800 px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700">{Math.round(swappingIngredient.ingredient.calories)} kcal</span>
-                                    <span className="text-[10px] font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30">{Math.round(swappingIngredient.ingredient.protein)}g prot</span>
-                                </div>
                             </div>
                         </div>
 
@@ -456,10 +402,6 @@ export const DietPlanView: React.FC = () => {
                                                     <div className="flex-1 pr-4">
                                                         <span className="font-bold text-gray-900 dark:text-white block mb-1 text-sm leading-tight">{opt.name}</span>
                                                         <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-widest">{opt.amount}</span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="block font-extrabold text-gray-900 dark:text-white text-base tabular-nums">{Math.round(opt.calories)} <span className="text-[10px] font-medium opacity-40 uppercase">kcal</span></span>
-                                                        <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">{Math.round(opt.protein)}g prot</span>
                                                     </div>
                                                 </div>
                                             </button>
@@ -542,8 +484,7 @@ export const DietPlanView: React.FC = () => {
                                             >
                                                 <p className="font-bold text-gray-900 dark:text-white text-sm mb-1">{item.nome}</p>
                                                 <div className="flex items-center gap-3 text-[10px] text-gray-400 font-medium">
-                                                    <span>{Math.round(item.calorias)} kcal / 100g</span>
-                                                    <span>{Math.round(item.proteinas)}g prot</span>
+                                                    <span>Base de dados TACO</span>
                                                 </div>
                                             </button>
                                         ))

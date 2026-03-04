@@ -31,7 +31,7 @@ const GoalInput: React.FC<{
 );
 
 export const LifestyleGoals: React.FC = () => {
-    const { userData, setUserData, fetchData } = useAppContext();
+    const { userData, setUserData, calculateGoals } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +51,12 @@ export const LifestyleGoals: React.FC = () => {
 
     const handleSave = async () => {
         setIsSaving(true);
+        
+        // Recalculate goals based on current weight if needed, 
+        // but here we allow manual override. 
+        // If the user wants automatic updates, we should probably 
+        // trigger recalculation based on weight changes.
+        
         const { error } = await supabase
             .from('profiles')
             .update({ 

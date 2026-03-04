@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon, SyringeIcon, FlameIcon, TargetIcon, SettingsIcon, LockIcon, PlayCircleIcon, ChatBubbleIcon, LightBulbIcon, DocumentIcon, ShieldIcon, LogOutIcon, CoffeeIcon, AppleIcon, WavesIcon } from '../core/Icons';
+import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon, SyringeIcon, FlameIcon, TargetIcon, SettingsIcon, LockIcon, PlayCircleIcon, ChatBubbleIcon, LightBulbIcon, DocumentIcon, ShieldIcon, LogOutIcon, CoffeeIcon, AppleIcon, WavesIcon, SparklesIcon, CheckCircleIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
@@ -240,13 +240,25 @@ export const SettingsTab: React.FC = () => {
                     icon={<div className="bg-gray-500 p-1.5 rounded-md text-white"><LockIcon className="w-4 h-4"/></div>}
                     label="Privacidade e Segurança" 
                     onClick={() => navigate('/settings/privacy')} 
-                    isLast={userData.isPro}
                 />
-                {!userData.isPro && (
+                {!userData.isPro ? (
+                    <>
+                        <SettingsItem 
+                            icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
+                            label="Assinar FitMind PRO" 
+                            onClick={() => setShowSubPage(true)} 
+                        />
+                        <SettingsItem 
+                            icon={<div className="bg-orange-500 p-1.5 rounded-md text-white"><SparklesIcon className="w-4 h-4"/></div>}
+                            label="Desbloquear PRO (Dev)" 
+                            onClick={unlockPro} 
+                            isLast
+                        />
+                    </>
+                ) : (
                     <SettingsItem 
-                        icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
-                        label="Assinar FitMind PRO" 
-                        onClick={() => setShowSubPage(true)} 
+                        icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><CheckCircleIcon className="w-4 h-4"/></div>}
+                        label="Status: Assinante PRO" 
                         isLast
                     />
                 )}

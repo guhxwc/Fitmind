@@ -30,16 +30,26 @@ const App: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error getting session:", error);
+        if (error.message.includes("Refresh Token Not Found") || error.message.includes("Invalid Refresh Token")) {
+          supabase.auth.signOut();
+          setSession(null);
+        }
+      } else {
+        setSession(session);
+        if (session) fetchProfile(session.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else {
+      if (_event === 'SIGNED_OUT' || !session) {
+        setSession(null);
         setProfileExists(null);
+      } else {
+        setSession(session);
+        fetchProfile(session.user.id);
       }
     });
 
@@ -48,12 +58,14 @@ const App: React.FC = () => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .maybeSingle();
 
+      console.log("Profile data:", data, "Error:", error);
       if (error) throw error;
       setProfileExists(!!data);
     } catch (err) {
@@ -138,7 +150,7 @@ const App: React.FC = () => {
             ) : (
               <OnboardingFlow 
                 onComplete={handleOnboardingComplete} 
-                initialStep={28} 
+                initialStep={0} 
                 initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
               />
             )

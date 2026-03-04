@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { CalorieCamModal } from './tabs/CalorieCamModal';
 import { ManualMealModal } from './tabs/ManualMealModal';
+import { GoogleGenAI } from "@google/genai";
 
 interface SmartLogModalProps {
   onClose: () => void;
@@ -99,35 +100,65 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       const now = new Date();
       const currentTimeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      let payload: any;
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const model = "gemini-3-flash-preview";
+
+      const prompt = `
+        Você é um assistente de nutrição inteligente. O usuário vai descrever o que comeu, bebeu ou seu peso atual.
+        Analise a entrada e extraia as informações nutricionais.
+        
+        Regras:
+        1. Identifique refeições (nome, calorias, proteína, tipo: 'Café da manhã', 'Almoço', 'Jantar', 'Lanche').
+        2. Identifique consumo de água em litros (water_liters).
+        3. Identifique registro de peso em kg (weight_kg).
+        4. O horário atual é ${currentTimeStr}.
+        
+        Retorne APENAS um JSON com a seguinte estrutura:
+        {
+          "meals": [
+            { "name": "Frango Grelhado", "calories": 250, "protein": 30, "meal_type": "Almoço", "time": "12:30" }
+          ],
+          "water_liters": 0.5,
+          "weight_kg": 75.5
+        }
+      `;
+
+      let response;
       if (source === 'text') {
-        payload = {
-          type: 'text',
-          input: input,
-          currentTime: currentTimeStr
-        };
+        response = await ai.models.generateContent({
+          model: model,
+          contents: `${prompt}\n\nEntrada do usuário: "${input}"`,
+          config: { responseMimeType: "application/json" }
+        });
       } else {
         const base64Audio = await blobToBase64(audioBlob!);
-        payload = {
-          type: 'audio',
-          audio: base64Audio,
-          mimeType: audioBlob!.type,
-          currentTime: currentTimeStr
-        };
+        response = await ai.models.generateContent({
+          model: model,
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: audioBlob!.type,
+                    data: base64Audio
+                  }
+                }
+              ]
+            }
+          ],
+          config: { responseMimeType: "application/json" }
+        });
       }
 
-      const { data: result, error } = await supabase.functions.invoke('gemini-nutrition', {
-        body: payload
-      });
-
-      if (error) throw error;
+      const result = JSON.parse(response.text || '{}');
       
       if (result.meals && result.meals.length > 0) {
           const newMeals = result.meals.map((m: any) => ({
               name: m.name,
               calories: m.calories,
               protein: m.protein,
-              type: m.meal_type,
+              type: m.meal_type || 'Almoço',
               id: new Date().toISOString() + Math.random(),
               time: m.time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           }));

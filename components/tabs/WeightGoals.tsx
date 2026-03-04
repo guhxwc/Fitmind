@@ -6,7 +6,7 @@ import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 
 export const WeightGoals: React.FC = () => {
-    const { userData, setUserData } = useAppContext();
+    const { userData, setUserData, calculateGoals } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
 
@@ -33,15 +33,19 @@ export const WeightGoals: React.FC = () => {
             return;
         }
 
+        const newGoals = calculateGoals(newTargetWeight, userData.activityLevel);
+
         const updatedData = {
             ...userData,
             targetWeight: newTargetWeight,
-            pace: pace
+            pace: pace,
+            goals: newGoals
         };
 
         const { error } = await supabase.from('profiles').update({
             target_weight: newTargetWeight,
-            pace: pace
+            pace: pace,
+            goals: newGoals
         }).eq('id', userData.id);
 
         if (error) {

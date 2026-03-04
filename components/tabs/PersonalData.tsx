@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { ChevronLeftIcon, CameraIcon, UserCircleIcon } from '../core/Icons';
@@ -13,6 +13,12 @@ export const PersonalData: React.FC = () => {
 
     const [name, setName] = useState(userData?.name || '');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (userData?.name) {
+            setName(userData.name);
+        }
+    }, [userData?.name]);
 
     if (!userData || !session) return null;
 

@@ -51,15 +51,15 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: '/logo192.png',
-    badge: '/logo192.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
+    badge: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/', // URL de destino
       dateOfArrival: Date.now()
     },
     actions: [
-      {action: 'explore', title: 'Abrir App', icon: 'images/checkmark.png'}
+      {action: 'explore', title: 'Abrir App'}
     ]
   };
 

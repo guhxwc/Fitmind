@@ -3,10 +3,10 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 // Removed GoogleGenAI import
 import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback, Exercise, WorkoutDay } from '../../types';
-import { DumbbellIcon, FlameIcon, ClockIcon, ChevronRightIcon, CheckCircleIcon, ArrowPathIcon, CalendarIcon, PlusIcon, MinusIcon, LockIcon, EditIcon, TrashIcon } from '../core/Icons';
+import { DumbbellIcon, FlameIcon, ClockIcon, ChevronRightIcon, CheckCircleIcon, ArrowPathIcon, CalendarIcon, PlusIcon, MinusIcon, LockIcon, EditIcon, TrashIcon, SparklesIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { WorkoutQuiz } from './WorkoutQuiz';
-import { EXERCISE_DATABASE } from '../../workoutData';
+import { workoutService } from '../../services/workoutService';
 import { useAppContext } from '../AppContext';
 import Portal from '../core/Portal';
 import { SubscriptionPage } from '../SubscriptionPage';
@@ -25,181 +25,6 @@ const XMarkIcon: React.FC<{ className?: string }> = ({ className }) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
-
-// --- LOGIC: Workout Generator Engine ---
-
-const generateManualWorkoutPlan = (answers: WorkoutQuizAnswers): WorkoutPlan => {
-    // 1. Filtragem Inicial de Exercícios (Database Filtering)
-    let availableExercises = EXERCISE_DATABASE.filter(ex => {
-        // Filtro de Local e Equipamento
-        if (answers.location === 'Academia') return true;
-        
-        // Se for Casa
-        if (answers.equipment) return ex.setting === 'Casa' || ex.equipment === 'Halteres';
-        return ex.setting === 'Casa' && ex.equipment === 'Corpo';
-    });
-
-    // Filtro de Lesões (Segurança)
-    if (answers.injuries.length > 0 && !answers.injuries.includes('Nenhuma')) {
-        availableExercises = availableExercises.filter(ex => 
-            !ex.muscleGroups.some(mg => answers.injuries.includes(mg))
-        );
-    }
-
-    // 2. Determinar Parâmetros de Volume baseados em Objetivo e Biotipo
-    let sets = '3';
-    let reps = '10-12';
-    let rest = '60';
-
-    if (answers.goal === 'emagrecer') {
-        reps = '12-15';
-        rest = '45';
-        sets = answers.bodyType === 'endomorfo' ? '4' : '3';
-    } else if (answers.goal === 'ganhar massa') {
-        reps = '8-10';
-        rest = '90';
-        sets = '4';
-        if (answers.bodyType === 'ectomorfo') rest = '120'; // Mais descanso para ecto
-    }
-
-    // Ajuste por tempo disponível (Exercises per day)
-    // 30min ~ 4 ex, 45min ~ 5 ex, 60min ~ 7 ex, 90min ~ 9 ex
-    const exerciseCount = Math.floor(answers.duration / 7);
-
-    // 3. Estrutura de Divisão (Split Logic)
-    let schedule: { day: number, focus: string, muscles: string[] }[] = [];
-    const days = answers.daysPerWeek;
-    const pref = answers.splitPreference;
-
-    // Lógica Complexa de Divisão
-    if (days === 2) {
-        // Sempre Full Body para 2 dias
-        schedule = [
-            { day: 1, focus: "Full Body A", muscles: ["Pernas", "Peito", "Costas", "Ombros"] },
-            { day: 2, focus: "Full Body B", muscles: ["Pernas", "Costas", "Peito", "Bíceps", "Tríceps"] }
-        ];
-    } else if (days === 3) {
-        if (pref === 'fullbody') {
-            schedule = [
-                { day: 1, focus: "Full Body A", muscles: ["Pernas", "Peito", "Costas"] },
-                { day: 2, focus: "Full Body B", muscles: ["Pernas", "Ombros", "Braços"] },
-                { day: 3, focus: "Full Body C", muscles: ["Glúteos", "Costas", "Peito"] }
-            ];
-        } else {
-            // PPL (Push Pull Legs) Adaptado ou ABC Clássico
-            schedule = [
-                { day: 1, focus: "A: Empurrar (Peito/Ombro/Tríceps)", muscles: ["Peito", "Ombros", "Tríceps"] },
-                { day: 2, focus: "B: Puxar (Costas/Bíceps)", muscles: ["Costas", "Bíceps", "Abdômen"] },
-                { day: 3, focus: "C: Pernas Completo", muscles: ["Pernas", "Glúteos", "Panturrilha"] }
-            ];
-        }
-    } else if (days === 4) {
-        if (pref === 'abcd') {
-            schedule = [
-                { day: 1, focus: "A: Peito e Tríceps", muscles: ["Peito", "Tríceps"] },
-                { day: 2, focus: "B: Costas e Bíceps", muscles: ["Costas", "Bíceps"] },
-                { day: 3, focus: "C: Pernas (Anterior)", muscles: ["Pernas", "Panturrilha"] },
-                { day: 4, focus: "D: Ombros e Posterior", muscles: ["Ombros", "Glúteos", "Abdômen"] }
-            ];
-        } else {
-            // Upper / Lower 2x
-            schedule = [
-                { day: 1, focus: "A: Superiores", muscles: ["Peito", "Costas", "Ombros"] },
-                { day: 2, focus: "B: Inferiores", muscles: ["Pernas", "Glúteos"] },
-                { day: 3, focus: "C: Superiores Foco Braços", muscles: ["Bíceps", "Tríceps", "Ombros"] },
-                { day: 4, focus: "D: Inferiores Completo", muscles: ["Pernas", "Panturrilha", "Abdômen"] }
-            ];
-        }
-    } else {
-        // 5 ou 6 dias
-        if (pref === 'abcde') {
-            schedule = [
-                { day: 1, focus: "A: Peito", muscles: ["Peito", "Abdômen"] },
-                { day: 2, focus: "B: Costas", muscles: ["Costas", "Lombar"] },
-                { day: 3, focus: "C: Pernas", muscles: ["Pernas", "Panturrilha"] },
-                { day: 4, focus: "D: Ombros", muscles: ["Ombros", "Trapézio"] },
-                { day: 5, focus: "E: Braços", muscles: ["Bíceps", "Tríceps"] }
-            ];
-        } else {
-            // ABC 2x (Rotação)
-            schedule = [
-                { day: 1, focus: "A: Peito/Ombro/Tríceps", muscles: ["Peito", "Ombros", "Tríceps"] },
-                { day: 2, focus: "B: Costas/Bíceps", muscles: ["Costas", "Bíceps"] },
-                { day: 3, focus: "C: Pernas", muscles: ["Pernas", "Glúteos"] },
-                { day: 4, focus: "A: Peito/Ombro/Tríceps", muscles: ["Peito", "Ombros", "Tríceps"] },
-                { day: 5, focus: "B: Costas/Bíceps", muscles: ["Costas", "Bíceps"] }
-            ];
-        }
-        
-        if (days === 6) {
-            schedule.push({ day: 6, focus: "C: Pernas/Abdômen", muscles: ["Pernas", "Abdômen", "Cardio"] });
-        }
-    }
-
-    // 4. Montagem do Plano
-    const plan: WorkoutPlan = schedule.map((dayPlan, index) => {
-        const dayExercises: any[] = [];
-        
-        // Priorizar os músculos focais do dia
-        const slotsPerMuscle = Math.max(1, Math.ceil(exerciseCount / dayPlan.muscles.length));
-
-        dayPlan.muscles.forEach(muscle => {
-            // Filtrar exercícios desse músculo
-            let candidates = availableExercises.filter(ex => ex.muscleGroups.includes(muscle));
-            
-            // Priorizar músculos selecionados no quiz ("Priority Muscles")
-            // Se o dia tem "Peito" e o usuário marcou "Peito" como prioridade, damos preferência
-            const isPriorityMuscle = answers.priorityMuscles.includes(muscle);
-            
-            if (isPriorityMuscle) {
-                // Tenta pegar exercícios mais compostos/avançados se o nível permitir
-                if (answers.level !== 'Iniciante') {
-                    candidates.sort((a, b) => (a.level === 'Avançado' ? -1 : 1));
-                }
-            } else {
-                // Shuffle normal
-                candidates = candidates.sort(() => 0.5 - Math.random());
-            }
-            
-            let selectedForMuscle: Exercise[] = [];
-            
-            // Selecionar exercícios
-            // Se for prioridade, adiciona 1 exercício extra se possível
-            const limit = isPriorityMuscle ? slotsPerMuscle + 1 : slotsPerMuscle;
-
-            while (selectedForMuscle.length < limit && candidates.length > 0) {
-                // Evitar duplicatas de nome muito similares se possível
-                const nextEx = candidates.shift();
-                if (nextEx) selectedForMuscle.push(nextEx);
-            }
-
-            selectedForMuscle.forEach(ex => {
-                dayExercises.push({
-                    exerciseId: ex.id,
-                    name: ex.name,
-                    muscleGroups: ex.muscleGroups,
-                    sets: sets,
-                    reps: reps,
-                    rest: rest
-                });
-            });
-        });
-
-        // Garantir que não exceda absurdamente o tempo
-        // Se tiver muitos exercícios, corta os últimos
-        const finalExercises = dayExercises.slice(0, exerciseCount + 2); // +2 margem
-
-        return {
-            day: dayPlan.day,
-            focus: dayPlan.focus,
-            estimatedTime: answers.duration,
-            exercises: finalExercises
-        };
-    }).filter(Boolean) as WorkoutPlan;
-
-    return plan;
-};
-
 
 // --- Sub-components (RestTimer, SetRow, ActiveSessionView, etc...) ---
 // (Mantendo os componentes de UI existentes sem alteração visual, apenas lógica)
@@ -860,10 +685,9 @@ export const WorkoutsTab: React.FC = () => {
         setIsQuizOpen(false);
         setIsLoading(true);
 
-        // MANUAL GENERATION LOGIC
         try {
-            // Generate locally based on answers
-            const newPlan = generateManualWorkoutPlan(answers);
+            // AI GENERATION LOGIC
+            const newPlan = await workoutService.generateWorkoutPlan(answers);
             
             // Save to DB
             const { error: dbError } = await supabase.from('workout_plans').insert({
@@ -875,11 +699,11 @@ export const WorkoutsTab: React.FC = () => {
             setWorkoutPlan(newPlan);
             // Reset selection to auto
             setSelectedDayIndex(null); 
-            addToast("Treino gerado com sucesso!", "success");
+            addToast("Treino gerado com sucesso pela IA!", "success");
 
         } catch (e: any) {
             console.error("Erro na geração do treino:", e);
-            addToast('Erro ao salvar treino. Tente novamente.', 'error');
+            addToast('Erro ao gerar treino com IA. Tente novamente.', 'error');
         } finally {
             setIsLoading(false);
         }

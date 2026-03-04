@@ -44,8 +44,12 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
     skipBreakfast: false,
     nightHunger: false,
     restrictions: [],
+    dietaryPreference: 'nenhuma',
     pace: 'normal',
     trains: userData?.activityLevel !== 'Sedentário',
+    complexity: 'prático',
+    cookingTime: 'médio',
+    dislikedFoods: '',
   });
 
   const updateAnswer = (key: keyof DietQuizAnswers, value: any) => {
@@ -95,6 +99,16 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
       ],
     },
     {
+        title: "Qual seu estilo alimentar preferido?",
+        key: 'dietaryPreference',
+        options: [
+            { label: 'Nenhuma (Comer de tudo)', value: 'nenhuma' },
+            { label: 'Vegana', value: 'vegana' },
+            { label: 'Vegetariana', value: 'vegetariana' },
+            { label: 'Baixo Carboidrato', value: 'baixo carboidrato' }
+        ],
+    },
+    {
         title: "Qual ritmo de emagrecimento você prefere?",
         key: 'pace',
         options: [
@@ -112,6 +126,29 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
         ],
     },
      {
+        title: "Quanto tempo você tem para preparar suas refeições?",
+        key: 'cookingTime',
+        options: [
+            { label: 'Pouco (15-30 min)', value: 'pouco' },
+            { label: 'Médio (30-60 min)', value: 'médio' },
+            { label: 'Muito (+60 min)', value: 'muito' }
+        ],
+    },
+    {
+        title: "Qual nível de complexidade você prefere?",
+        key: 'complexity',
+        options: [
+            { label: 'Prático e Rápido', value: 'prático' },
+            { label: 'Moderado', value: 'moderado' },
+            { label: 'Elaborado / Gourmet', value: 'elaborado' }
+        ],
+    },
+    {
+        title: "Existe algum alimento que você não gosta?",
+        key: 'dislikedFoods',
+        type: 'text',
+    },
+    {
         title: "Alguma restrição alimentar?",
         subtitle: "Selecione uma ou mais opções.",
         key: 'restrictions',
@@ -146,13 +183,21 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
                 {currentQuestion.subtitle && <p className="text-gray-500 dark:text-gray-400 mt-2">{currentQuestion.subtitle}</p>}
                 <div className="mt-8">
                     {currentQuestion.type === 'multiselect' ? (
-                        currentQuestion.options.map(opt => (
+                        currentQuestion.options?.map(opt => (
                             <QuizOption key={opt.value} onClick={() => handleMultiSelect(opt.value)} isSelected={answers.restrictions.includes(opt.value)}>
                                 {opt.label}
                             </QuizOption>
                         ))
+                    ) : currentQuestion.type === 'text' ? (
+                        <input 
+                            type="text"
+                            value={answers[currentQuestion.key as keyof DietQuizAnswers] as string}
+                            onChange={(e) => updateAnswer(currentQuestion.key as keyof DietQuizAnswers, e.target.value)}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-lg text-gray-900 dark:text-gray-100"
+                            placeholder="Ex: Brócolis, peixe..."
+                        />
                     ) : (
-                        currentQuestion.options.map(opt => (
+                        currentQuestion.options?.map(opt => (
                             <QuizOption key={opt.value.toString()} onClick={() => updateAnswer(currentQuestion.key as keyof DietQuizAnswers, opt.value)} isSelected={(answers as any)[currentQuestion.key] === opt.value}>
                                 {opt.label}
                             </QuizOption>

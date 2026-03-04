@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import type { Meal } from '../../types';
 import { CameraIcon, PlusIcon, ArrowPathIcon } from '../core/Icons';
 import Portal from '../core/Portal';
-import { supabase } from '../../supabaseClient';
+import { GoogleGenAI } from "@google/genai";
 
 // Helper to convert blob to base64
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -55,15 +55,43 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
     try {
       const base64Data = await blobToBase64(file);
       
-      const { data: result, error } = await supabase.functions.invoke('gemini-nutrition', {
-        body: {
-          type: 'image',
-          image: base64Data,
-          mimeType: file.type
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const model = "gemini-3-flash-preview";
+
+      const prompt = `
+        Analise esta imagem de uma refeição e identifique o prato principal ou alimento.
+        Estime as calorias totais e a quantidade de proteína em gramas.
+        Retorne APENAS um JSON com a seguinte estrutura:
+        {
+          "foodName": "Nome do prato",
+          "calories": 450,
+          "protein": 25
+        }
+      `;
+
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: file.type,
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json"
         }
       });
 
-      if (error) throw error;
+      const result = JSON.parse(response.text || '{}');
+      
+      if (!result.foodName) throw new Error("Invalid AI response");
       
       setAnalysisResult(result);
       setStage('results');

@@ -29,7 +29,6 @@ export const StepAge: React.FC<StepAgeProps> = ({ onNext, onBack, onSelect, valu
             onChange={setAge}
             label="Anos"
             placeholder="30"
-            autoFocus
         />
       </div>
       

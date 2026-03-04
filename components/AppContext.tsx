@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Session } from '@supabase/supabase-js';
-import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry } from '../types';
+import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry, ActivityLevel } from '../types';
 import { DEFAULT_USER_DATA } from '../constants';
 import { useToast } from './ToastProvider';
 
@@ -40,6 +40,7 @@ interface AppContextType {
   theme: Theme;
   toggleTheme: () => void;
   unlockPro: () => Promise<void>;
+  calculateGoals: (weight: number, activityLevel: ActivityLevel) => UserData['goals'];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -90,6 +91,22 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
+  const calculateGoals = (weight: number, activityLevel: ActivityLevel) => {
+      const water = weight * 0.035;
+      const calories = weight * 30;
+      const protein = weight * 1.6;
+      return {
+          water: parseFloat(water.toFixed(1)),
+          calories: Math.round(calories),
+          protein: Math.round(protein),
+          fiber: 25,
+          carbs: 0,
+          fats: 0,
+          steps: 10000,
+          exerciseMinutes: 30
+      };
+  };
+
   const formatProfileToUserData = (profile: any): UserData => ({
       id: profile.id,
       name: profile.name || DEFAULT_USER_DATA.name,
@@ -119,6 +136,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       biggestFrustration: profile.biggest_frustration,
       futureWorry: profile.future_worry,
       monthlyInvestment: profile.monthly_investment,
+      lastWeightGoalUpdate: profile.last_weight_goal_update || profile.weight,
   });
 
   const fetchData = useCallback(async () => {
@@ -151,7 +169,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           dailyNotesRes,
           sideEffectsRes
         ] = await Promise.all([
-            supabase.from('profiles').select('*').eq('id', userId).single(),
+            supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('progress_photos').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('workout_plans').select('plan').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
@@ -164,6 +182,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         if (profileRes.data) {
           setUserData(formatProfileToUserData(profileRes.data));
+        } else {
+          setUserData(null);
         }
         
         setWeightHistory(weightRes.data || []);
@@ -379,7 +399,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       updateStreak,
       theme,
       toggleTheme,
-      unlockPro
+      unlockPro,
+      calculateGoals
     }}>
       {children}
     </AppContext.Provider>
@@ -421,6 +442,7 @@ export const useAppContext = () => {
         theme: 'light',
         toggleTheme: () => {},
         unlockPro: async () => {},
+        calculateGoals: () => ({ water: 0, protein: 0, calories: 0, fiber: 0, carbs: 0, fats: 0, steps: 0, exerciseMinutes: 0 }),
     } as unknown as AppContextType;
   }
   return context;

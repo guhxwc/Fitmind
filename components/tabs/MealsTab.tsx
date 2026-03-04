@@ -11,6 +11,8 @@ import { FastingView } from './FastingView';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { ProFeatureModal } from '../ProFeatureModal';
 
+import { DietPlanView } from './diet/DietPlanView';
+
 // --- Today View ---
 const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void }> = ({ onAddMeal }) => {
     const { meals, userData, unlockPro } = useAppContext();
@@ -54,7 +56,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-sm font-semibold opacity-80 uppercase tracking-wide">Consumido Hoje</p>
-                        <h2 className="text-4xl font-bold mt-1">{totalCalories} <span className="text-lg font-medium opacity-70">kcal</span></h2>
+                        <h2 className="text-4xl font-bold mt-1">{Math.round(totalCalories)} <span className="text-lg font-medium opacity-70">kcal</span></h2>
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-semibold opacity-80 uppercase tracking-wide">Meta</p>
@@ -65,7 +67,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                     <div className="bg-white dark:bg-black h-full rounded-full" style={{width: `${Math.min((totalCalories / (userData?.goals.calories || 2000)) * 100, 100)}%`}}></div>
                 </div>
                 <div className="mt-4 flex gap-4 text-sm font-medium opacity-90">
-                    <span className="flex items-center gap-1.5"><FlameIcon className="w-4 h-4" /> {totalProtein}g Proteína</span>
+                    <span className="flex items-center gap-1.5"><FlameIcon className="w-4 h-4" /> {Math.round(totalProtein)}g Proteína</span>
                 </div>
             </div>
 
@@ -96,8 +98,8 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                                 <p className="text-xs text-gray-500 mt-0.5">{meal.time}</p>
                             </div>
                             <div className="text-right">
-                                <p className="font-bold text-gray-900 dark:text-white">{meal.calories} kcal</p>
-                                <p className="text-xs text-blue-500 font-medium">{meal.protein}g prot</p>
+                                <p className="font-bold text-gray-900 dark:text-white">{Math.round(meal.calories)} kcal</p>
+                                <p className="text-xs text-blue-500 font-medium">{Math.round(meal.protein)}g prot</p>
                             </div>
                         </div>
                     ))
@@ -135,64 +137,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
 }
 
 // --- Diet Plan View ---
-const DietPlanView: React.FC = () => {
-    const [isQuizOpen, setIsQuizOpen] = useState(false);
-    const { userData } = useAppContext();
-
-    return (
-        <div className="px-5 py-6 space-y-6 animate-fade-in min-h-screen">
-             <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Seu Plano Nutricional</h2>
-                <p className="text-gray-500 dark:text-gray-400">Personalizado por IA para {userData?.name}</p>
-             </div>
-
-             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-800 border border-green-100 dark:border-gray-700 p-6 rounded-3xl text-center shadow-sm">
-                 <div className="w-20 h-20 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-sm">
-                     🥗
-                 </div>
-                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Plano Flexível GLP-1</h3>
-                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 leading-relaxed">
-                     Focado em proteínas e fibras para maximizar a saciedade e minimizar efeitos colaterais da medicação.
-                 </p>
-                 <button onClick={() => setIsQuizOpen(true)} className="w-full bg-black dark:bg-white text-white dark:text-black py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
-                     Refazer Quiz de Dieta
-                 </button>
-             </div>
-
-             <div className="space-y-4">
-                 <h3 className="font-bold text-gray-900 dark:text-white px-1">Recomendações Diárias</h3>
-                 <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                     <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-xl text-orange-600 dark:text-orange-400"><CoffeeIcon /></div>
-                     <div>
-                         <p className="font-bold text-gray-900 dark:text-white">Café da Manhã</p>
-                         <p className="text-xs text-gray-500">Ovos mexidos com espinafre</p>
-                     </div>
-                 </div>
-                 <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                     <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-xl text-yellow-600 dark:text-yellow-400"><LunchIcon /></div>
-                     <div>
-                         <p className="font-bold text-gray-900 dark:text-white">Almoço</p>
-                         <p className="text-xs text-gray-500">Frango grelhado e salada</p>
-                     </div>
-                 </div>
-                 <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                     <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-xl text-green-600 dark:text-green-400"><AppleIcon /></div>
-                     <div>
-                         <p className="font-bold text-gray-900 dark:text-white">Lanche</p>
-                         <p className="text-xs text-gray-500">Iogurte natural com frutas</p>
-                     </div>
-                 </div>
-             </div>
-
-             {isQuizOpen && (
-                 <DietQuiz 
-                    onComplete={() => setIsQuizOpen(false)} 
-                    onClose={() => setIsQuizOpen(false)} 
-                 />
-             )}
-        </div>
-    )
-}
+// The DietPlanView component has been moved to ./diet/DietPlanView.tsx
 
 // --- Main Component ---
 

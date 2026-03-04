@@ -118,7 +118,7 @@ const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: numbe
 );
 
 const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
-    const { userData, setUserData, setWeightHistory } = useAppContext();
+    const { userData, setUserData, setWeightHistory, calculateGoals } = useAppContext();
     const debounceTimer = useRef<number | null>(null);
 
     if (!userData) return null;
@@ -127,7 +127,15 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
         const currentWeight = userData.weight;
         const newWeight = parseFloat((currentWeight + change).toFixed(1));
 
-        setUserData(prev => prev ? ({ ...prev, weight: newWeight }) : null);
+        let newGoals = userData.goals;
+        let newLastWeightGoalUpdate = userData.lastWeightGoalUpdate || currentWeight;
+
+        if (Math.abs(newWeight - (userData.lastWeightGoalUpdate || currentWeight)) >= 5) {
+            newGoals = calculateGoals(newWeight, userData.activityLevel);
+            newLastWeightGoalUpdate = newWeight;
+        }
+
+        setUserData(prev => prev ? ({ ...prev, weight: newWeight, goals: newGoals, lastWeightGoalUpdate: newLastWeightGoalUpdate }) : null);
         
         const todayStr = new Date().toISOString().split('T')[0];
         setWeightHistory(prev => {
@@ -147,7 +155,11 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
         
         debounceTimer.current = window.setTimeout(async () => {
             try {
-                await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
+                await supabase.from('profiles').update({ 
+                    weight: newWeight, 
+                    goals: newGoals,
+                    last_weight_goal_update: newLastWeightGoalUpdate
+                }).eq('id', userData.id);
                  await supabase
                     .from('weight_history')
                     .insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight });

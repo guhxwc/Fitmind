@@ -25,6 +25,8 @@ import { StepComparison } from './StepComparison';
 import { StepFinalPlan } from './StepFinalPlan';
 import { useToast } from '../ToastProvider';
 import { SubscriptionPage } from '../SubscriptionPage';
+import { supabase } from '../../supabaseClient';
+
 // Funnel Steps
 import { 
   StepDuration, 
@@ -57,12 +59,67 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   });
   const [showSubscription, setShowSubscription] = useState(false);
   const { addToast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize user ID and load progress from Supabase
+  useEffect(() => {
+    const initUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+
+        // Load progress from Supabase if not forced by initialStep
+        if (initialStep === undefined) {
+          try {
+            const { data, error } = await supabase
+              .from('onboarding_progress')
+              .select('step, user_data')
+              .eq('user_id', user.id)
+              .single();
+
+            if (data && !error) {
+              // Only update if the saved step is valid and further than 0 (or explicitly 0 but saved)
+              // Prioritize Supabase data over localStorage if available
+              if (data.step !== undefined) setStep(data.step);
+              if (data.user_data) setUserData(data.user_data);
+            }
+          } catch (err) {
+            console.error("Error loading onboarding progress:", err);
+          }
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initUser();
+  }, [initialStep]);
+
+  // Save progress to Supabase and localStorage
   useEffect(() => {
       // Save step to localStorage whenever it changes, unless we are in the forced return flow (initialStep used)
-      if (initialStep === undefined) {
+      if (initialStep === undefined && !isLoading) {
         localStorage.setItem('onboarding_step', step.toString());
         localStorage.setItem('onboarding_userData', JSON.stringify(userData));
+
+        // Save to Supabase
+        if (userId) {
+          const saveToSupabase = async () => {
+            try {
+              await supabase
+                .from('onboarding_progress')
+                .upsert({ 
+                  user_id: userId,
+                  step: step,
+                  user_data: userData,
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+            } catch (err) {
+              console.error("Error saving onboarding progress:", err);
+            }
+          };
+          saveToSupabase();
+        }
       }
       
       // Scroll to top on step change
@@ -71,7 +128,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
           root.scrollTo(0, 0);
       }
       window.scrollTo(0, 0);
-  }, [step, initialStep, userData]);
+  }, [step, initialStep, userData, userId, isLoading]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => Math.max(0, prev - 1));
@@ -84,6 +141,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     // Clear saved step on completion
     localStorage.removeItem('onboarding_step');
     localStorage.removeItem('onboarding_userData');
+    // Optionally clear Supabase progress or mark as completed, but keeping it allows "returning" if needed.
+    // However, usually completion means moving to the main app.
+    // We might want to keep it in Supabase for analytics or recovery if signup fails.
     onComplete(userData);
   };
 
@@ -186,6 +246,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
         data={userData} 
     />,
   ];
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-white dark:bg-black">

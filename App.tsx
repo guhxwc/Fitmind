@@ -150,7 +150,6 @@ const App: React.FC = () => {
             ) : (
               <OnboardingFlow 
                 onComplete={handleOnboardingComplete} 
-                initialStep={0} 
                 initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
               />
             )

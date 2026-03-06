@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
-import { useAppContext } from './AppContext';
 import { motion, AnimatePresence } from "framer-motion";
 import { Syringe, Dumbbell, TrendingUp, Apple } from "lucide-react";
 
@@ -247,7 +246,7 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -260,27 +259,6 @@ export const Auth: React.FC = () => {
       setError(signUpError.message);
       setLoading(false);
       return;
-    }
-
-    // Verifica se veio por indicação via localStorage
-    const affiliateRef = localStorage.getItem('affiliate_ref');
-    if (affiliateRef && authData.user) {
-      // Salva a indicação no banco
-      const { error: referralError } = await supabase
-        .from('referrals')
-        .insert({
-          user_id: authData.user.id,
-          affiliate_ref: affiliateRef,
-          created_at: new Date().toISOString(),
-          status: 'pending'
-        });
-      
-      if (referralError) {
-        console.error("Erro ao salvar indicação:", referralError);
-      } else {
-        // Limpa o storage para não duplicar futuramente
-        localStorage.removeItem('affiliate_ref');
-      }
     }
 
     console.log("SignUp realizado com sucesso, aguardando confirmação.");
@@ -436,24 +414,6 @@ export const Auth: React.FC = () => {
                   </button>
                 </div>
               </form>
-
-              <div className="mt-8 text-center">
-                {isSignupView ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Já tem uma conta?{' '}
-                    <button onClick={() => { setView('login'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
-                      Entre agora
-                    </button>
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Não tem uma conta?{' '}
-                    <button onClick={() => { setView('signup'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
-                      Cadastre-se agora
-                    </button>
-                  </p>
-                )}
-              </div>
           </div>
         </div>
     );

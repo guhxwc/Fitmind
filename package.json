@@ -16,6 +16,7 @@
     "clsx": "^2.1.0",
     "firebase": "^10.7.1",
     "framer-motion": "^12.34.3",
+    "js-cookie": "^3.0.5",
     "lucide-react": "^0.575.0",
     "motion": "^12.34.3",
     "react": "^18.2.0",
@@ -25,6 +26,7 @@
     "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",

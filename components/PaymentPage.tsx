@@ -4,6 +4,7 @@ import { LockIcon, ShieldCheckIcon, ArrowPathIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
+import { useAffiliateTracker } from '../hooks/useAffiliateTracker';
 
 const STRIPE_PRICE_IDS = {
     monthly: 'price_1STlzZQdX6ANfRVOkyXlfOvr',
@@ -17,9 +18,10 @@ interface PaymentPageProps {
 }
 
 export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, onClose }) => {
-  const { session, affiliateCode } = useAppContext();
+  const { session } = useAppContext();
   const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { getAffiliateCode } = useAffiliateTracker();
 
   const handleCheckout = async () => {
     setIsProcessing(true);
@@ -28,6 +30,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         if (!session?.user) throw new Error("Usuário não autenticado.");
 
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
+        const affiliateCode = getAffiliateCode();
         
         // Redireciona diretamente para a Home (#/) após o pagamento
         const returnUrl = `${window.location.origin}/#/`;

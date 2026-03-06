@@ -17,7 +17,7 @@ interface PaymentPageProps {
 }
 
 export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, onClose }) => {
-  const { session } = useAppContext();
+  const { session, affiliateCode } = useAppContext();
   const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -37,7 +37,8 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                 priceId: priceId,
                 email: session.user.email,
                 userId: session.user.id,
-                returnUrl: returnUrl
+                returnUrl: returnUrl,
+                affiliateCode: affiliateCode // Envia o código do afiliado
             }
         });
 

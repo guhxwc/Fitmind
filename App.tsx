@@ -30,6 +30,18 @@ const App: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Verifica se tem ?ref=CODIGO na URL
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    
+    if (ref) {
+      // Salva no navegador do usuário
+      localStorage.setItem('affiliate_ref', ref);
+      console.log('Afiliado detectado:', ref);
+    }
+  }, []);
+
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error("Error getting session:", error);

@@ -1,19 +1,29 @@
+# Supabase Edge Function: create-checkout-session
 
+Esta função cria uma sessão de checkout no Stripe para assinatura do plano PRO.
+
+### 1. Comando para criar a função (via CLI):
+```bash
+supabase functions new create-checkout-session
+```
+
+### 2. Código da Função (`index.ts`):
+Substitua o conteúdo do arquivo `supabase/functions/create-checkout-session/index.ts` pelo código abaixo:
+
+```typescript
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
+import Stripe from "https://esm.sh/stripe@12.0.0?target=deno"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0"
+
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+  apiVersion: '2022-11-15',
+  httpClient: Stripe.createFetchHttpClient(),
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-
-declare const Deno: {
-  env: {
-    get(key: string): string | undefined;
-  };
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,21 +31,11 @@ serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeKey) throw new Error("Chave STRIPE_SECRET_KEY não configurada.");
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
-    const { priceId, email, userId, returnUrl, affiliateCode } = await req.json();
-    
-    if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
+    const { priceId, email, userId, returnUrl, affiliateCode } = await req.json()
 
     // 1. Buscar se existe um cupom válido para esse código de afiliado
     let couponId = null;
-    let metadata: any = { supabase_user_id: userId };
+    let metadata = { userId };
 
     if (affiliateCode) {
       const supabase = createClient(
@@ -64,6 +64,7 @@ serve(async (req) => {
             }
           } catch (e) {
             console.log(`Cupom ${affiliate.code} não encontrado no Stripe ou inválido.`);
+            // Opcional: Criar o cupom dinamicamente no Stripe se não existir
           }
         }
       }
@@ -71,14 +72,18 @@ serve(async (req) => {
 
     // 2. Criar a sessão de checkout
     const sessionConfig: any = {
-      customer_email: email && email.trim() !== "" ? email : undefined,
-      line_items: [{ price: priceId, quantity: 1 }],
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
       mode: 'subscription',
       success_url: `${returnUrl}?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${returnUrl.replace('/success', '')}?payment_canceled=true`,
-      client_reference_id: userId,
+      cancel_url: `${returnUrl}?payment_canceled=true`,
+      customer_email: email,
       metadata: metadata,
-      allow_promotion_codes: true,
     };
 
     // Adicionar cupom se existir
@@ -88,27 +93,25 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
-    if (!session.url) {
-        throw new Error("O Stripe não gerou uma URL para esta sessão.");
-    }
-
-    return new Response(JSON.stringify({ 
-      url: session.url,
-      id: session.id,
-      success: true 
-    }), {
+    return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
     })
-
-  } catch (error: any) {
-    console.error("[Checkout Error]:", error.message);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false 
-    }), {
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
   }
 })
+```
+
+### 3. Configurar a Secret no Supabase:
+Certifique-se de que você já executou:
+```bash
+supabase secrets set STRIPE_SECRET_KEY=sua_chave_secreta_do_stripe
+```
+
+### 4. Deploy da Função:
+```bash
+supabase functions deploy create-checkout-session
+```

@@ -246,7 +246,7 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -259,6 +259,27 @@ export const Auth: React.FC = () => {
       setError(signUpError.message);
       setLoading(false);
       return;
+    }
+
+    // Verifica se veio por indicação
+    const affiliateRef = localStorage.getItem('affiliate_ref');
+
+    if (affiliateRef && authData.user) {
+      // Salva a indicação no banco
+      const { error: referralError } = await supabase
+        .from('referrals')
+        .insert({
+          user_id: authData.user.id,
+          affiliate_ref: affiliateRef,
+          status: 'active' // ou 'pending'
+        });
+      
+      if (referralError) {
+        console.error("Erro ao salvar indicação:", referralError);
+      } else {
+        // Limpa o storage para não duplicar futuramente
+        localStorage.removeItem('affiliate_ref');
+      }
     }
 
     console.log("SignUp realizado com sucesso, aguardando confirmação.");

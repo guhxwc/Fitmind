@@ -1,8 +1,20 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/assets/(.*)",
+      "destination": "/dist/assets/$1"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/dist/manifest.json"
+    },
+    {
+      "source": "/service-worker.js",
+      "destination": "/dist/service-worker.js"
+    },
+    {
+      "source": "/((?!.*\\.).*)",
+      "destination": "/dist/index.html"
     }
   ]
 }

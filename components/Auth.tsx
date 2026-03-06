@@ -436,6 +436,24 @@ export const Auth: React.FC = () => {
                   </button>
                 </div>
               </form>
+
+              <div className="mt-8 text-center">
+                {isSignupView ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Já tem uma conta?{' '}
+                    <button onClick={() => { setView('login'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
+                      Entre agora
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Não tem uma conta?{' '}
+                    <button onClick={() => { setView('signup'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
+                      Cadastre-se agora
+                    </button>
+                  </p>
+                )}
+              </div>
           </div>
         </div>
     );

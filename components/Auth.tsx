@@ -271,7 +271,8 @@ export const Auth: React.FC = () => {
         .insert({
           user_id: authData.user.id,
           affiliate_ref: affiliateRef,
-          status: 'active' // ou 'pending'
+          created_at: new Date().toISOString(),
+          status: 'pending'
         });
       
       if (referralError) {

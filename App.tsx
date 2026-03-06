@@ -38,6 +38,10 @@ const App: React.FC = () => {
       // Salva no navegador do usuário
       localStorage.setItem('affiliate_ref', ref);
       console.log('Afiliado detectado:', ref);
+
+      // Limpa a URL para não ficar com o parâmetro exposto
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
     }
   }, []);
 

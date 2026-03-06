@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
+import { useAppContext } from './AppContext';
 import { motion, AnimatePresence } from "framer-motion";
 import { Syringe, Dumbbell, TrendingUp, Apple } from "lucide-react";
 
@@ -174,6 +175,7 @@ const AuthAnimation = () => {
 
 export const Auth: React.FC = () => {
   const { addToast } = useToast();
+  const { affiliateRef, setAffiliateRef } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -261,9 +263,7 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    // Verifica se veio por indicação
-    const affiliateRef = localStorage.getItem('affiliate_ref');
-
+    // Verifica se veio por indicação (da memória, sem cookie)
     if (affiliateRef && authData.user) {
       // Salva a indicação no banco
       const { error: referralError } = await supabase
@@ -278,8 +278,8 @@ export const Auth: React.FC = () => {
       if (referralError) {
         console.error("Erro ao salvar indicação:", referralError);
       } else {
-        // Limpa o storage para não duplicar futuramente
-        localStorage.removeItem('affiliate_ref');
+        // Limpa a memória para não duplicar futuramente
+        setAffiliateRef(null);
       }
     }
 

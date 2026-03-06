@@ -24,7 +24,7 @@ const App: React.FC = () => {
   }
 
   const [session, setSession] = useState<Session | null>(null);
-  const { userData, loading: contextLoading, fetchData } = useAppContext();
+  const { userData, loading: contextLoading, fetchData, setAffiliateRef } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
@@ -35,15 +35,15 @@ const App: React.FC = () => {
     const ref = params.get('ref');
     
     if (ref) {
-      // Salva no navegador do usuário
-      localStorage.setItem('affiliate_ref', ref);
-      console.log('Afiliado detectado:', ref);
+      // Salva apenas na memória da sessão (sem cookies/localStorage)
+      setAffiliateRef(ref);
+      console.log('Afiliado detectado (sem cookies):', ref);
 
       // Limpa a URL para não ficar com o parâmetro exposto
       const newUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, []);
+  }, [setAffiliateRef]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {

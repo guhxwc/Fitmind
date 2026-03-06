@@ -30,6 +30,13 @@ const App: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
+    if (window.location.hash && window.location.hash.includes('access_token=')) {
+      setTimeout(() => {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }, 500);
+    }
+
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error("Error getting session:", error);

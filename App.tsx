@@ -13,14 +13,8 @@ import { DEFAULT_USER_DATA } from './constants';
 import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
-import Cookies from 'js-cookie';
-
-import { useAffiliateTracker } from './hooks/useAffiliateTracker';
 
 const App: React.FC = () => {
-  // Initialize affiliate tracker
-  useAffiliateTracker();
-
   if (!supabase) {
     return (
       <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
@@ -82,12 +76,9 @@ const App: React.FC = () => {
   const handleOnboardingComplete = async (userData: Omit<UserData, 'id'>) => {
     if (!session) return;
 
-    const affiliateCode = Cookies.get('fitmind_affiliate_code');
-
     const profileData = {
       id: session.user.id,
       name: userData.name || 'Usuário',
-      referred_by: affiliateCode || null,
       gender: userData.gender,
       age: userData.age,
       birth_date: userData.birthDate || null,

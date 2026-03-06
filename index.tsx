@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ToastProvider } from './components/ToastProvider';
 import { AppContextProvider } from './components/AppContext';
@@ -14,13 +14,13 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <ToastProvider>
         <AppContextProvider>
           <App />
         </AppContextProvider>
       </ToastProvider>
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );
 

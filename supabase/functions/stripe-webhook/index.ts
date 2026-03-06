@@ -54,8 +54,8 @@ serve(async (req) => {
 
       console.log(`✅ Processando PRO para usuário: ${userId}`);
 
-      // Atualiza o perfil usando SERVICE_ROLE (bypassa RLS)
-      const { error } = await supabase
+      // 1. Atualizar o perfil do usuário para PRO
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           is_pro: true, 
@@ -64,9 +64,56 @@ serve(async (req) => {
         })
         .eq('id', userId);
       
-      if (error) {
-          console.error("❌ Erro ao atualizar banco:", error.message);
-          throw error;
+      if (profileError) {
+          console.error("❌ Erro ao atualizar banco:", profileError.message);
+          throw profileError;
+      }
+
+      // 2. Processar comissão de afiliado se houver
+      const affiliateId = session.metadata?.affiliate_id;
+      const amountTotal = session.amount_total; // Valor em centavos
+
+      if (affiliateId && amountTotal) {
+        console.log(`💰 Processando comissão para afiliado: ${affiliateId}`);
+        
+        // Buscar dados do afiliado
+        const { data: affiliate, error: affError } = await supabase
+          .from('affiliates')
+          .select('commission_rate, balance, conversions')
+          .eq('id', affiliateId)
+          .single();
+
+        if (affiliate && !affError) {
+          const commissionAmount = (amountTotal / 100) * (affiliate.commission_rate / 100);
+          
+          // Registrar a transação de comissão
+          const { error: transError } = await supabase
+            .from('affiliate_transactions')
+            .insert({
+              affiliate_id: affiliateId,
+              amount: commissionAmount,
+              type: 'commission',
+              description: `Comissão de venda para usuário ${userId}`,
+              reference_id: session.id
+            });
+
+          if (!transError) {
+            // Atualizar saldo e conversões do afiliado
+            await supabase
+              .from('affiliates')
+              .update({
+                balance: affiliate.balance + commissionAmount,
+                conversions: affiliate.conversions + 1
+              })
+              .eq('id', affiliateId);
+            
+            console.log(`✅ Comissão de R$ ${commissionAmount.toFixed(2)} registrada.`);
+          } else {
+            console.error("❌ Erro ao registrar transação de afiliado:", transError.message);
+          }
+        } else {
+          console.error("❌ Erro ao buscar dados do afiliado:", affError?.message);
+        }
       }
       
       console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);

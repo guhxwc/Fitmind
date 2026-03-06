@@ -133,9 +133,28 @@
         background: rgba(28, 28, 30, 0.75);
       }
     </style>
+    <script>
+      // Captura o link de afiliado e salva apenas no localStorage (sem cookies)
+      (function() {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        
+        if (ref) {
+          localStorage.setItem('affiliate_ref', ref);
+          console.log('Afiliado salvo:', ref);
+        }
+
+        // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
+        if (window.location.hash && window.location.hash.includes('access_token=')) {
+          setTimeout(() => {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }, 500);
+        }
+      })();
+    </script>
   </head>
   <body class="antialiased selection:bg-blue-500 selection:text-white">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

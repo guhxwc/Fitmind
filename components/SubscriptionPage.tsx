@@ -6,7 +6,6 @@ import { PreSubscriptionPage } from './PreSubscriptionPage';
 import Portal from './core/Portal';
 import type { UserData } from '../types';
 import { useAppContext } from './AppContext';
-import { useAffiliateTracker } from '../hooks/useAffiliateTracker';
 
 interface SubscriptionPageProps {
   onClose: () => void;
@@ -67,17 +66,14 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [showCheckout, setShowCheckout] = useState(false);
   const { fetchData } = useAppContext();
-  const { getAffiliateCode } = useAffiliateTracker();
-  const affiliateCode = getAffiliateCode();
-  const discount = affiliateCode ? 0.10 : 0; // 10% de desconto se tiver cupom
 
   // Preços base
   const baseAnnualPrice = 389.22;
   const baseMonthlyPrice = 49.00;
 
   // Preços com desconto
-  const annualPrice = baseAnnualPrice * (1 - discount);
-  const monthlyPrice = baseMonthlyPrice * (1 - discount);
+  const annualPrice = baseAnnualPrice;
+  const monthlyPrice = baseMonthlyPrice;
 
   // Formatação
   const formatPrice = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -128,11 +124,6 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
 
                 <div className="flex-grow overflow-y-auto p-6 pb-40">
                     <div className="text-center mb-8">
-                        {affiliateCode && (
-                            <div className="mb-4 inline-block bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-4 py-2 rounded-full text-sm font-bold animate-pulse">
-                                🎉 Cupom {affiliateCode} ativado: 10% OFF extra!
-                            </div>
-                        )}
                         <div className="inline-block p-3 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 mb-4">
                             <StarIcon className="w-8 h-8 text-white" />
                         </div>

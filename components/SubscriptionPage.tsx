@@ -137,7 +137,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             price={formatPrice(annualPrice)}
                             subtext={`Equivalente a ${formatPrice(annualPrice / 12)}/mês`}
                             isPopular
-                            savings={affiliateCode ? "-45% OFF" : "-35% OFF"}
+                            savings="-35% OFF"
                             extraTag={`R$ ${(annualPrice / 365).toFixed(2)}/dia`}
                             isSelected={selectedPlan === 'annual'}
                             onClick={() => setSelectedPlan('annual')}

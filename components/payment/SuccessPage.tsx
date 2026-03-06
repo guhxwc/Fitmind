@@ -42,8 +42,8 @@ export const SuccessPage: React.FC = () => {
                 // Sincroniza os dados globais silenciosamente
                 await fetchData(); 
                 
-                // Redireciona imediatamente para a dashboard
-                navigate('/', { replace: true });
+                // Redireciona imediatamente para a aba de resumo
+                navigate('/summary', { replace: true });
             } else if (!data) {
                 // Profile doesn't exist yet! The user paid before finishing onboarding.
                 // Let's create the profile using the saved onboarding data.
@@ -90,7 +90,7 @@ export const SuccessPage: React.FC = () => {
                         localStorage.setItem('has_seen_onboarding', 'true');
                         localStorage.removeItem('onboarding_step');
                         await fetchData();
-                        navigate('/', { replace: true });
+                        navigate('/summary', { replace: true });
                         return;
                     } else {
                         console.error("Erro ao criar perfil:", upsertError);
@@ -101,7 +101,7 @@ export const SuccessPage: React.FC = () => {
                 if (attempts.current >= maxAttempts) {
                     if (pollingInterval.current) clearInterval(pollingInterval.current);
                     // Redireciona mesmo se falhar o polling, o sync de fundo do AppContext resolverá depois
-                    navigate('/', { replace: true });
+                    navigate('/summary', { replace: true });
                 }
             }
         } catch (err) {

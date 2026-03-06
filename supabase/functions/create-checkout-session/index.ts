@@ -33,21 +33,36 @@ serve(async (req) => {
     
     if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
 
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    let finalAffiliateCode = affiliateCode;
+    
+    // Se não veio no request, tenta buscar na tabela de indicações (referrals)
+    if (!finalAffiliateCode) {
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('affiliate_ref')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (referral && referral.affiliate_ref) {
+        finalAffiliateCode = referral.affiliate_ref;
+      }
+    }
+
     // 1. Buscar se existe um cupom válido para esse código de afiliado
     let couponId = null;
     let metadata: any = { supabase_user_id: userId };
 
-    if (affiliateCode) {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-
+    if (finalAffiliateCode) {
       // Buscar o afiliado pelo código
       const { data: affiliate, error } = await supabase
         .from('affiliates')
         .select('id, discount_rate, code')
-        .eq('code', affiliateCode)
+        .eq('code', finalAffiliateCode)
         .single()
 
       if (affiliate && !error) {

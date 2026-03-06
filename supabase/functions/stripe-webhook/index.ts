@@ -116,6 +116,22 @@ serve(async (req) => {
         }
       }
       
+      // 3. Atualizar o status da indicação (referrals) para 'completed'
+      const affiliateCode = session.metadata?.affiliate_code;
+      if (affiliateCode) {
+        const { error: refUpdateError } = await supabase
+          .from('referrals')
+          .update({ status: 'completed' })
+          .eq('user_id', userId)
+          .eq('affiliate_ref', affiliateCode);
+          
+        if (refUpdateError) {
+          console.error("❌ Erro ao atualizar status da indicação:", refUpdateError.message);
+        } else {
+          console.log(`✅ Indicação atualizada para concluída (Afiliado: ${affiliateCode}, Usuário: ${userId})`);
+        }
+      }
+      
       console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);
     }
 

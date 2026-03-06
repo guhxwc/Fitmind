@@ -67,6 +67,37 @@ const App: React.FC = () => {
   const fetchProfile = async (userId: string) => {
     try {
       console.log("Fetching profile for user:", userId);
+      
+      // Verifica se há um cupom de afiliado pendente no localStorage
+      const affiliateRef = localStorage.getItem('affiliate_ref');
+      if (affiliateRef) {
+        // Verifica se já existe indicação
+        const { data: existingRef } = await supabase
+          .from('referrals')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (!existingRef) {
+          const { error: referralError } = await supabase
+            .from('referrals')
+            .insert({
+              user_id: userId,
+              affiliate_ref: affiliateRef,
+              created_at: new Date().toISOString(),
+              status: 'pending'
+            });
+          
+          if (!referralError) {
+            console.log("Afiliado registrado no banco:", affiliateRef);
+            localStorage.removeItem('affiliate_ref');
+          }
+        } else {
+          // Se já existe, apenas limpa o localStorage
+          localStorage.removeItem('affiliate_ref');
+        }
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id')

@@ -17,13 +17,16 @@ export const SuccessPage: React.FC = () => {
             navigate('/auth', { replace: true });
             return;
         }
-        if (!userData?.id) return;
+        
+        // Use session.user.id instead of userData?.id because userData might not be loaded yet
+        const userId = session.user.id;
+        if (!userId) return;
 
         try {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('is_pro')
-                .eq('id', userData.id)
+                .eq('id', userId)
                 .single();
 
             if (error) throw error;
@@ -66,7 +69,7 @@ export const SuccessPage: React.FC = () => {
         return () => {
             if (pollingInterval.current) clearInterval(pollingInterval.current);
         };
-    }, [userData?.id, session, navigate]);
+    }, [session, navigate]);
 
     // Renderiza apenas um estado de transição minimalista e elegante (iOS-style loader)
     return (

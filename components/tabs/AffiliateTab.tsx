@@ -50,7 +50,7 @@ export const AffiliateTab: React.FC = () => {
                 body: {
                     code: customCode,
                     userId: userData.id,
-                    discountRate: 10,
+                    discountRate: 1,
                     commissionRate: 20
                 }
             });
@@ -80,7 +80,7 @@ export const AffiliateTab: React.FC = () => {
         if (navigator.share) {
             navigator.share({
                 title: 'FitMind - Transforme seu corpo',
-                text: 'Use meu cupom para ganhar 10% de desconto no FitMind!',
+                text: 'Use meu cupom para ganhar um desconto exclusivo no FitMind!',
                 url: link,
             });
         } else {
@@ -113,7 +113,7 @@ export const AffiliateTab: React.FC = () => {
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Ganhe dinheiro indicando o FitMind</h2>
                         <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
-                            Seja um parceiro FitMind. Seus amigos ganham <span className="text-green-500 font-bold">10% de desconto</span> e você ganha <span className="text-blue-500 font-bold">20% de comissão</span> sobre cada assinatura realizada.
+                            Seja um parceiro FitMind. Seus amigos ganham um <span className="text-green-500 font-bold">desconto exclusivo</span> e você ganha <span className="text-blue-500 font-bold">20% de comissão</span> sobre cada assinatura realizada.
                         </p>
 
                         <form onSubmit={handleCreateAffiliate} className="space-y-4">
@@ -210,7 +210,7 @@ export const AffiliateTab: React.FC = () => {
                             </div>
                             <div className="p-4 flex justify-between items-center">
                                 <span className="text-gray-500 dark:text-gray-400 text-sm">Desconto p/ Amigos</span>
-                                <span className="font-bold text-green-500">{affiliate.discount_rate}% OFF</span>
+                                <span className="font-bold text-green-500">Ativado</span>
                             </div>
                             <div className="p-4 flex justify-between items-center">
                                 <span className="text-gray-500 dark:text-gray-400 text-sm">Sua Comissão</span>

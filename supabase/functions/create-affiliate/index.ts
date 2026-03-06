@@ -44,7 +44,7 @@ serve(async (req) => {
       // Criar se não existir
       stripeCoupon = await stripe.coupons.create({
         id: normalizedCode,
-        percent_off: discountRate || 10, // Padrão 10%
+        percent_off: discountRate || 1, // Padrão 1%
         duration: 'forever',
         name: `Cupom Afiliado: ${normalizedCode}`,
       });
@@ -57,7 +57,7 @@ serve(async (req) => {
       .upsert({
         user_id: userId,
         code: normalizedCode,
-        discount_rate: discountRate || 10,
+        discount_rate: discountRate || 1,
         commission_rate: commissionRate || 20, // Padrão 20%
         updated_at: new Date().toISOString()
       }, { onConflict: 'code' })

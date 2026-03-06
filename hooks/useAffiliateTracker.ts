@@ -33,7 +33,7 @@ export const useAffiliateTracker = () => {
         
         // Opcional: Mostrar feedback visual para o usuário
         console.log(`Afiliado detectado: ${code}`);
-        addToast(`Cupom ${code} ativado com sucesso!`, 'success');
+        addToast(`Cupom ${code} aplicado!`, 'success');
       }
 
       // Limpar os parâmetros da URL para o cliente (esconder o código)

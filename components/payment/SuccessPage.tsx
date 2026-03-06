@@ -7,12 +7,16 @@ import { supabase } from '../../supabaseClient';
 
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
-    const { fetchData, userData } = useAppContext();
+    const { fetchData, userData, session } = useAppContext();
     const pollingInterval = useRef<number | null>(null);
     const attempts = useRef(0);
     const maxAttempts = 20; // Aproximadamente 30 segundos de tentativa
 
     const checkProStatus = async () => {
+        if (!session) {
+            navigate('/auth', { replace: true });
+            return;
+        }
         if (!userData?.id) return;
 
         try {
@@ -51,6 +55,10 @@ export const SuccessPage: React.FC = () => {
     };
 
     useEffect(() => {
+        if (!session) {
+            navigate('/auth', { replace: true });
+            return;
+        }
         // Inicia verificação imediata e depois em intervalo
         checkProStatus();
         pollingInterval.current = window.setInterval(checkProStatus, 1500);
@@ -58,7 +66,7 @@ export const SuccessPage: React.FC = () => {
         return () => {
             if (pollingInterval.current) clearInterval(pollingInterval.current);
         };
-    }, [userData?.id]);
+    }, [userData?.id, session, navigate]);
 
     // Renderiza apenas um estado de transição minimalista e elegante (iOS-style loader)
     return (

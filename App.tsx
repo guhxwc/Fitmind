@@ -13,6 +13,7 @@ import { DEFAULT_USER_DATA } from './constants';
 import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
+import { SuccessPage } from './components/payment/SuccessPage';
 
 const App: React.FC = () => {
   if (!supabase) {
@@ -144,6 +145,7 @@ const App: React.FC = () => {
       <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/success" element={<SuccessPage />} />
       
       <Route path="/*" element={
         session ? (

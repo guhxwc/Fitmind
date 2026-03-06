@@ -1,14 +1,12 @@
 import { useEffect } from 'react';
-import Cookies from 'js-cookie';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/ToastProvider';
-
-const COOKIE_NAME = 'fitmind_affiliate_code';
-const COOKIE_DURATION = 30; // dias
+import { useAppContext } from '../components/AppContext';
 
 export const useAffiliateTracker = () => {
   const [searchParams] = useSearchParams();
   const { addToast } = useToast();
+  const { affiliateCode, setAffiliateCode } = useAppContext();
 
   useEffect(() => {
     // 1. Tentar pegar do searchParams (depois do # no HashRouter)
@@ -24,14 +22,12 @@ export const useAffiliateTracker = () => {
       // Normalizar o código para maiúsculo para consistência
       const code = refCode.toUpperCase();
       
-      // Verificar se já existe um cookie e se é diferente
-      const currentCookie = Cookies.get(COOKIE_NAME);
-
-      if (currentCookie !== code) {
-        // Salvar o cookie com validade de 30 dias
-        Cookies.set(COOKIE_NAME, code, { expires: COOKIE_DURATION });
+      // Verificar se já existe um código salvo e se é diferente
+      if (affiliateCode !== code) {
+        // Salvar no context (que persiste no sessionStorage)
+        setAffiliateCode(code);
         
-        // Opcional: Mostrar feedback visual para o usuário
+        // Feedback visual para o usuário
         console.log(`Afiliado detectado: ${code}`);
         addToast(`Cupom ${code} aplicado!`, 'success');
       }
@@ -51,12 +47,7 @@ export const useAffiliateTracker = () => {
         }
       }
     }
-  }, [searchParams, addToast]);
+  }, [searchParams, addToast, affiliateCode, setAffiliateCode]);
 
-  // Função auxiliar para recuperar o código quando precisar (ex: no checkout)
-  const getAffiliateCode = () => {
-    return Cookies.get(COOKIE_NAME);
-  };
-
-  return { getAffiliateCode };
+  return { getAffiliateCode: () => affiliateCode };
 };

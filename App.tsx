@@ -13,7 +13,6 @@ import { DEFAULT_USER_DATA } from './constants';
 import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
-import Cookies from 'js-cookie';
 
 import { useAffiliateTracker } from './hooks/useAffiliateTracker';
 
@@ -30,7 +29,7 @@ const App: React.FC = () => {
   }
 
   const [session, setSession] = useState<Session | null>(null);
-  const { userData, loading: contextLoading, fetchData } = useAppContext();
+  const { userData, loading: contextLoading, fetchData, affiliateCode } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
@@ -81,8 +80,6 @@ const App: React.FC = () => {
 
   const handleOnboardingComplete = async (userData: Omit<UserData, 'id'>) => {
     if (!session) return;
-
-    const affiliateCode = Cookies.get('fitmind_affiliate_code');
 
     const profileData = {
       id: session.user.id,

@@ -13,7 +13,6 @@ import { LifestyleGoals } from './tabs/LifestyleGoals';
 import { WeightGoals } from './tabs/WeightGoals';
 import { PersonalData } from './tabs/PersonalData';
 import { ApplicationTab } from './tabs/ApplicationTab';
-import { AffiliateTab } from './tabs/AffiliateTab';
 import { BottomNav } from './core/BottomNav';
 import { HelpTab } from './tabs/HelpTab';
 import { PrivacySettings } from './tabs/PrivacySettings';
@@ -165,7 +164,6 @@ export const MainApp: React.FC = () => {
           <Route path="/meals" element={<MealsTab />} />
           <Route path="/workouts" element={<WorkoutsTab />} />
           <Route path="/progress" element={<ProgressTab />} />
-          <Route path="/affiliate" element={<AffiliateTab />} />
           <Route path="/settings" element={<SettingsTab />} />
           <Route path="/settings/account" element={<AccountSettings />} />
           <Route path="/settings/personal-data" element={<PersonalData />} />

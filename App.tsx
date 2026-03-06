@@ -14,12 +14,7 @@ import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 
-import { useAffiliateTracker } from './hooks/useAffiliateTracker';
-
 const App: React.FC = () => {
-  // Initialize affiliate tracker
-  useAffiliateTracker();
-
   if (!supabase) {
     return (
       <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
@@ -29,7 +24,7 @@ const App: React.FC = () => {
   }
 
   const [session, setSession] = useState<Session | null>(null);
-  const { userData, loading: contextLoading, fetchData, affiliateCode } = useAppContext();
+  const { userData, loading: contextLoading, fetchData } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
@@ -84,7 +79,6 @@ const App: React.FC = () => {
     const profileData = {
       id: session.user.id,
       name: userData.name || 'Usuário',
-      referred_by: affiliateCode || null,
       gender: userData.gender,
       age: userData.age,
       birth_date: userData.birthDate || null,

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon, SyringeIcon, FlameIcon, TargetIcon, SettingsIcon, LockIcon, PlayCircleIcon, ChatBubbleIcon, LightBulbIcon, DocumentIcon, ShieldIcon, LogOutIcon, CoffeeIcon, AppleIcon, WavesIcon, SparklesIcon, CheckCircleIcon, GiftIcon } from '../core/Icons';
+import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon, SyringeIcon, FlameIcon, TargetIcon, SettingsIcon, LockIcon, PlayCircleIcon, ChatBubbleIcon, LightBulbIcon, DocumentIcon, ShieldIcon, LogOutIcon, CoffeeIcon, AppleIcon, WavesIcon, SparklesIcon, CheckCircleIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
@@ -235,11 +235,6 @@ export const SettingsTab: React.FC = () => {
                     icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
                     label="Minha Conta" 
                     onClick={() => navigate('/settings/account')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><GiftIcon className="w-4 h-4"/></div>}
-                    label="Programa de Afiliados" 
-                    onClick={() => navigate('/affiliate')} 
                 />
                 <SettingsItem 
                     icon={<div className="bg-gray-500 p-1.5 rounded-md text-white"><LockIcon className="w-4 h-4"/></div>}

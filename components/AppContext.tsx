@@ -41,8 +41,6 @@ interface AppContextType {
   toggleTheme: () => void;
   unlockPro: () => Promise<void>;
   calculateGoals: (weight: number, activityLevel: ActivityLevel) => UserData['goals'];
-  affiliateRef: string | null;
-  setAffiliateRef: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,7 +62,6 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [meals, setMeals] = useState<Meal[]>([]);
   const [quickAddProtein, setQuickAddProtein] = useState(0);
   const [currentWater, setCurrentWater] = useState(0);
-  const [affiliateRef, setAffiliateRef] = useState<string | null>(null);
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
@@ -403,9 +400,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       theme,
       toggleTheme,
       unlockPro,
-      calculateGoals,
-      affiliateRef,
-      setAffiliateRef
+      calculateGoals
     }}>
       {children}
     </AppContext.Provider>
@@ -448,8 +443,6 @@ export const useAppContext = () => {
         toggleTheme: () => {},
         unlockPro: async () => {},
         calculateGoals: () => ({ water: 0, protein: 0, calories: 0, fiber: 0, carbs: 0, fats: 0, steps: 0, exerciseMinutes: 0 }),
-        affiliateRef: null,
-        setAffiliateRef: () => {},
     } as unknown as AppContextType;
   }
   return context;

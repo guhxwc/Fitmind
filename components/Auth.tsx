@@ -175,7 +175,6 @@ const AuthAnimation = () => {
 
 export const Auth: React.FC = () => {
   const { addToast } = useToast();
-  const { affiliateRef, setAffiliateRef } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -263,7 +262,8 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    // Verifica se veio por indicação (da memória, sem cookie)
+    // Verifica se veio por indicação via localStorage
+    const affiliateRef = localStorage.getItem('affiliate_ref');
     if (affiliateRef && authData.user) {
       // Salva a indicação no banco
       const { error: referralError } = await supabase
@@ -278,8 +278,8 @@ export const Auth: React.FC = () => {
       if (referralError) {
         console.error("Erro ao salvar indicação:", referralError);
       } else {
-        // Limpa a memória para não duplicar futuramente
-        setAffiliateRef(null);
+        // Limpa o storage para não duplicar futuramente
+        localStorage.removeItem('affiliate_ref');
       }
     }
 

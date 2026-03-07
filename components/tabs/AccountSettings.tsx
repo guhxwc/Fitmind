@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
@@ -180,38 +179,23 @@ export const AccountSettings: React.FC = () => {
 
         try {
             addToast("Excluindo conta...", "info");
-            
-            // 1. Delete all user data from all tables
-            const userId = userData.id;
-            const tables = [
-                'weight_history', 
-                'progress_photos', 
-                'workout_plans', 
-                'workout_history', 
-                'applications', 
-                'daily_records', 
-                'daily_notes', 
-                'side_effects'
-            ];
 
-            for (const table of tables) {
-                await supabase.from(table).delete().eq('user_id', userId);
+            // Chama a Edge Function com service_role para deletar tudo incluindo auth.users
+            const { data, error } = await supabase.functions.invoke('delete-account-final');
+
+            if (error || !data?.success) {
+                throw new Error(data?.error || error?.message || 'Erro desconhecido.');
             }
-            
-            // Delete profile last
-            await supabase.from('profiles').delete().eq('id', userId);
 
-            // 2. Sign out
+            // Limpa sessão local e redireciona
             await supabase.auth.signOut();
-            
-            // 3. Clear local storage
             localStorage.clear();
-            
+
             addToast("Conta excluída com sucesso.", "success");
             navigate('/auth');
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting account:", error);
-            addToast("Erro ao excluir conta. Tente novamente.", "error");
+            addToast(error.message || "Erro ao excluir conta. Tente novamente.", "error");
         }
     };
 

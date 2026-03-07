@@ -155,6 +155,25 @@
         }
       })();
     </script>
+    <script>
+      // Auto-reload quando assets 404 (bundle desatualizado no cache do browser)
+      window.addEventListener('error', function(e) {
+        var target = e.target;
+        if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+          var src = target.src || target.href || '';
+          if (src.includes('/assets/')) {
+            var reloadKey = 'fitmind_reload_attempt';
+            var lastReload = parseInt(sessionStorage.getItem(reloadKey) || '0');
+            var now = Date.now();
+            if (now - lastReload > 10000) {
+              sessionStorage.setItem(reloadKey, String(now));
+              console.log('Asset desatualizado detectado, recarregando...');
+              window.location.reload(true);
+            }
+          }
+        }
+      }, true);
+    </script>
   </head>
   <body class="antialiased selection:bg-blue-500 selection:text-white">
     <div id="root"></div>

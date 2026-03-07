@@ -1,7 +1,7 @@
 
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'fitmind-v2';
+const CACHE_NAME = 'fitmind-v1';
 const urlsToCache = ['/', '/index.html'];
 
 self.addEventListener('install', (event) => {

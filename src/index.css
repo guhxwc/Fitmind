@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #F2F2F7;
+  --ink: #1C1C1E;
+}
+
+@layer base {
+  body {
+    @apply bg-ios-bg text-ios-dark-bg transition-colors duration-300;
+  }
+}
+
+.dark {
+  --bg: #000000;
+  --ink: #FFFFFF;
+}

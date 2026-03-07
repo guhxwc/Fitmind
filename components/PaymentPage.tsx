@@ -29,7 +29,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         const priceId = selectedPlan === 'annual' ? STRIPE_PRICE_IDS.annual : STRIPE_PRICE_IDS.monthly;
         
         // Redireciona diretamente para a Home (#/) após o pagamento
-        const returnUrl = `${window.location.origin}/#/`;
+        const returnUrl = `${window.location.origin}/success`;
 
         // PATCHED
         const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;

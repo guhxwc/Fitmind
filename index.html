@@ -137,6 +137,26 @@
       }
     </style>
     <script>
+      // Auto-reload quando assets 404 (bundle desatualizado no cache do browser)
+      window.addEventListener('error', function(e) {
+        const target = e.target;
+        if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+          const src = target.src || target.href || '';
+          if (src.includes('/assets/')) {
+            const reloadKey = 'fitmind_reload_attempt';
+            const lastReload = parseInt(sessionStorage.getItem(reloadKey) || '0');
+            const now = Date.now();
+            // Só recarrega uma vez por sessão para evitar loop
+            if (now - lastReload > 10000) {
+              sessionStorage.setItem(reloadKey, String(now));
+              console.log('Asset desatualizado detectado, recarregando...');
+              window.location.reload(true);
+            }
+          }
+        }
+      }, true);
+    </script>
+    <script>
       // Captura o link de afiliado e salva apenas no localStorage (sem cookies)
       (function() {
         const params = new URLSearchParams(window.location.search);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { LockIcon, ShieldCheckIcon, ArrowPathIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
@@ -32,12 +31,15 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         // Redireciona diretamente para a Home (#/) após o pagamento
         const returnUrl = `${window.location.origin}/#/`;
 
+        // PATCHED
+        const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
                 email: session.user.email,
                 userId: session.user.id,
-                returnUrl: returnUrl
+                returnUrl: returnUrl,
+                affiliateCode: affiliateCode
             }
         });
 

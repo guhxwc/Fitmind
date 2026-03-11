@@ -10,6 +10,8 @@ import { ProFeatureModal } from '../ProFeatureModal';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { SideEffectModal } from './SideEffectModal';
 import { MedicationLevelChart } from './MedicationLevelChart';
+import { ConfirmModal } from '../ConfirmModal';
+import { useToast } from '../ToastProvider';
 
 // --- Sub-componente: Seletor de Local por Texto (Simples) ---
 const INJECTION_SITES = [
@@ -42,14 +44,30 @@ const EditApplicationModal: React.FC<{
 }> = ({ entry, onClose, onSave, onDelete }) => {
     const [med, setMed] = useState<MedicationName>(entry.medication);
     const [dose, setDose] = useState<string>(entry.dose);
+    const [date, setDate] = useState<string>(entry.date.split('T')[0]);
+    const [time, setTime] = useState<string>(() => {
+        const d = new Date(entry.date);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    });
     const [isSaving, setIsSaving] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const availableDoses = MEDICATIONS.find(m => m.name === med)?.doses || [];
 
     const handleSaveClick = async () => {
         setIsSaving(true);
-        await onSave({ ...entry, medication: med, dose: dose });
-        setIsSaving(false);
+        try {
+            const [year, month, day] = date.split('-').map(Number);
+            const [hour, minute] = time.split(':').map(Number);
+            const updatedDate = new Date(year, month - 1, day, hour, minute).toISOString();
+            await onSave({ ...entry, medication: med, dose: dose, date: updatedDate });
+        } catch (error) {
+            console.error("Error saving application:", error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -68,23 +86,57 @@ const EditApplicationModal: React.FC<{
                             {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Data</label>
+                            <input 
+                                type="date" 
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Hora</label>
+                            <input 
+                                type="time" 
+                                value={time}
+                                onChange={(e) => setTime(e.target.value)}
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="mt-8 flex flex-col gap-3">
                     <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
-                    <button onClick={() => { if(window.confirm('Excluir?')) onDelete(entry.id); }} className="w-full text-red-500 font-semibold py-2 text-sm">
+                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full text-red-500 font-semibold py-2 text-sm">
                         Excluir Registro
                     </button>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Excluir Registro"
+                message="Tem certeza que deseja excluir este registro?"
+                confirmText="Excluir"
+                onConfirm={() => {
+                    setShowDeleteConfirm(false);
+                    onDelete(entry.id);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isDestructive={true}
+            />
         </div>
     );
 };
 
 export const ApplicationTab: React.FC = () => {
   const { userData, applicationHistory, setApplicationHistory, updateStreak, unlockPro, sideEffects, setSideEffects } = useAppContext();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ApplicationEntry | null>(null);
@@ -104,7 +156,7 @@ export const ApplicationTab: React.FC = () => {
 
   const handleLogClick = () => {
       if (!selectedSite) {
-          alert("Por favor, selecione onde você aplicou.");
+          addToast("Por favor, selecione onde você aplicou.", "error");
           return;
       }
       if (userData.isPro) {
@@ -139,9 +191,13 @@ export const ApplicationTab: React.FC = () => {
   };
 
   const handleUpdateApplication = async (updatedEntry: ApplicationEntry) => {
-    const { data, error } = await supabase.from('applications').update({ medication: updatedEntry.medication, dose: updatedEntry.dose }).eq('id', updatedEntry.id).select();
+    const { data, error } = await supabase.from('applications').update({ 
+        medication: updatedEntry.medication, 
+        dose: updatedEntry.dose,
+        date: updatedEntry.date
+    }).eq('id', updatedEntry.id).select();
     if (data) {
-        setApplicationHistory(prev => prev.map(item => (item.id === updatedEntry.id ? data[0] : item)));
+        setApplicationHistory(prev => prev.map(item => (item.id === updatedEntry.id ? data[0] : item)).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setEditingEntry(null);
     }
     if (error) console.error("Error updating application:", error);

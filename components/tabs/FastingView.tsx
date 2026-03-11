@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClockIcon, PersonStandingIcon, BarChartIcon, CalendarIcon, EditIcon, ArrowPathIcon, FlameIcon, ChevronLeftIcon, CheckCircleIcon, ShieldCheckIcon, LeafIcon } from '../core/Icons';
 import { FastingQuiz } from './FastingQuiz';
+import { useAppContext } from '../AppContext';
 
 // --- Types & Data ---
 
@@ -490,6 +491,7 @@ const ScientificSourceFooter: React.FC = () => (
 );
 
 export const FastingView: React.FC = () => {
+    const { userData, meals } = useAppContext();
     const [isQuizOpen, setIsQuizOpen] = useState(false);
     const [showAllPlans, setShowAllPlans] = useState(false);
     
@@ -508,6 +510,11 @@ export const FastingView: React.FC = () => {
         return FASTING_CATEGORIES[1].plans[1]; // Default 16:8
     };
     const plan = getCurrentPlan();
+
+    // Caloric Progress
+    const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
+    const goalCalories = userData?.goals?.calories || 2000;
+    const caloriesProgress = Math.min((totalCalories / goalCalories) * 100, 100);
 
     useEffect(() => {
         let interval: any;
@@ -652,6 +659,32 @@ export const FastingView: React.FC = () => {
                 ) : (
                     <p className="text-gray-500 dark:text-gray-400 text-sm">Inicie o cronômetro para acompanhar as fases biológicas do seu corpo em tempo real.</p>
                 )}
+            </div>
+
+            {/* Caloric Progress Card */}
+            <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-white/5">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-500">
+                            <FlameIcon className="w-4 h-4" />
+                        </div>
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg">Progresso Calórico</h3>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(totalCalories)} / {goalCalories} kcal</span>
+                </div>
+                
+                <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden mb-2">
+                    <div 
+                        className={`h-full rounded-full transition-all duration-500 ${caloriesProgress > 100 ? 'bg-red-500' : 'bg-orange-500'}`} 
+                        style={{width: `${Math.min(caloriesProgress, 100)}%`}}
+                    ></div>
+                </div>
+                
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    {caloriesProgress >= 100 
+                        ? "Você atingiu sua meta calórica de hoje." 
+                        : `Faltam ${Math.round(goalCalories - totalCalories)} kcal para sua meta diária.`}
+                </p>
             </div>
 
             {/* Plan Selector & Quiz */}

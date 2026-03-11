@@ -9,6 +9,7 @@ import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 import Portal from '../core/Portal';
 import { RegisterWeightModal } from '../RegisterWeightModal';
+import { ConfirmModal } from '../ConfirmModal';
 
 // --- Utilitários de Formatação e Cálculo ---
 const formatDate = (isoString: string) => new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
@@ -415,16 +416,19 @@ export const ProgressTab: React.FC = () => {
       }
   };
 
-  const handleDeletePhoto = async (photo: ProgressPhoto) => {
-      if (window.confirm("Tem certeza que deseja excluir esta foto?")) {
-          const url = new URL(photo.photo_url);
-          const path = url.pathname.split('/progress_photos/')[1];
-          await supabase.storage.from('progress_photos').remove([path]);
-          await supabase.from('progress_photos').delete().eq('id', photo.id);
-          setProgressPhotos(prev => prev.filter(p => p.id !== photo.id));
-          setViewingPhoto(null);
-          addToast("Foto excluída.", "success");
-      }
+  const [photoToDelete, setPhotoToDelete] = useState<ProgressPhoto | null>(null);
+
+  const handleDeletePhoto = async () => {
+      if (!photoToDelete) return;
+      
+      const url = new URL(photoToDelete.photo_url);
+      const path = url.pathname.split('/progress_photos/')[1];
+      await supabase.storage.from('progress_photos').remove([path]);
+      await supabase.from('progress_photos').delete().eq('id', photoToDelete.id);
+      setProgressPhotos(prev => prev.filter(p => p.id !== photoToDelete.id));
+      setViewingPhoto(null);
+      setPhotoToDelete(null);
+      addToast("Foto excluída.", "success");
   }
   
   const sortedPhotos = useMemo(() => [...progressPhotos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [progressPhotos]);
@@ -584,7 +588,7 @@ export const ProgressTab: React.FC = () => {
       )}
 
       {isWeightModalOpen && <RegisterWeightModal onSave={handleAddWeight} onClose={() => setIsWeightModalOpen(false)} />}
-      {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={handleDeletePhoto} />}
+      {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={(photo) => setPhotoToDelete(photo)} />}
       {isComparisonModalOpen && <PhotoComparisonModal photos={progressPhotos} onClose={() => setIsComparisonModalOpen(false)} />}
       
       {viewingSymptom && (
@@ -594,6 +598,17 @@ export const ProgressTab: React.FC = () => {
               onClose={() => setViewingSymptom(null)} 
           />
       )}
+
+      <ConfirmModal
+          isOpen={!!photoToDelete}
+          title="Excluir Foto"
+          message="Tem certeza que deseja excluir esta foto?"
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onConfirm={handleDeletePhoto}
+          onCancel={() => setPhotoToDelete(null)}
+          isDestructive={true}
+      />
     </div>
   );
 };

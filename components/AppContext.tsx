@@ -141,6 +141,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchData = useCallback(async () => {
     isInitialLoad.current = true;
+    if (!supabase) {
+      setLoading(false);
+      isInitialLoad.current = false;
+      return;
+    }
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) {
       setLoading(false);
@@ -265,15 +270,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const unlockPro = async () => {
       if(userData) {
-          const { error } = await supabase.from('profiles').update({ 
-              is_pro: true, 
-              subscription_status: 'active' 
-          }).eq('id', userData.id);
-
-          if (!error) {
-              await fetchData();
-              addToast("Modo PRO desbloqueado!", "success");
-          }
+          // Em produção, a atualização do status PRO (is_pro = true) 
+          // deve ser feita EXCLUSIVAMENTE por um webhook do gateway de pagamento (ex: Stripe)
+          // interagindo com o backend de forma segura, e nunca pelo client-side.
+          
+          // Aqui apenas recarregamos os dados do usuário para refletir a mudança
+          // feita pelo webhook.
+          await fetchData();
+          addToast("Verificando status da assinatura...", "info");
       }
   }
 

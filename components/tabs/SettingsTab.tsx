@@ -8,6 +8,7 @@ import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { DEFAULT_USER_DATA } from '../../constants';
+import { ConfirmModal } from '../ConfirmModal';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -54,6 +55,8 @@ const NotificationSettings: React.FC = () => {
     const settings = userData?.notifications || DEFAULT_USER_DATA.notifications;
     const [isEnabled, setIsEnabled] = useState(settings.enabled);
     const [localSettings, setLocalSettings] = useState(settings);
+    const [showIosAlert, setShowIosAlert] = useState(false);
+    const [showBlockedAlert, setShowBlockedAlert] = useState(false);
 
     const updateSettings = async (key: string, value: any) => {
         const newSettings = { ...localSettings, [key]: value };
@@ -78,14 +81,12 @@ const NotificationSettings: React.FC = () => {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
             if (isIOS && !isStandalone) {
-                // Use native alert for maximum visibility
-                window.alert("No iPhone, as notificações só funcionam se você instalar o App.\n\n1. Toque no botão Compartilhar (embaixo)\n2. Selecione 'Adicionar à Tela de Início'");
+                setShowIosAlert(true);
                 return;
             }
 
             if (Notification.permission === 'denied') {
-                // Browser blocks prompt if denied previously. Guide user.
-                window.alert('As notificações estão bloqueadas no navegador.\n\nPara ativar: Toque no cadeado 🔒 na barra de endereço ou vá em Configurações do Site e permita Notificações.');
+                setShowBlockedAlert(true);
                 return;
             }
 
@@ -175,6 +176,22 @@ const NotificationSettings: React.FC = () => {
                     </div>
                 </div>
             )}
+            
+            <ConfirmModal
+                isOpen={showIosAlert}
+                title="Instalar App"
+                message="No iPhone, as notificações só funcionam se você instalar o App.&#10;&#10;1. Toque no botão Compartilhar (embaixo)&#10;2. Selecione 'Adicionar à Tela de Início'"
+                confirmText="Entendi"
+                onConfirm={() => setShowIosAlert(false)}
+            />
+            
+            <ConfirmModal
+                isOpen={showBlockedAlert}
+                title="Notificações Bloqueadas"
+                message="As notificações estão bloqueadas no navegador.&#10;&#10;Para ativar: Toque no cadeado 🔒 na barra de endereço ou vá em Configurações do Site e permita Notificações."
+                confirmText="Entendi"
+                onConfirm={() => setShowBlockedAlert(false)}
+            />
         </SettingsGroup>
     );
 };
@@ -235,11 +252,6 @@ export const SettingsTab: React.FC = () => {
                     icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
                     label="Minha Conta" 
                     onClick={() => navigate('/settings/account')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><GiftIcon className="w-4 h-4"/></div>}
-                    label="Programa de Afiliados" 
-                    onClick={() => navigate('/affiliate')} 
                 />
                 <SettingsItem 
                     icon={<div className="bg-gray-500 p-1.5 rounded-md text-white"><LockIcon className="w-4 h-4"/></div>}

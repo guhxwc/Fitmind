@@ -157,10 +157,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   };
 
   const handleSubscriptionSuccess = (plan: 'annual' | 'monthly') => {
+      // O status PRO será atualizado pelo webhook.
+      // Aqui apenas finalizamos o onboarding.
       const finalData = { 
-          ...userData, 
-          isPro: true, 
-          subscriptionStatus: 'active' as const 
+          ...userData
       };
       localStorage.removeItem('onboarding_step');
       onComplete(finalData);

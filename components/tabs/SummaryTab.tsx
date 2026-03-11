@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
@@ -170,6 +170,10 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
         }, 1000);
     };
 
+    const progressPercentage = userData.startWeight !== userData.targetWeight 
+        ? Math.max(0, Math.min(((userData.startWeight - userData.weight) / (userData.startWeight - userData.targetWeight)) * 100, 100))
+        : 100;
+
     return (
         <div id="tour-weight-card" className="bg-ios-card dark:bg-ios-dark-card p-6 rounded-[24px] shadow-soft flex flex-col items-center text-center">
              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 w-full text-left">Controle de Peso</h3>
@@ -188,7 +192,7 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
                  </button>
              </div>
              <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                 <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(((userData.weight - userData.targetWeight) / userData.weight) * 100, 100)}%`}}></div>
+                 <div className="bg-blue-500 h-full rounded-full" style={{ width: `${progressPercentage}%`}}></div>
              </div>
              <div className="flex justify-between w-full mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">
                  <span>Atual</span>

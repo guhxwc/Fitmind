@@ -15,15 +15,7 @@ import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { SuccessPage } from './components/payment/SuccessPage';
 
-const App: React.FC = () => {
-  if (!supabase) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
-        <SupabaseSetupMessage />
-      </div>
-    );
-  }
-
+const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const { userData, loading: contextLoading, fetchData } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
@@ -137,8 +129,6 @@ const App: React.FC = () => {
       goals: userData.goals,
       streak: userData.streak || 0,
       last_activity_date: userData.lastActivityDate || new Date().toISOString(),
-      is_pro: userData.isPro || false,
-      subscription_status: userData.subscriptionStatus || 'free',
       journey_duration: userData.journeyDuration || null,
       biggest_frustration: userData.biggestFrustration || null,
       future_worry: userData.futureWorry || null,
@@ -204,6 +194,18 @@ const App: React.FC = () => {
       <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
     </Routes>
   );
+};
+
+const App: React.FC = () => {
+  if (!supabase) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black max-w-md mx-auto shadow-lg">
+        <SupabaseSetupMessage />
+      </div>
+    );
+  }
+
+  return <AppContent />;
 };
 
 export default App;

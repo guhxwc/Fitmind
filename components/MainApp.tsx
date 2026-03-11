@@ -24,6 +24,7 @@ import { supabase } from '../supabaseClient';
 import type { Meal } from '../types';
 import { useToast } from './ToastProvider';
 import { NotificationManager } from './NotificationManager';
+import { CelebrationManager } from './CelebrationManager';
 
 export const MainApp: React.FC = () => {
   const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData } = useAppContext();
@@ -157,6 +158,7 @@ export const MainApp: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-ios-bg dark:bg-ios-dark-bg max-w-md mx-auto shadow-2xl overflow-hidden relative">
       <NotificationManager />
+      <CelebrationManager />
       <main className="flex-grow overflow-y-auto hide-scrollbar pb-40 pt-safe-top">
         <Routes>
           <Route path="/" element={<SummaryTab />} />

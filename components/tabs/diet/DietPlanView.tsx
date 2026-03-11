@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../AppContext';
+import { useToast } from '../../ToastProvider';
 import { DietPlan, DietDay, DietMeal, DietIngredient, Weekday, DietQuizAnswers } from '../../../types';
 import { dietService } from '../../../services/dietService';
 import { foodDatabaseService, FoodItem } from '../../../services/foodDatabaseService';
@@ -117,6 +118,7 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
 
 export const DietPlanView: React.FC = () => {
   const { userData } = useAppContext();
+  const { addToast } = useToast();
   const [plan, setPlan] = useState<DietPlan | null>(null);
   const [selectedDay, setSelectedDay] = useState<Weekday>(() => {
     const days: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
@@ -155,7 +157,7 @@ export const DietPlanView: React.FC = () => {
           localStorage.setItem('diet_plan', JSON.stringify(newPlan));
       } catch (error) {
           console.error("Error generating plan", error);
-          alert("Erro ao gerar dieta. Verifique sua conexão e tente novamente.");
+          addToast("Erro ao gerar dieta. Verifique sua conexão e tente novamente.", "error");
       } finally {
           setLoading(false);
       }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
+import { ConfirmModal } from '../ConfirmModal';
 import { ChevronRightIcon, CameraIcon, XMarkIcon, ScaleIcon, RulerIcon, CakeIcon, GenderIcon, MailIcon, PersonStandingIcon, SettingsIcon } from '../core/Icons';
 import Portal from '../core/Portal';
 
@@ -168,14 +169,10 @@ export const AccountSettings: React.FC = () => {
         }
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const handleDeleteAccount = async () => {
         if (!userData || !session) return;
-
-        const confirmed = window.confirm(
-            "TEM CERTEZA? Esta ação é permanente e apagará todos os seus dados de progresso, fotos, histórico de peso e configurações. Não há como desfazer."
-        );
-
-        if (!confirmed) return;
 
         try {
             addToast("Excluindo conta...", "info");
@@ -271,7 +268,7 @@ export const AccountSettings: React.FC = () => {
                 
                 <div className="mt-12 mb-8">
                     <button 
-                        onClick={handleDeleteAccount}
+                        onClick={() => setShowDeleteConfirm(true)}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-white dark:bg-[#1C1C1E] text-red-500 font-bold rounded-2xl border border-red-100 dark:border-red-900/30 active:scale-[0.98] transition-all shadow-sm"
                     >
                         Excluir Minha Conta
@@ -298,6 +295,20 @@ export const AccountSettings: React.FC = () => {
                     onSave={handleSaveAttribute}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Excluir Conta"
+                message="TEM CERTEZA? Esta ação é permanente e apagará todos os seus dados de progresso, fotos, histórico de peso e configurações. Não há como desfazer."
+                confirmText="Excluir"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                    setShowDeleteConfirm(false);
+                    handleDeleteAccount();
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isDestructive={true}
+            />
         </div>
     );
 };

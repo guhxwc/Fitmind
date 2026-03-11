@@ -38,13 +38,8 @@ export const SuccessPage: React.FC = () => {
             setStatusMsg('Confirmando com o servidor...');
 
             if (profile) {
-                // Perfil existe — marca como Pro imediatamente sem esperar webhook
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ is_pro: true, subscription_status: 'active' })
-                    .eq('id', userId);
-
-                if (error) throw error;
+                // Perfil existe — espera o webhook atualizar o status
+                // Não atualizamos is_pro aqui para evitar vulnerabilidade
             } else {
                 // Perfil não existe — cria com dados do onboarding salvo
                 const savedData = localStorage.getItem('onboarding_userData');
@@ -72,8 +67,7 @@ export const SuccessPage: React.FC = () => {
                     goals: parsed.goals || null,
                     streak: 0,
                     last_activity_date: new Date().toISOString(),
-                    is_pro: true,
-                    subscription_status: 'active',
+                    // is_pro e subscription_status serão atualizados pelo webhook
                 });
 
                 if (error) throw error;

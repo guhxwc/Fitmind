@@ -96,6 +96,16 @@ export interface Meal {
   protein: number;
 }
 
+export interface FavoriteMeal {
+  id: string;
+  user_id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  type: string;
+  created_at: string;
+}
+
 export interface WeightEntry {
   id?: number;
   user_id?: string;
@@ -162,6 +172,7 @@ export interface WorkoutFeedback {
   date: string;
   workoutDayIndex: number;
   rating: 'leve' | 'ideal' | 'pesado';
+  details?: any;
 }
 
 export interface Medication {

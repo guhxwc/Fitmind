@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 import { supabase } from '../../supabaseClient';
+import { ConfirmModal } from '../ConfirmModal';
 import { 
     KeyIcon, 
     LogOutIcon, 
@@ -103,6 +104,7 @@ export const PrivacySettings: React.FC = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [isResetting, setIsResetting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     if (!userData || !session) return null;
 
@@ -128,8 +130,6 @@ export const PrivacySettings: React.FC = () => {
     };
 
     const handleDeleteAccount = async () => {
-        if (!window.confirm("ATENÇÃO: Essa ação é irreversível. Todos os seus dados serão apagados permanentemente. Deseja continuar?")) return;
-
         try {
             addToast("Iniciando exclusão...", 'info');
 
@@ -206,7 +206,7 @@ export const PrivacySettings: React.FC = () => {
                         icon={<TrashIcon className="w-5 h-5"/>}
                         colorClass="bg-red-500"
                         label="Excluir Minha Conta"
-                        onClick={handleDeleteAccount}
+                        onClick={() => setShowDeleteConfirm(true)}
                         isDestructive
                         isLast
                     />
@@ -237,6 +237,20 @@ export const PrivacySettings: React.FC = () => {
                     </p>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Excluir Conta"
+                message="ATENÇÃO: Essa ação é irreversível. Todos os seus dados serão apagados permanentemente. Deseja continuar?"
+                confirmText="Excluir"
+                cancelText="Cancelar"
+                onConfirm={() => {
+                    setShowDeleteConfirm(false);
+                    handleDeleteAccount();
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isDestructive={true}
+            />
         </div>
     );
 };

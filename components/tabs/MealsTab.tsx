@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
-import { FlameIcon, DietIcon, AppleIcon, CoffeeIcon, LunchIcon, PlusIcon, LockIcon } from '../core/Icons';
+import { FlameIcon, DietIcon, AppleIcon, CoffeeIcon, LunchIcon, PlusIcon, LockIcon, HeartIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import type { Meal } from '../../types';
 import { ManualMealModal } from './ManualMealModal';
@@ -10,12 +10,15 @@ import { DietQuiz } from './DietQuiz';
 import { FastingView } from './FastingView';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { ProFeatureModal } from '../ProFeatureModal';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../ToastProvider';
 
 import { DietPlanView } from './diet/DietPlanView';
 
 // --- Today View ---
 const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void }> = ({ onAddMeal }) => {
     const { meals, userData, unlockPro } = useAppContext();
+    const { addToast } = useToast();
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
     const [isCalorieCamOpen, setIsCalorieCamOpen] = useState(false);
     
@@ -45,6 +48,24 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
             setIsCalorieCamOpen(true);
         }
         setPendingAction(null);
+    };
+
+    const handleFavorite = async (meal: Meal) => {
+        if (!userData) return;
+        try {
+            const { error } = await supabase.from('favorite_meals').insert({
+                user_id: userData.id,
+                name: meal.name,
+                calories: meal.calories,
+                protein: meal.protein,
+                type: meal.type || 'Lanche'
+            });
+            if (error) throw error;
+            addToast("Refeição salva nos favoritos!", "success");
+        } catch (error) {
+            console.error("Error saving favorite:", error);
+            addToast("Erro ao salvar favorito.", "error");
+        }
     };
 
     const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
@@ -97,9 +118,18 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                                 <p className="font-bold text-gray-900 dark:text-white">{meal.name}</p>
                                 <p className="text-xs text-gray-500 mt-0.5">{meal.time}</p>
                             </div>
-                            <div className="text-right">
-                                <p className="font-bold text-gray-900 dark:text-white">{Math.round(meal.calories)} kcal</p>
-                                <p className="text-xs text-blue-500 font-medium">{Math.round(meal.protein)}g prot</p>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <p className="font-bold text-gray-900 dark:text-white">{Math.round(meal.calories)} kcal</p>
+                                    <p className="text-xs text-blue-500 font-medium">{Math.round(meal.protein)}g prot</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleFavorite(meal)}
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors active:scale-95"
+                                    title="Salvar nos favoritos"
+                                >
+                                    <HeartIcon className="w-5 h-5" />
+                                </button>
                             </div>
                         </div>
                     ))

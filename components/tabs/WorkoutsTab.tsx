@@ -53,7 +53,7 @@ const RestTimer: React.FC<{ duration: number; onFinish: () => void; onCancel: ()
     const progress = ((duration - timeLeft) / duration) * 100;
 
     return (
-        <div className="fixed bottom-24 right-5 z-[60] animate-slide-up">
+        <div className="fixed bottom-36 right-5 z-[60] animate-slide-up">
             <div className="bg-black/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-black rounded-2xl p-4 shadow-2xl flex items-center gap-4 border border-white/10 w-full max-w-[220px]">
                 <div className="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 48 48">
@@ -135,28 +135,40 @@ const SetRow: React.FC<{
 // 3. Active Session View
 const ActiveSessionView: React.FC<{
     dayWorkout: any;
-    onComplete: (rating: 'leve' | 'ideal' | 'pesado') => Promise<void>;
+    lastSessionDetails?: any;
+    onComplete: (rating: 'leve' | 'ideal' | 'pesado', details: any) => Promise<void>;
     onBack: () => void;
-}> = ({ dayWorkout, onComplete, onBack }) => {
+}> = ({ dayWorkout, lastSessionDetails, onComplete, onBack }) => {
     // --- State ---
     const [editableWorkout, setEditableWorkout] = useState(JSON.parse(JSON.stringify(dayWorkout))); // Deep copy for editing
     const [isEditingMode, setIsEditingMode] = useState(false);
     const [completedSets, setCompletedSets] = useState<Record<string, boolean[]>>({});
+    const [sessionData, setSessionData] = useState<Record<string, { weight: string, reps: string }[]>>({});
     const [activeTimer, setActiveTimer] = useState<number | null>(null);
     const [showFinishModal, setShowFinishModal] = useState(false);
     
     // --- Effects ---
     useEffect(() => {
         const initialSets: Record<string, boolean[]> = {};
+        const initialData: Record<string, { weight: string, reps: string }[] | any> = {};
+
         editableWorkout.exercises.forEach((ex: any, idx: number) => {
             const numSets = parseInt(ex.sets) || 3;
             initialSets[idx] = new Array(numSets).fill(false);
+            
+            // Try to pre-fill from last session if available
+            const lastExData = lastSessionDetails?.[idx] || [];
+            initialData[idx] = new Array(numSets).fill(null).map((_, sIdx) => ({
+                weight: lastExData[sIdx]?.weight || '',
+                reps: lastExData[sIdx]?.reps || ex.reps.toString().split(/[-– ]/)[0].replace(/\D/g, '')
+            }));
         });
         setCompletedSets(initialSets);
+        setSessionData(initialData);
     }, []); // Run once on mount
 
     // --- Actions ---
-    const handleSetToggle = (exerciseIndex: number, setIndex: number, restTime: number) => {
+    const handleSetToggle = (exerciseIndex: number, setIndex: number, weight: string, reps: string, restTime: number) => {
         const currentExerciseSets = [...(completedSets[exerciseIndex] || [])];
         const wasCompleted = currentExerciseSets[setIndex];
         
@@ -165,6 +177,14 @@ const ActiveSessionView: React.FC<{
         setCompletedSets(prev => ({
             ...prev,
             [exerciseIndex]: currentExerciseSets
+        }));
+
+        // Update session data
+        const currentExData = [...(sessionData[exerciseIndex] || [])];
+        currentExData[setIndex] = { weight, reps };
+        setSessionData(prev => ({
+            ...prev,
+            [exerciseIndex]: currentExData
         }));
 
         // Start timer if checking off (not unchecking) and not the last set
@@ -359,9 +379,10 @@ const ActiveSessionView: React.FC<{
                                         key={setIdx}
                                         index={setIdx}
                                         setNumber={setIdx + 1}
-                                        targetReps={cleanedReps}
+                                        prevWeight={sessionData[idx]?.[setIdx]?.weight}
+                                        targetReps={sessionData[idx]?.[setIdx]?.reps || cleanedReps}
                                         isCompleted={isSetDone}
-                                        onToggle={() => handleSetToggle(idx, setIdx, parseInt(ex.rest) || 60)}
+                                        onToggle={(w, r) => handleSetToggle(idx, setIdx, w, r, parseInt(ex.rest) || 60)}
                                     />
                                 ))}
                             </div>
@@ -391,7 +412,7 @@ const ActiveSessionView: React.FC<{
                 <WorkoutFeedbackModal 
                     onClose={() => setShowFinishModal(false)} 
                     onRate={async (rating) => {
-                        await onComplete(rating);
+                        await onComplete(rating, sessionData);
                         setShowFinishModal(false);
                     }} 
                 />
@@ -454,6 +475,8 @@ const WorkoutFeedbackModal: React.FC<{
     );
 };
 
+import { ConfirmModal } from '../ConfirmModal';
+
 // --- History Edit Modal ---
 const HistoryEditModal: React.FC<{
     item: WorkoutFeedback;
@@ -462,6 +485,7 @@ const HistoryEditModal: React.FC<{
     onDelete: (id: number) => Promise<void>;
 }> = ({ item, onClose, onUpdate, onDelete }) => {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleRatingChange = async (rating: 'leve' | 'ideal' | 'pesado') => {
         setIsProcessing(true);
@@ -470,7 +494,7 @@ const HistoryEditModal: React.FC<{
     };
 
     const handleDelete = async () => {
-        if (!item.id || !window.confirm("Excluir este treino do histórico?")) return;
+        if (!item.id) return;
         setIsProcessing(true);
         await onDelete(item.id);
         setIsProcessing(false);
@@ -503,7 +527,7 @@ const HistoryEditModal: React.FC<{
                     </div>
 
                     <button 
-                        onClick={handleDelete}
+                        onClick={() => setShowDeleteConfirm(true)}
                         disabled={isProcessing}
                         className="w-full py-4 rounded-xl font-bold text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2"
                     >
@@ -516,6 +540,18 @@ const HistoryEditModal: React.FC<{
                     </button>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Excluir Treino"
+                message="Excluir este treino do histórico?"
+                confirmText="Excluir"
+                onConfirm={() => {
+                    setShowDeleteConfirm(false);
+                    handleDelete();
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+                isDestructive={true}
+            />
         </Portal>
     )
 }
@@ -709,17 +745,18 @@ export const WorkoutsTab: React.FC = () => {
         }
     };
 
-    const handleFeedback = async (rating: WorkoutFeedback['rating']) => {
-        if (!userData) return;
+    const handleFeedback = async (rating: WorkoutFeedback['rating'], details?: any) => {
+        if (!userData || activeWorkoutDay === null) return;
         
         // If activeWorkoutDay is -1 (Freestyle), we can record it as a special index
         const dayIndexToSave = activeWorkoutDay === -1 ? 999 : activeWorkoutDay;
 
-        const newFeedback = {
+        const newFeedback: WorkoutFeedback = {
             user_id: userData.id,
             date: new Date().toISOString(),
             workoutDayIndex: dayIndexToSave,
             rating,
+            details
         };
         
         try {
@@ -800,8 +837,10 @@ export const WorkoutsTab: React.FC = () => {
         }
 
         if (dayPlan) {
+            const lastSession = workoutHistory.find(h => h.workoutDayIndex === activeWorkoutDay);
             return <ActiveSessionView 
                 dayWorkout={dayPlan} 
+                lastSessionDetails={lastSession?.details}
                 onComplete={handleFeedback} 
                 onBack={() => setActiveWorkoutDay(null)} 
             />;

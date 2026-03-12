@@ -79,8 +79,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: 'https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=192&h=192&fit=contain&trim=10',
-    badge: 'https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=96&h=96&fit=contain&trim=10',
+    icon: 'https://i.imgur.com/T95MJyk.png',
+    badge: 'https://i.imgur.com/T95MJyk.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/', // URL de destino

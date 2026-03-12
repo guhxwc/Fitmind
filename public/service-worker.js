@@ -1,7 +1,8 @@
 
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'fitmind-v1';
+// Atualize a versão do cache para forçar a limpeza do cache antigo
+const CACHE_NAME = 'fitmind-v2';
 const urlsToCache = ['/', '/index.html'];
 
 self.addEventListener('install', (event) => {
@@ -12,12 +13,39 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  // Limpa caches antigos quando uma nova versão do SW é ativada
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Limpando cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
+  // Estratégia Network First para navegação (HTML)
+  if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request).then((response) => {
+          return response || caches.match('/index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  // Estratégia Cache First para outros recursos (imagens, etc)
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
 

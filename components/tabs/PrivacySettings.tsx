@@ -105,6 +105,8 @@ export const PrivacySettings: React.FC = () => {
     const { addToast } = useToast();
     const [isResetting, setIsResetting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isCanceling, setIsCanceling] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     if (!userData || !session) return null;
 
@@ -122,6 +124,42 @@ export const PrivacySettings: React.FC = () => {
             addToast(`Email de redefinição enviado para ${session.user.email}`, 'success');
         }
         setIsResetting(false);
+    };
+
+    const handleCancelSubscription = async () => {
+        setIsCanceling(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('cancel-subscription');
+            
+            if (error || data?.error) {
+                console.log("Erro na função cancel-subscription. Redirecionando para o portal do Stripe...", error || data?.error);
+                
+                // Fallback: Redirecionar para o portal de pagamentos do Stripe
+                const { data: portalData, error: portalError } = await supabase.functions.invoke('create-portal-session', {
+                    body: { returnUrl: window.location.origin + '/#/settings/privacy' }
+                });
+
+                if (portalError) throw new Error(portalError.message);
+                if (portalData?.error) throw new Error(portalData.error);
+                
+                if (portalData?.url) {
+                    window.location.href = portalData.url;
+                    return;
+                }
+                
+                throw new Error(error?.message || data?.error || "Erro desconhecido");
+            }
+
+            addToast("Assinatura cancelada com sucesso.", "success");
+            setShowCancelConfirm(false);
+            // Reload page or fetch data to reflect changes
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Erro ao cancelar assinatura:", error);
+            addToast(error.message || "Erro ao cancelar assinatura.", "error");
+        } finally {
+            setIsCanceling(false);
+        }
     };
 
     const handleLogout = async () => {
@@ -194,7 +232,7 @@ export const PrivacySettings: React.FC = () => {
                         icon={<StarIcon className="w-5 h-5"/>}
                         colorClass="bg-purple-500"
                         label="Cancelar Assinatura"
-                        onClick={() => addToast("Para cancelar, acesse a loja de aplicativos ou o portal de pagamentos.", "info")}
+                        onClick={() => setShowCancelConfirm(true)}
                     />
                     <ActionItem 
                         icon={<LogOutIcon className="w-5 h-5"/>}
@@ -249,6 +287,17 @@ export const PrivacySettings: React.FC = () => {
                     handleDeleteAccount();
                 }}
                 onCancel={() => setShowDeleteConfirm(false)}
+                isDestructive={true}
+            />
+
+            <ConfirmModal
+                isOpen={showCancelConfirm}
+                title="Cancelar Assinatura"
+                message="Tem certeza que deseja cancelar sua assinatura PRO? Você perderá acesso aos recursos premium."
+                confirmText={isCanceling ? "Cancelando..." : "Sim, cancelar"}
+                cancelText="Voltar"
+                onConfirm={handleCancelSubscription}
+                onCancel={() => setShowCancelConfirm(false)}
                 isDestructive={true}
             />
         </div>

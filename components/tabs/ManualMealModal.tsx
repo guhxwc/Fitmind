@@ -61,10 +61,10 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full max-w-md h-auto rounded-t-3xl p-6 flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
-          <div className="flex-shrink-0 flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-black w-full max-w-md rounded-t-3xl p-6 flex flex-col animate-slide-up max-h-[92vh] overflow-y-auto hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0 flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-black z-10 py-1">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Registrar Refeição</h2>
-            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>

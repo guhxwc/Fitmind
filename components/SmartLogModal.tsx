@@ -251,191 +251,196 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full max-w-md rounded-t-[32px] p-6 animate-slide-up shadow-2xl relative" onClick={e => e.stopPropagation()}>
+        <div className="bg-white dark:bg-black w-full max-w-md rounded-t-[32px] animate-slide-up shadow-2xl relative max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             
-            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 opacity-50"></div>
+            {/* Header Area (Sticky) */}
+            <div className="flex-shrink-0 pt-4 pb-2 px-6 relative">
+              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto opacity-50"></div>
+              <button 
+                onClick={onClose}
+                className="absolute top-4 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
 
-            <button 
-              onClick={onClose}
-              className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-
-            {mode === 'menu' && (
-              <div className="animate-fade-in">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                      <SparklesIcon className="w-8 h-8 text-white" />
+            {/* Scrollable Content Area */}
+            <div className="flex-grow overflow-y-auto p-6 pt-2 hide-scrollbar">
+              {mode === 'menu' && (
+                <div className="animate-fade-in">
+                  <div className="text-center mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                        <SparklesIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registro Inteligente</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Escolha como deseja registrar hoje</p>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registro Inteligente</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Escolha como deseja registrar hoje</p>
-                </div>
 
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                  <button 
-                    onClick={() => setMode('manual')}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
-                  >
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
-                      <KeyboardIcon className="w-6 h-6" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">Manual</p>
-                      <p className="text-xs text-gray-500">Preencha os dados da refeição</p>
-                    </div>
-                  </button>
-
-                  <button 
-                    onClick={() => setMode('favorites')}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
-                  >
-                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-600 dark:text-red-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">Favoritos</p>
-                      <p className="text-xs text-gray-500">Adicione refeições salvas</p>
-                    </div>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      if (userData?.isPro) {
-                        setMode('type');
-                      } else {
-                        addToast("Recurso exclusivo para assinantes PRO", "info");
-                      }
-                    }}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
-                  >
-                    {!userData?.isPro && (
-                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
-                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                  <div className="grid grid-cols-1 gap-4 mb-4">
+                    <button 
+                      onClick={() => setMode('manual')}
+                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                    >
+                      <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
+                        <KeyboardIcon className="w-6 h-6" />
                       </div>
-                    )}
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      <SparklesIcon className="w-6 h-6" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">Digitar (IA)</p>
-                      <p className="text-xs text-gray-500">Escreva naturalmente o que comeu</p>
-                    </div>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      if (userData?.isPro) {
-                        setMode('voice');
-                      } else {
-                        addToast("Recurso exclusivo para assinantes PRO", "info");
-                      }
-                    }}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
-                  >
-                    {!userData?.isPro && (
-                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
-                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900 dark:text-white">Manual</p>
+                        <p className="text-xs text-gray-500">Preencha os dados da refeição</p>
                       </div>
-                    )}
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
-                      <MicrophoneIcon className="w-6 h-6" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">Falar</p>
-                      <p className="text-xs text-gray-500">Grave um áudio descrevendo tudo</p>
-                    </div>
-                  </button>
+                    </button>
 
-                  <button 
-                    onClick={() => {
-                      if (userData?.isPro) {
-                        setMode('camera');
-                      } else {
-                        addToast("Recurso exclusivo para assinantes PRO", "info");
-                      }
-                    }}
-                    className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
-                  >
-                    {!userData?.isPro && (
-                      <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
-                        <LockIcon className="w-2.5 h-2.5" /> PRO
+                    <button 
+                      onClick={() => setMode('favorites')}
+                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                    >
+                      <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-600 dark:text-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>
                       </div>
-                    )}
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
-                      <CameraIcon className="w-6 h-6" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">CalorieCam</p>
-                      <p className="text-xs text-gray-500">Tire uma foto do seu prato</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900 dark:text-white">Favoritos</p>
+                        <p className="text-xs text-gray-500">Adicione refeições salvas</p>
+                      </div>
+                    </button>
 
-            {mode === 'type' && (
-              <div className="animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <button onClick={() => setMode('menu')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar Registro</h2>
-                  <div className="w-6"></div>
-                </div>
+                    <button 
+                      onClick={() => {
+                        if (userData?.isPro) {
+                          setMode('type');
+                        } else {
+                          addToast("Recurso exclusivo para assinantes PRO", "info");
+                        }
+                      }}
+                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                    >
+                      {!userData?.isPro && (
+                        <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                          <LockIcon className="w-2.5 h-2.5" /> PRO
+                        </div>
+                      )}
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                        <SparklesIcon className="w-6 h-6" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900 dark:text-white">Digitar (IA)</p>
+                        <p className="text-xs text-gray-500">Escreva naturalmente o que comeu</p>
+                      </div>
+                    </button>
 
-                <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ex: Almocei frango com salada agora ao meio-dia..."
-                    className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600 mb-6"
-                    autoFocus
-                />
+                    <button 
+                      onClick={() => {
+                        if (userData?.isPro) {
+                          setMode('voice');
+                        } else {
+                          addToast("Recurso exclusivo para assinantes PRO", "info");
+                        }
+                      }}
+                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                    >
+                      {!userData?.isPro && (
+                        <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                          <LockIcon className="w-2.5 h-2.5" /> PRO
+                        </div>
+                      )}
+                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
+                        <MicrophoneIcon className="w-6 h-6" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900 dark:text-white">Falar</p>
+                        <p className="text-xs text-gray-500">Grave um áudio descrevendo tudo</p>
+                      </div>
+                    </button>
 
-                <button
-                    onClick={() => handleProcess('text')}
-                    disabled={isProcessing || !input.trim()}
-                    className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
-                >
-                    {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Processar com IA"}
-                </button>
-              </div>
-            )}
-
-            {mode === 'voice' && (
-              <div className="animate-fade-in text-center">
-                <div className="flex items-center justify-between mb-6">
-                  <button onClick={() => { stopRecording(); setMode('menu'); }} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Falar Registro</h2>
-                  <div className="w-6"></div>
-                </div>
-
-                <div className="py-10">
-                  <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all duration-500 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-purple-500'}`}>
-                    <MicrophoneIcon className="w-10 h-10 text-white" />
+                    <button 
+                      onClick={() => {
+                        if (userData?.isPro) {
+                          setMode('camera');
+                        } else {
+                          addToast("Recurso exclusivo para assinantes PRO", "info");
+                        }
+                      }}
+                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                    >
+                      {!userData?.isPro && (
+                        <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
+                          <LockIcon className="w-2.5 h-2.5" /> PRO
+                        </div>
+                      )}
+                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
+                        <CameraIcon className="w-6 h-6" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-gray-900 dark:text-white">CalorieCam</p>
+                        <p className="text-xs text-gray-500">Tire uma foto do seu prato</p>
+                      </div>
+                    </button>
                   </div>
-                  <p className="text-2xl font-mono font-bold mt-6 text-gray-900 dark:text-white">{formatTime(recordingTime)}</p>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2">
-                    {isRecording ? "Gravando... Fale naturalmente." : audioBlob ? "Gravação concluída!" : "Toque em Iniciar para falar"}
-                  </p>
                 </div>
+              )}
 
-                <div className="flex gap-4 mt-6">
-                  {!isRecording && !audioBlob && (
-                    <button onClick={startRecording} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold">Iniciar Gravação</button>
-                  )}
-                  {isRecording && (
-                    <button onClick={stopRecording} className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold">Parar</button>
-                  )}
-                  {audioBlob && !isRecording && (
-                    <>
-                      <button onClick={() => { setAudioBlob(null); setRecordingTime(0); }} className="w-1/3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"><ArrowPathIcon className="w-5 h-5" /> Refazer</button>
-                      <button onClick={() => handleProcess('audio')} disabled={isProcessing} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2">
-                        {isProcessing ? "Analisando..." : "Analisar Áudio"}
-                      </button>
-                    </>
-                  )}
+              {mode === 'type' && (
+                <div className="animate-fade-in">
+                  <div className="flex items-center justify-between mb-6">
+                    <button onClick={() => setMode('menu')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar Registro</h2>
+                    <div className="w-6"></div>
+                  </div>
+
+                  <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ex: Almocei frango com salada agora ao meio-dia..."
+                      className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600 mb-6"
+                      autoFocus
+                  />
+
+                  <button
+                      onClick={() => handleProcess('text')}
+                      disabled={isProcessing || !input.trim()}
+                      className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                  >
+                      {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Processar com IA"}
+                  </button>
                 </div>
-              </div>
-            )}
+              )}
+
+              {mode === 'voice' && (
+                <div className="animate-fade-in text-center">
+                  <div className="flex items-center justify-between mb-6">
+                    <button onClick={() => { stopRecording(); setMode('menu'); }} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Falar Registro</h2>
+                    <div className="w-6"></div>
+                  </div>
+
+                  <div className="py-10">
+                    <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center transition-all duration-500 ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-purple-500'}`}>
+                      <MicrophoneIcon className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-2xl font-mono font-bold mt-6 text-gray-900 dark:text-white">{formatTime(recordingTime)}</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">
+                      {isRecording ? "Gravando... Fale naturalmente." : audioBlob ? "Gravação concluída!" : "Toque em Iniciar para falar"}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-4 mt-6">
+                    {!isRecording && !audioBlob && (
+                      <button onClick={startRecording} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold">Iniciar Gravação</button>
+                    )}
+                    {isRecording && (
+                      <button onClick={stopRecording} className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold">Parar</button>
+                    )}
+                    {audioBlob && !isRecording && (
+                      <>
+                        <button onClick={() => { setAudioBlob(null); setRecordingTime(0); }} className="w-1/3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"><ArrowPathIcon className="w-5 h-5" /> Refazer</button>
+                        <button onClick={() => handleProcess('audio')} disabled={isProcessing} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                          {isProcessing ? "Analisando..." : "Analisar Áudio"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
         </div>
       </div>
     </Portal>

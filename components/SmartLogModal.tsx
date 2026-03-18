@@ -255,6 +255,13 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
             
             <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-6 opacity-50"></div>
 
+            <button 
+              onClick={onClose}
+              className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+
             {mode === 'menu' && (
               <div className="animate-fade-in">
                 <div className="text-center mb-8">

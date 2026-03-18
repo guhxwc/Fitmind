@@ -159,6 +159,7 @@ export interface Exercise {
 
 export interface WorkoutDay {
   day: number;
+  weekday?: Weekday;
   focus: string;
   estimatedTime: number;
   exercises: any[];

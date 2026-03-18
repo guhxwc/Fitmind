@@ -171,7 +171,7 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
     };
 
     const progressPercentage = userData.startWeight !== userData.targetWeight 
-        ? Math.max(0, Math.min(((userData.startWeight - userData.weight) / (userData.startWeight - userData.targetWeight)) * 100, 100))
+        ? Math.max(5, Math.min(((userData.startWeight - userData.weight) / (userData.startWeight - userData.targetWeight)) * 100, 100))
         : 100;
 
     return (

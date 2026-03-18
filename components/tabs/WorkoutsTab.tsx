@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 // Removed GoogleGenAI import
-import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback, Exercise, WorkoutDay } from '../../types';
+import type { WorkoutQuizAnswers, WorkoutPlan, WorkoutFeedback, Exercise, WorkoutDay, Weekday } from '../../types';
 import { DumbbellIcon, FlameIcon, ClockIcon, ChevronRightIcon, CheckCircleIcon, ArrowPathIcon, CalendarIcon, PlusIcon, MinusIcon, LockIcon, EditIcon, TrashIcon, SparklesIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { WorkoutQuiz } from './WorkoutQuiz';
@@ -135,10 +135,11 @@ const SetRow: React.FC<{
 // 3. Active Session View
 const ActiveSessionView: React.FC<{
     dayWorkout: any;
+    dayIndex: number;
     lastSessionDetails?: any;
     onComplete: (rating: 'leve' | 'ideal' | 'pesado', details: any) => Promise<void>;
     onBack: () => void;
-}> = ({ dayWorkout, lastSessionDetails, onComplete, onBack }) => {
+}> = ({ dayWorkout, dayIndex, lastSessionDetails, onComplete, onBack }) => {
     // --- State ---
     const [editableWorkout, setEditableWorkout] = useState(JSON.parse(JSON.stringify(dayWorkout))); // Deep copy for editing
     const [isEditingMode, setIsEditingMode] = useState(false);
@@ -146,9 +147,31 @@ const ActiveSessionView: React.FC<{
     const [sessionData, setSessionData] = useState<Record<string, { weight: string, reps: string }[]>>({});
     const [activeTimer, setActiveTimer] = useState<number | null>(null);
     const [showFinishModal, setShowFinishModal] = useState(false);
+    const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+    const [elapsedTime, setElapsedTime] = useState(0);
     
     // --- Effects ---
     useEffect(() => {
+        const storageKey = `workout_progress_${dayIndex}`;
+        const savedProgress = localStorage.getItem(storageKey);
+        
+        if (savedProgress) {
+            try {
+                const parsed = JSON.parse(savedProgress);
+                // Verify if the saved progress belongs to the current workout plan
+                if (!parsed.editableWorkout || parsed.editableWorkout.focus === dayWorkout.focus) {
+                    setCompletedSets(parsed.completedSets || {});
+                    setSessionData(parsed.sessionData || {});
+                    if (parsed.editableWorkout) {
+                        setEditableWorkout(parsed.editableWorkout);
+                    }
+                    return; // Use saved progress
+                }
+            } catch (e) {
+                console.error("Error parsing saved progress", e);
+            }
+        }
+
         const initialSets: Record<string, boolean[]> = {};
         const initialData: Record<string, { weight: string, reps: string }[] | any> = {};
 
@@ -165,7 +188,44 @@ const ActiveSessionView: React.FC<{
         });
         setCompletedSets(initialSets);
         setSessionData(initialData);
-    }, []); // Run once on mount
+    }, [dayIndex, dayWorkout, lastSessionDetails]); // Run on mount or when day changes
+
+    // Timer effect
+    useEffect(() => {
+        const storageKey = `workout_start_time_${dayIndex}`;
+        const savedStartTime = localStorage.getItem(storageKey);
+        let startTime = Date.now();
+        if (savedStartTime) {
+            startTime = parseInt(savedStartTime, 10);
+            setSessionStartTime(startTime);
+        } else {
+            localStorage.setItem(storageKey, startTime.toString());
+        }
+
+        const interval = setInterval(() => {
+            setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+        }, 1000);
+        
+        return () => clearInterval(interval);
+    }, [dayIndex]);
+
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        if (h > 0) {
+            return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // Save to local storage whenever progress changes
+    useEffect(() => {
+        if (Object.keys(completedSets).length > 0) {
+            const storageKey = `workout_progress_${dayIndex}`;
+            localStorage.setItem(storageKey, JSON.stringify({ completedSets, sessionData, editableWorkout }));
+        }
+    }, [completedSets, sessionData, editableWorkout, dayIndex]);
 
     // --- Actions ---
     const handleSetToggle = (exerciseIndex: number, setIndex: number, weight: string, reps: string, restTime: number) => {
@@ -190,6 +250,23 @@ const ActiveSessionView: React.FC<{
         // Start timer if checking off (not unchecking) and not the last set
         if (!wasCompleted && setIndex < currentExerciseSets.length - 1) {
             setActiveTimer(restTime || 60);
+        } else if (!wasCompleted && setIndex === currentExerciseSets.length - 1) {
+            // It's the last set and we are checking it off
+            // Scroll to next exercise
+            setTimeout(() => {
+                const nextEl = document.getElementById(`exercise-container-${exerciseIndex + 1}`);
+                if (nextEl) {
+                    const headerOffset = 140; // Approximate height of the sticky header
+                    const elementPosition = nextEl.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 400);
+            setActiveTimer(null);
         } else {
             setActiveTimer(null); // Cancel timer if unchecked or last set
         }
@@ -286,8 +363,12 @@ const ActiveSessionView: React.FC<{
                         </p>
                     </div>
                     {!isEditingMode && (
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end">
                             <span className="text-3xl font-extrabold text-orange-500 tabular-nums">{progress}%</span>
+                            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 mt-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                                <ClockIcon className="w-3.5 h-3.5" />
+                                <span className="text-xs font-mono font-bold">{formatTime(elapsedTime)}</span>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -310,7 +391,7 @@ const ActiveSessionView: React.FC<{
 
                     if (isEditingMode) {
                         return (
-                            <div key={`edit-${idx}`} className="bg-white dark:bg-[#1C1C1E] rounded-[20px] p-4 border-2 border-orange-100 dark:border-orange-900/30 relative group">
+                            <div key={`edit-${idx}`} id={`exercise-container-${idx}`} className="bg-white dark:bg-[#1C1C1E] rounded-[20px] p-4 border-2 border-orange-100 dark:border-orange-900/30 relative group">
                                 <div className="absolute top-4 right-4">
                                     <button onClick={() => handleRemoveExercise(idx)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors">
                                         <TrashIcon className="w-4 h-4" />
@@ -361,7 +442,7 @@ const ActiveSessionView: React.FC<{
                     }
 
                     return (
-                        <div key={idx} className={`bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-sm border transition-all ${isExerciseDone ? 'border-green-500/30 opacity-80' : 'border-gray-100 dark:border-gray-800'}`}>
+                        <div key={idx} id={`exercise-container-${idx}`} className={`bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-sm border transition-all ${isExerciseDone ? 'border-green-500/30 opacity-80' : 'border-gray-100 dark:border-gray-800'}`}>
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h3 className={`text-lg font-extrabold text-gray-900 dark:text-white leading-tight ${isExerciseDone ? 'text-green-600 dark:text-green-400' : ''}`}>{ex.name}</h3>
@@ -413,6 +494,8 @@ const ActiveSessionView: React.FC<{
                     onClose={() => setShowFinishModal(false)} 
                     onRate={async (rating) => {
                         await onComplete(rating, sessionData);
+                        localStorage.removeItem(`workout_progress_${dayIndex}`);
+                        localStorage.removeItem(`workout_start_time_${dayIndex}`);
                         setShowFinishModal(false);
                     }} 
                 />
@@ -556,6 +639,65 @@ const HistoryEditModal: React.FC<{
     )
 }
 
+// --- Edit Days Modal ---
+const EditDaysModal: React.FC<{
+    plan: WorkoutPlan;
+    onClose: () => void;
+    onSave: (newPlan: WorkoutPlan) => void;
+}> = ({ plan, onClose, onSave }) => {
+    const [editedPlan, setEditedPlan] = useState<WorkoutPlan>(JSON.parse(JSON.stringify(plan)));
+    const weekdays: Weekday[] = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+
+    const handleSave = () => {
+        onSave(editedPlan);
+    };
+
+    return (
+        <Portal>
+            <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-6 backdrop-blur-md animate-fade-in" onClick={onClose}>
+                <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 w-full max-w-sm shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 text-center">Configurar Dias da Semana</h2>
+                    
+                    <div className="space-y-4 mb-8 overflow-y-auto hide-scrollbar flex-grow">
+                        {editedPlan.map((day, idx) => (
+                            <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white mb-2">Treino {idx + 1}: {day.focus}</p>
+                                <select 
+                                    value={day.weekday || ''}
+                                    onChange={(e) => {
+                                        const newPlan = [...editedPlan];
+                                        newPlan[idx].weekday = e.target.value as Weekday;
+                                        setEditedPlan(newPlan);
+                                    }}
+                                    className="w-full bg-white dark:bg-gray-700 p-3 rounded-xl text-sm font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                >
+                                    <option value="" disabled>Selecione um dia</option>
+                                    {weekdays.map(w => (
+                                        <option key={w} value={w}>{w}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-auto">
+                        <button 
+                            onClick={handleSave}
+                            className="w-full py-4 rounded-xl font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                            Salvar Alterações
+                        </button>
+                        
+                        <button onClick={onClose} className="mt-4 w-full text-center text-gray-400 font-semibold text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Portal>
+    );
+};
+
 // --- Swap Modal ---
 const SwapWorkoutModal: React.FC<{ 
     plan: WorkoutPlan, 
@@ -581,7 +723,7 @@ const SwapWorkoutModal: React.FC<{
                             className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-between group"
                         >
                             <div>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Dia {idx + 1}</span>
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">{day.weekday ? day.weekday : `Dia ${idx + 1}`}</span>
                                 <span className="text-base font-bold text-gray-900 dark:text-white">{day.focus}</span>
                             </div>
                             <ChevronRightIcon className="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-black dark:group-hover:text-white" />
@@ -607,34 +749,57 @@ const SwapWorkoutModal: React.FC<{
 const CalendarStrip: React.FC<{ 
     plan: WorkoutPlan, 
     completedHistory: WorkoutFeedback[], 
-    onDaySelect: (index: number) => void 
-}> = ({ plan, completedHistory, onDaySelect }) => {
+    onDaySelect: (index: number) => void,
+    onEditDays: () => void,
+    selectedIndex: number
+}> = ({ plan, completedHistory, onDaySelect, onEditDays, selectedIndex }) => {
     return (
-        <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-5 px-5 snap-x">
-            {plan.map((day, index) => {
-                // Check if this day index exists in history
-                const isCompleted = completedHistory.some(h => h.workoutDayIndex === index);
-                const isRest = day.exercises.length === 0;
+        <div className="relative">
+            <div className="flex justify-between items-center mb-3 px-5">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Sua Semana</h3>
+                <button onClick={onEditDays} className="text-[10px] font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 bg-orange-50 dark:bg-orange-500/10 px-2.5 py-1.5 rounded-lg transition-colors uppercase tracking-wider">
+                    <EditIcon className="w-3 h-3" /> Editar Dias
+                </button>
+            </div>
+            <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-4 -mx-5 px-5 snap-x">
+                {plan.map((day, index) => {
+                    // Check if this day index exists in history for today
+                    const isCompleted = completedHistory.some(h => {
+                        const hDate = new Date(h.date);
+                        const now = new Date();
+                        return h.workoutDayIndex === index && 
+                               hDate.getDate() === now.getDate() && 
+                               hDate.getMonth() === now.getMonth() && 
+                               hDate.getFullYear() === now.getFullYear();
+                    });
+                    const isRest = day.exercises.length === 0;
+                    const isSelected = selectedIndex === index;
+                    
+                    const dayLabel = day.weekday ? day.weekday.substring(0, 3) : `D${index + 1}`;
 
-                return (
-                    <button 
-                        key={index}
-                        // We disabled click here because users should use the Swap feature for main workout logic,
-                        // but if they want to view history, we could add logic. For now, visual indicator only.
-                        className={`flex flex-col items-center justify-center min-w-[60px] h-[80px] rounded-2xl border snap-center transition-all ${
-                            isCompleted 
-                                ? 'bg-green-500 border-green-500 text-white' 
-                                : isRest 
-                                    ? 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700'
-                                    : 'bg-white dark:bg-[#1C1C1E] border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
-                        }`}
-                    >
-                        <span className="text-[10px] font-bold uppercase tracking-wider mb-1">Dia</span>
-                        <span className="text-xl font-extrabold">{index + 1}</span>
-                        {isCompleted && <div className="mt-1 bg-white/30 w-1.5 h-1.5 rounded-full"></div>}
-                    </button>
-                )
-            })}
+                    return (
+                        <button 
+                            key={index}
+                            onClick={() => onDaySelect(index)}
+                            className={`flex flex-col items-center justify-center min-w-[64px] h-[88px] rounded-[20px] border snap-center transition-all duration-300 ${
+                                isSelected
+                                    ? 'bg-black border-black text-white dark:bg-white dark:border-white dark:text-black shadow-lg scale-105'
+                                    : isCompleted 
+                                        ? 'bg-green-500 border-green-500 text-white opacity-60 hover:opacity-80' 
+                                        : isRest 
+                                            ? 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700'
+                                            : 'bg-white dark:bg-[#1C1C1E] border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                        >
+                            <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isSelected ? 'opacity-80' : 'opacity-60'}`}>{dayLabel}</span>
+                            <span className="text-2xl font-extrabold">{index + 1}</span>
+                            <div className="h-1.5 mt-1 flex items-center justify-center">
+                                {isCompleted && <div className="bg-current w-1.5 h-1.5 rounded-full"></div>}
+                            </div>
+                        </button>
+                    )
+                })}
+            </div>
         </div>
     )
 }
@@ -669,12 +834,14 @@ export const WorkoutsTab: React.FC = () => {
     // State to toggle between the dashboard and the active workout runner
     const [activeWorkoutDay, setActiveWorkoutDay] = useState<number | null>(null);
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [isEditDaysModalOpen, setIsEditDaysModalOpen] = useState(false);
     
     // State to track which workout is selected for preview/start (defaulting to next in queue)
     const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
     
     // Edit History State
     const [editingHistoryItem, setEditingHistoryItem] = useState<WorkoutFeedback | null>(null);
+    const [showAllHistory, setShowAllHistory] = useState(false);
     
     // Pro Features
     const [showProModal, setShowProModal] = useState(false);
@@ -682,9 +849,22 @@ export const WorkoutsTab: React.FC = () => {
 
     // Logic: Find next incomplete workout automatically
     const nextWorkoutIndex = useMemo(() => {
-        if (!workoutPlan) return 0;
-        return workoutHistory.length % workoutPlan.length;
-    }, [workoutHistory, workoutPlan]);
+        if (!workoutPlan || workoutPlan.length === 0) return 0;
+        
+        const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const weekdays: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+        const todayWeekday = weekdays[today];
+
+        // Try to find a workout for today
+        const todayIdx = workoutPlan.findIndex(day => day.weekday === todayWeekday);
+        
+        if (todayIdx !== -1) {
+            return todayIdx;
+        }
+
+        // Fallback if today has no assigned workout
+        return 0;
+    }, [workoutPlan]);
 
     // Determines what to show on the Hero Card
     // Prioritize manual selection, otherwise fallback to the automatic next workout
@@ -717,6 +897,22 @@ export const WorkoutsTab: React.FC = () => {
         setSelectedDayIndex(-1);
     };
 
+    const handleSaveDays = async (newPlan: WorkoutPlan) => {
+        try {
+            const { error: dbError } = await supabase.from('workout_plans').insert({
+                user_id: userData?.id,
+                plan: newPlan
+            });
+            if (dbError) throw dbError;
+            setWorkoutPlan(newPlan);
+            setIsEditDaysModalOpen(false);
+            addToast("Dias de treino atualizados!", "success");
+        } catch (e: any) {
+            console.error("Erro ao atualizar dias:", e);
+            addToast('Erro ao atualizar dias. Tente novamente.', 'error');
+        }
+    };
+
     const handleQuizComplete = async (answers: WorkoutQuizAnswers) => {
         setIsQuizOpen(false);
         setIsLoading(true);
@@ -724,6 +920,12 @@ export const WorkoutsTab: React.FC = () => {
         try {
             // AI GENERATION LOGIC
             const newPlan = await workoutService.generateWorkoutPlan(answers);
+            
+            // Assign default weekdays
+            const defaultWeekdays: Weekday[] = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+            newPlan.forEach((day, index) => {
+                day.weekday = defaultWeekdays[index % 7];
+            });
             
             // Save to DB
             const { error: dbError } = await supabase.from('workout_plans').insert({
@@ -840,6 +1042,7 @@ export const WorkoutsTab: React.FC = () => {
             const lastSession = workoutHistory.find(h => h.workoutDayIndex === activeWorkoutDay);
             return <ActiveSessionView 
                 dayWorkout={dayPlan} 
+                dayIndex={activeWorkoutDay}
                 lastSessionDetails={lastSession?.details}
                 onComplete={handleFeedback} 
                 onBack={() => setActiveWorkoutDay(null)} 
@@ -864,7 +1067,9 @@ export const WorkoutsTab: React.FC = () => {
                     <CalendarStrip 
                         plan={workoutPlan} 
                         completedHistory={workoutHistory} 
-                        onDaySelect={(idx) => { /* Just viewing history in strip */ }}
+                        onDaySelect={(idx) => setSelectedDayIndex(idx)}
+                        onEditDays={() => setIsEditDaysModalOpen(true)}
+                        selectedIndex={currentDisplayIndex}
                     />
                 )}
             </div>
@@ -901,7 +1106,7 @@ export const WorkoutsTab: React.FC = () => {
                                             {activePlanForCard.focus}
                                         </h3>
                                         <p className="text-sm font-medium text-gray-400 dark:text-gray-600 mb-6 uppercase tracking-wide">
-                                            {currentDisplayIndex === -1 ? 'Personalizado' : `Dia ${currentDisplayIndex + 1}`} • {currentDisplayIndex === -1 ? '?' : activePlanForCard.exercises.length} Exercícios
+                                            {currentDisplayIndex === -1 ? 'Personalizado' : (activePlanForCard as any).weekday ? (activePlanForCard as any).weekday : `Dia ${currentDisplayIndex + 1}`} • {currentDisplayIndex === -1 ? '?' : activePlanForCard.exercises.length} Exercícios
                                         </p>
 
                                         <div className="flex items-center gap-3">
@@ -924,8 +1129,10 @@ export const WorkoutsTab: React.FC = () => {
                             </div>
                             
                             <div className="space-y-3">
-                                {workoutHistory.slice(0, 3).map((h, i) => {
-                                    const planName = h.workoutDayIndex === 999 ? "Treino Livre" : workoutPlan[h.workoutDayIndex]?.focus || `Treino Dia ${h.workoutDayIndex + 1}`;
+                                {(showAllHistory ? workoutHistory : workoutHistory.slice(0, 3)).map((h, i) => {
+                                    const planName = h.workoutDayIndex === 999 
+                                        ? "Treino Livre" 
+                                        : workoutPlan[h.workoutDayIndex]?.focus || (workoutPlan[h.workoutDayIndex]?.weekday ? `Treino ${workoutPlan[h.workoutDayIndex].weekday}` : `Treino Dia ${h.workoutDayIndex + 1}`);
                                     return (
                                         <button 
                                             key={i} 
@@ -960,6 +1167,14 @@ export const WorkoutsTab: React.FC = () => {
                                 {workoutHistory.length === 0 && (
                                     <p className="text-center text-gray-400 text-sm py-4">Nenhum treino completado ainda.</p>
                                 )}
+                                {workoutHistory.length > 3 && (
+                                    <button 
+                                        onClick={() => setShowAllHistory(!showAllHistory)}
+                                        className="w-full py-3 mt-2 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                                    >
+                                        {showAllHistory ? 'Ver Menos' : `Ver Mais (${workoutHistory.length - 3})`}
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -978,6 +1193,14 @@ export const WorkoutsTab: React.FC = () => {
                     onClose={() => setIsSwapModalOpen(false)}
                     onSelect={(idx) => setSelectedDayIndex(idx)}
                     onFreestyle={handleFreestyleSelect}
+                />
+            )}
+
+            {isEditDaysModalOpen && workoutPlan && (
+                <EditDaysModal 
+                    plan={workoutPlan}
+                    onClose={() => setIsEditDaysModalOpen(false)}
+                    onSave={handleSaveDays}
                 />
             )}
 

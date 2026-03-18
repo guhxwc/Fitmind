@@ -27,108 +27,121 @@ export const PrivacyPage: React.FC = () => {
                         <LockIcon className="w-6 h-6" />
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Compromisso com a Lei Geral de Proteção de Dados (LGPD) e transparência total sobre seus dados.
+                        Em conformidade com a LGPD (Lei 13.709/2018) e transparência total sobre seus dados.
                     </p>
                 </div>
 
                 <div className="space-y-10">
                     <section>
                         <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">1. Controlador dos Dados</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                            A FitMind Health Technologies atua como controladora. Dúvidas sobre dados podem ser enviadas ao nosso Encarregado (DPO) através do e-mail <a href="mailto:privacy@fitmind.app" className="text-blue-500 underline">privacy@fitmind.app</a>.
+                        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-gray-100 dark:border-gray-800 text-sm space-y-2">
+                            <p><span className="text-gray-400">Razão Social:</span> <span className="font-medium text-gray-900 dark:text-white">FitMind Health Technologies</span></p>
+                            <p><span className="text-gray-400">CNPJ:</span> <span className="font-medium text-gray-900 dark:text-white">65.458.597/0001-68</span></p>
+                            <p><span className="text-gray-400">E-mail do DPO:</span> <a href="mailto:contato@fitmindhealth.com.br" className="text-blue-500 font-medium">contato@fitmindhealth.com.br</a></p>
+                            <p><span className="text-gray-400">Website:</span> <a href="https://fitmindhealth.com.br" target="_blank" rel="noopener noreferrer" className="text-blue-500 font-medium">fitmindhealth.com.br</a></p>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs mt-3 leading-relaxed">
+                            A FitMind Health Technologies atua como controladora dos dados pessoais. O Encarregado de Proteção de Dados (DPO) pode ser contatado pelo e-mail acima para quaisquer questões.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">2. Dados Coletados</h2>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">2. Dados Pessoais Coletados</h2>
                         <div className="bg-white dark:bg-[#1C1C1E] rounded-[16px] overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <table className="min-w-full text-xs text-left">
+                            <table className="min-w-full text-[11px] text-left">
                                 <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                                     <tr>
-                                        <th className="py-3 px-4 font-bold text-gray-400 uppercase tracking-wider">Dado</th>
-                                        <th className="py-3 px-4 font-bold text-gray-400 uppercase tracking-wider">Finalidade & Base Legal</th>
+                                        <th className="py-3 px-3 font-bold text-gray-400 uppercase tracking-wider">Categoria</th>
+                                        <th className="py-3 px-3 font-bold text-gray-400 uppercase tracking-wider">Dados & Finalidade</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                     <tr>
-                                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white align-top">Identificação<br/><span className="text-gray-400 font-normal">Nome, E-mail</span></td>
-                                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400">Criação de conta e suporte.<br/><em>(Execução de Contrato)</em></td>
+                                        <td className="py-3 px-3 font-semibold text-gray-900 dark:text-white align-top">Identificação</td>
+                                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">Nome, e-mail, senha (hash). Criação de conta e autenticação.</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white align-top">Saúde (Sensível)<br/><span className="text-gray-400 font-normal">Peso, Medicação, Fotos</span></td>
-                                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400">Funcionalidades principais do app.<br/><em>(Consentimento Explícito)</em></td>
+                                        <td className="py-3 px-3 font-semibold text-gray-900 dark:text-white align-top">Saúde (Sensível)</td>
+                                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">Peso, altura, IMC, medicação, fotos de refeições, histórico. Funcionalidades principais.</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white align-top">Pagamento<br/><span className="text-gray-400 font-normal">Histórico, Token</span></td>
-                                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400">Processamento de assinaturas.<br/><em>(Execução de Contrato)</em></td>
+                                        <td className="py-3 px-3 font-semibold text-gray-900 dark:text-white align-top">Pagamento</td>
+                                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">Histórico, token Stripe. Processamento de assinaturas.</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white align-top">Uso & Logs<br/><span className="text-gray-400 font-normal">Acessos, Eventos</span></td>
-                                        <td className="py-3 px-4 text-gray-500 dark:text-gray-400">Melhoria do serviço e segurança.<br/><em>(Legítimo Interesse)</em></td>
+                                        <td className="py-3 px-3 font-semibold text-gray-900 dark:text-white align-top">Uso & Técnicos</td>
+                                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">Logs, dispositivo, IP. Segurança e melhoria do serviço.</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+                        <p className="text-[11px] text-gray-400 mt-3 italic">
+                            Dados sensíveis de saúde são coletados somente com seu consentimento explícito. Você pode revogá-lo a qualquer momento.
+                        </p>
                     </section>
 
                     <section>
                         <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">3. Compartilhamento (Operadores)</h2>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center p-3 bg-white dark:bg-[#1C1C1E] rounded-xl border border-gray-100 dark:border-gray-800">
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white text-sm">Supabase</p>
-                                    <p className="text-xs text-gray-500">Infraestrutura de Banco de Dados</p>
+                        <div className="space-y-2">
+                            {[
+                                { name: 'Supabase (AWS)', desc: 'Infraestrutura e autenticação', loc: 'EUA' },
+                                { name: 'Google (Gemini AI)', desc: 'Processamento de IA', loc: 'EUA' },
+                                { name: 'Stripe, Inc.', desc: 'Pagamentos seguros', loc: 'EUA' },
+                                { name: 'Firebase (Google)', desc: 'Notificações e analytics', loc: 'EUA' }
+                            ].map((op, i) => (
+                                <div key={i} className="flex justify-between items-center p-3 bg-white dark:bg-[#1C1C1E] rounded-xl border border-gray-100 dark:border-gray-800">
+                                    <div>
+                                        <p className="font-bold text-gray-900 dark:text-white text-sm">{op.name}</p>
+                                        <p className="text-[11px] text-gray-500">{op.desc}</p>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded-md">{op.loc}</span>
                                 </div>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-white dark:bg-[#1C1C1E] rounded-xl border border-gray-100 dark:border-gray-800">
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white text-sm">Google Gemini (AI)</p>
-                                    <p className="text-xs text-gray-500">Processamento de texto e imagem (Anonimizado)</p>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-white dark:bg-[#1C1C1E] rounded-xl border border-gray-100 dark:border-gray-800">
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white text-sm">Stripe</p>
-                                    <p className="text-xs text-gray-500">Processamento seguro de pagamentos</p>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-white dark:bg-[#1C1C1E] rounded-xl border border-gray-100 dark:border-gray-800">
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white text-sm">Firebase</p>
-                                    <p className="text-xs text-gray-500">Notificações Push e Analytics</p>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </section>
 
                     <section>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">4. Segurança e Retenção</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">Utilizamos criptografia em trânsito (HTTPS) e em repouso. Seus dados são mantidos enquanto sua conta estiver ativa.</p>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">4. Transferência Internacional</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                            Seus dados são processados em servidores nos EUA pelos operadores listados acima, com base no Art. 33 da LGPD, observando padrões compatíveis de proteção de dados.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">5. Segurança dos Dados</h2>
                         <ul className="list-disc pl-5 space-y-1 text-sm text-gray-500 dark:text-gray-400 marker:text-gray-300">
-                            <li><strong>Conta Excluída:</strong> Dados são mantidos em backup por até 30 dias e depois removidos permanentemente.</li>
-                            <li><strong>Logs:</strong> Mantidos por até 6 meses para auditoria de segurança.</li>
+                            <li>Criptografia em trânsito (HTTPS/TLS) e em repouso (AES-256);</li>
+                            <li>Senhas com hash bcrypt;</li>
+                            <li>Row Level Security (RLS) no banco de dados;</li>
+                            <li>Autenticação via JWT com expiração.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">5. Seus Direitos</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Você tem total controle. No menu "Ajustes {'>'} Privacidade", você pode:</p>
-                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-500 dark:text-gray-400 marker:text-gray-300">
-                            <li>Solicitar cópia dos seus dados (Portabilidade).</li>
-                            <li>Corrigir dados cadastrais.</li>
-                            <li>Excluir permanentemente sua conta e dados.</li>
-                            <li>Revogar consentimentos dados anteriormente.</li>
-                        </ul>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">6. Retenção de Dados</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">Dados de saúde são excluídos imediatamente após a exclusão da conta. Logs de segurança são mantidos por 6 meses conforme o Marco Civil da Internet.</p>
                     </section>
 
                     <section>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">6. Menores de Idade</h2>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">O FitMind não é destinado a menores de 18 anos. Não coletamos intencionalmente dados de crianças ou adolescentes.</p>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">7. Seus Direitos (Art. 18 LGPD)</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Você pode exercer seus direitos de confirmação, acesso, correção, eliminação, portabilidade e revogação de consentimento.</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs italic">
+                            Solicitações via contato@fitmindhealth.com.br serão respondidas em até 15 dias úteis.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">8. Cookies e Armazenamento</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            Utilizamos localStorage para preferências e tokens de sessão. Não utilizamos cookies de rastreamento de terceiros para fins publicitários.
+                        </p>
                     </section>
 
                     <div className="pt-8 text-center text-xs text-gray-300 dark:text-gray-700 border-t border-gray-100 dark:border-gray-800 mt-8">
-                        <p>FitMind Health Technologies</p>
-                        <p>privacy@fitmind.app</p>
+                        <p className="font-bold">FitMind Health Technologies</p>
+                        <p>CNPJ: 65.458.597/0001-68</p>
+                        <p>contato@fitmindhealth.com.br</p>
+                        <p className="mt-1">Última atualização: Março de 2026</p>
                     </div>
                 </div>
             </div>

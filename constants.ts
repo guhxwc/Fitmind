@@ -6,7 +6,7 @@ export const MEDICATIONS: Medication[] = [
   { name: 'Ozempic', doses: ['0,25 mg', '0,5 mg', '1 mg', '2 mg'] },
   { name: 'Wegovy', doses: ['0,25 mg', '0,5 mg', '1 mg', '1,7 mg', '2,4 mg'] },
   { name: 'Saxenda', doses: ['0,6 mg', '1,2 mg', '1,8 mg', '2,4 mg', '3 mg'] },
-  { name: 'Other', doses: ['Dose única'] },
+  { name: 'Outra', doses: [] },
 ];
 
 export const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];

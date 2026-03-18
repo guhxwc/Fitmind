@@ -17,7 +17,7 @@ export const StepMedication: React.FC<StepMedicationProps> = ({ onNext, onBack, 
     <OnboardingScreen>
       <OnboardingHeader
         title="Qual medicamento GLP-1 você usa?"
-        subtitle="Se não estiver listado, escolha 'Outro'."
+        subtitle="Se não estiver listado, escolha 'Outra'."
         onBack={onBack}
         step={5}
         totalSteps={totalSteps}
@@ -25,7 +25,7 @@ export const StepMedication: React.FC<StepMedicationProps> = ({ onNext, onBack, 
       <div className="flex-grow overflow-y-auto hide-scrollbar min-h-0 pb-4">
         {MEDICATIONS.map(({ name }) => (
           <OptionButton key={name} onClick={() => { onSelect(name); smoothScrollToBottom(); }} isSelected={value === name}>
-            {name}®
+            {name}{name !== 'Outra' ? '®' : ''}
           </OptionButton>
         ))}
       </div>

@@ -25,7 +25,7 @@ const HALF_LIVES: Record<string, number> = {
     'Ozempic': 7,       // Semaglutida (~165-168 horas)
     'Wegovy': 7,        // Semaglutida
     'Saxenda': 0.54,    // Liraglutida (~13 horas)
-    'Other': 7          // Fallback
+    'Outra': 7          // Fallback
 };
 
 const parseDose = (doseStr: string): number => {

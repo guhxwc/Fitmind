@@ -78,13 +78,23 @@ const EditApplicationModal: React.FC<{
                 <div className="space-y-6">
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Dose Administrada</label>
-                        <select 
-                            value={dose} 
-                            onChange={(e) => setDose(e.target.value)}
-                            className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                        >
-                            {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
+                        {availableDoses.length > 0 ? (
+                            <select 
+                                value={dose} 
+                                onChange={(e) => setDose(e.target.value)}
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                        ) : (
+                            <input 
+                                type="text"
+                                value={dose}
+                                onChange={(e) => setDose(e.target.value)}
+                                placeholder="Digite a dose (ex: 10 mg)"
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -311,17 +321,27 @@ export const ApplicationTab: React.FC = () => {
           {/* Section 2: Dose Selector */}
           <div>
               <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Dose</p>
-              <div className="grid grid-cols-3 gap-2">
-                  {availableDoses.map(d => (
-                      <button 
-                        key={d} 
-                        onClick={() => setSelectedDose(d)} 
-                        className={`py-2 rounded-xl text-xs font-bold border transition-all ${selectedDose === d ? 'border-black dark:border-white text-black dark:text-white bg-transparent shadow-sm' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 text-gray-400'}`}
-                      >
-                          {d}
-                      </button>
-                  ))}
-              </div>
+              {availableDoses.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                      {availableDoses.map(d => (
+                          <button 
+                            key={d} 
+                            onClick={() => setSelectedDose(d)} 
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${selectedDose === d ? 'border-black dark:border-white text-black dark:text-white bg-transparent shadow-sm' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 text-gray-400'}`}
+                          >
+                              {d}
+                          </button>
+                      ))}
+                  </div>
+              ) : (
+                  <input 
+                    type="text"
+                    value={selectedDose}
+                    onChange={(e) => setSelectedDose(e.target.value)}
+                    placeholder="Digite a dose (ex: 10 mg)"
+                    className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none border border-transparent focus:border-blue-500"
+                  />
+              )}
           </div>
 
           {/* Section 3: Injection Site (Text Based) */}

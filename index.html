@@ -153,23 +153,29 @@
       }
 
       .flame-core {
-        transform-origin: 12px 18px;
-        animation: flamePulse 1.5s ease-in-out infinite alternate;
+        transform-origin: 12px 18.5px;
+        animation: flamePulseCore 1.5s ease-in-out infinite alternate;
       }
 
       @keyframes flameWiggleOuter {
-        0% { transform: rotate(-2deg) scaleX(1); }
-        100% { transform: rotate(2deg) scaleX(1.05); }
+        0% { transform: scale(1, 1) skewX(-2deg); }
+        50% { transform: scale(0.97, 1.03) skewX(2deg); }
+        100% { transform: scale(1.02, 0.98) skewX(-1deg); }
       }
 
       @keyframes flameWiggleInner {
-        0% { transform: rotate(3deg) scaleX(1.1); }
-        100% { transform: rotate(-3deg) scaleX(0.95); }
+        0% { transform: scale(1, 1) skewX(3deg); }
+        50% { transform: scale(1.05, 0.95) skewX(-2deg); }
+        100% { transform: scale(0.95, 1.05) skewX(1deg); }
       }
 
-      @keyframes flamePulse {
-        0% { transform: scale(1); opacity: 0.8; }
-        100% { transform: scale(1.1); opacity: 1; }
+      @keyframes flamePulseCore {
+        0% { transform: scale(1, 1); }
+        100% { transform: scale(0.85, 1.15) translateY(-0.5px); }
+      }
+
+      .bg-glow {
+        background: radial-gradient(circle, rgba(255, 120, 0, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
       }
     </style>
     <script>

@@ -183,13 +183,29 @@ export const TreatmentSettings: React.FC = () => {
                 />
             )}
             {activeModal === 'dose' && (
-                <SelectModal 
-                    title="Dosagem"
-                    options={availableDoses}
-                    selectedValue={userData.medication.dose}
-                    onClose={() => setActiveModal(null)}
-                    onSelect={(val) => updateMedication('dose', val)}
-                />
+                availableDoses.length > 0 ? (
+                    <SelectModal 
+                        title="Dosagem"
+                        options={availableDoses}
+                        selectedValue={userData.medication.dose}
+                        onClose={() => setActiveModal(null)}
+                        onSelect={(val) => updateMedication('dose', val)}
+                    />
+                ) : (
+                    <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center backdrop-blur-sm" onClick={() => setActiveModal(null)}>
+                        <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[32px] shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Digite sua Dose</h3>
+                            <input 
+                                type="text"
+                                placeholder="Ex: 10 mg"
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none border-2 border-transparent focus:border-blue-500 mb-6"
+                                value={userData.medication.dose}
+                                onChange={(e) => updateMedication('dose', e.target.value)}
+                            />
+                            <button onClick={() => setActiveModal(null)} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold">Confirmar</button>
+                        </div>
+                    </div>
+                )
             )}
             {activeModal === 'site' && (
                 <SelectModal 

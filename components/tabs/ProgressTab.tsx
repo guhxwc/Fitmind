@@ -507,7 +507,7 @@ export const ProgressTab: React.FC = () => {
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', backgroundColor: theme === 'dark' ? '#1f2937' : '#fff', color: theme === 'dark' ? '#fff' : '#000' }}
                                 labelFormatter={(label) => formatDate(label as string)}
                             />
-                            <Area type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" animationDuration={1500} />
+                            <Area name="Peso" type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorWeight)" animationDuration={1500} />
                         </AreaChart>
                     </ResponsiveContainer>
                   </div>

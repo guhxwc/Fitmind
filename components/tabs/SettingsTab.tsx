@@ -267,7 +267,7 @@ export const SettingsTab: React.FC = () => {
                         />
                         <SettingsItem 
                             icon={<div className="bg-orange-500 p-1.5 rounded-md text-white"><SparklesIcon className="w-4 h-4"/></div>}
-                            label="Desbloquear PRO (Dev)" 
+                            label="Sincronizar Assinatura" 
                             onClick={unlockPro} 
                             isLast
                         />
@@ -275,7 +275,8 @@ export const SettingsTab: React.FC = () => {
                 ) : (
                     <SettingsItem 
                         icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><CheckCircleIcon className="w-4 h-4"/></div>}
-                        label="Status: Assinante PRO" 
+                        label="Status: Assinante PRO (Sincronizar)" 
+                        onClick={unlockPro}
                         isLast
                     />
                 )}

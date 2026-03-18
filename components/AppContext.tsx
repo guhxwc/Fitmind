@@ -278,16 +278,36 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [selectedDate]);
 
   const unlockPro = async () => {
-      if(userData) {
-          // Em produção, a atualização do status PRO (is_pro = true) 
-          // deve ser feita EXCLUSIVAMENTE por um webhook do gateway de pagamento (ex: Stripe)
-          // interagindo com o backend de forma segura, e nunca pelo client-side.
-          
-          // Aqui apenas recarregamos os dados do usuário para refletir a mudança
-          // feita pelo webhook.
-          await fetchData();
-          addToast("Verificando status da assinatura...", "info");
-      }
+    if (!session?.user?.id) return;
+    
+    try {
+        addToast("Verificando status da assinatura...", "info");
+        
+        // Tenta sincronizar via Edge Function
+        // Nota: Aqui não temos o sessionId, então a função vai tentar buscar por userId
+        // (Precisamos atualizar a Edge Function para suportar busca por userId se sessionId estiver ausente)
+        const { data, error } = await supabase.functions.invoke('stripe-sync-profile', {
+            body: { userId: session.user.id }
+        });
+
+        if (error) throw error;
+
+        if (data?.isPro) {
+            addToast("Assinatura PRO confirmada!", "success");
+            await fetchData();
+        } else {
+            // Se não confirmou via sync, apenas recarrega os dados (pode ser que o webhook já tenha processado)
+            await fetchData();
+            if (userData?.isPro) {
+                addToast("Status PRO atualizado!", "success");
+            } else {
+                addToast("Assinatura não encontrada ou ainda processando.", "info");
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao sincronizar PRO:", error);
+        await fetchData();
+    }
   }
 
   useEffect(() => {

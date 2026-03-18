@@ -199,6 +199,8 @@ export interface DietIngredient {
   id: string; // unique ID for the ingredient in the meal
   name: string;
   amount: string; // e.g., "100g", "1 unidade"
+  calories?: number;
+  protein?: number;
 }
 
 export interface DietMeal {

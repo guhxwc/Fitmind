@@ -826,10 +826,9 @@ const EmptyStateView: React.FC<{ onGenerate: () => void }> = ({ onGenerate }) =>
 // --- Main Component ---
 
 export const WorkoutsTab: React.FC = () => {
-    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak, unlockPro } = useAppContext();
+    const { userData, workoutPlan, setWorkoutPlan, workoutHistory, setWorkoutHistory, updateStreak, unlockPro, isGeneratingWorkout, setIsGeneratingWorkout } = useAppContext();
     const { addToast } = useToast();
     const [isQuizOpen, setIsQuizOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     
     // State to toggle between the dashboard and the active workout runner
     const [activeWorkoutDay, setActiveWorkoutDay] = useState<number | null>(null);
@@ -915,7 +914,7 @@ export const WorkoutsTab: React.FC = () => {
 
     const handleQuizComplete = async (answers: WorkoutQuizAnswers) => {
         setIsQuizOpen(false);
-        setIsLoading(true);
+        setIsGeneratingWorkout(true);
 
         try {
             // AI GENERATION LOGIC
@@ -943,7 +942,7 @@ export const WorkoutsTab: React.FC = () => {
             console.error("Erro na geração do treino:", e);
             addToast('Erro ao gerar treino com IA. Tente novamente.', 'error');
         } finally {
-            setIsLoading(false);
+            setIsGeneratingWorkout(false);
         }
     };
 
@@ -1006,7 +1005,7 @@ export const WorkoutsTab: React.FC = () => {
         }
     };
 
-    if (isLoading) {
+    if (isGeneratingWorkout) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-black">
                 <div className="relative w-24 h-24 mb-6">

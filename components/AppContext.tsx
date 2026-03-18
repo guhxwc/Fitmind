@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Session } from '@supabase/supabase-js';
-import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry, ActivityLevel } from '../types';
+import type { UserData, Meal, WeightEntry, ProgressPhoto, WorkoutPlan, WorkoutFeedback, ApplicationEntry, DailyNote, SideEffectEntry, ActivityLevel, DietPlan } from '../types';
 import { DEFAULT_USER_DATA } from '../constants';
 import { useToast } from './ToastProvider';
 
@@ -34,6 +34,8 @@ interface AppContextType {
   setQuickAddProtein: React.Dispatch<React.SetStateAction<number>>;
   currentWater: number;
   setCurrentWater: React.Dispatch<React.SetStateAction<number>>;
+  dietPlan: DietPlan | null;
+  setDietPlan: React.Dispatch<React.SetStateAction<DietPlan | null>>;
   loading: boolean;
   fetchData: () => Promise<void>;
   updateStreak: () => void;
@@ -41,6 +43,10 @@ interface AppContextType {
   toggleTheme: () => void;
   unlockPro: () => Promise<void>;
   calculateGoals: (weight: number, activityLevel: ActivityLevel) => UserData['goals'];
+  isGeneratingDiet: boolean;
+  setIsGeneratingDiet: React.Dispatch<React.SetStateAction<boolean>>;
+  isGeneratingWorkout: boolean;
+  setIsGeneratingWorkout: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -62,6 +68,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [meals, setMeals] = useState<Meal[]>([]);
   const [quickAddProtein, setQuickAddProtein] = useState(0);
   const [currentWater, setCurrentWater] = useState(0);
+  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [isGeneratingDiet, setIsGeneratingDiet] = useState(false);
+  const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
@@ -398,13 +407,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setQuickAddProtein,
       currentWater,
       setCurrentWater,
+      dietPlan,
+      setDietPlan,
       loading,
       fetchData,
       updateStreak,
       theme,
       toggleTheme,
       unlockPro,
-      calculateGoals
+      calculateGoals,
+      isGeneratingDiet,
+      setIsGeneratingDiet,
+      isGeneratingWorkout,
+      setIsGeneratingWorkout
     }}>
       {children}
     </AppContext.Provider>
@@ -440,6 +455,8 @@ export const useAppContext = () => {
         setQuickAddProtein: () => {},
         currentWater: 0,
         setCurrentWater: () => {},
+        dietPlan: null,
+        setDietPlan: () => {},
         loading: false,
         fetchData: async () => {},
         updateStreak: () => {},
@@ -447,6 +464,10 @@ export const useAppContext = () => {
         toggleTheme: () => {},
         unlockPro: async () => {},
         calculateGoals: () => ({ water: 0, protein: 0, calories: 0, fiber: 0, carbs: 0, fats: 0, steps: 0, exerciseMinutes: 0 }),
+        isGeneratingDiet: false,
+        setIsGeneratingDiet: () => {},
+        isGeneratingWorkout: false,
+        setIsGeneratingWorkout: () => {},
     } as unknown as AppContextType;
   }
   return context;

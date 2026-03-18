@@ -23,6 +23,14 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!contextLoading && userData) {
+      if (userData.isPro) {
+        localStorage.removeItem('trigger_pro_tour');
+      }
+    }
+  }, [userData, contextLoading]);
+
+  useEffect(() => {
     // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
     if (window.location.hash && window.location.hash.includes('access_token=')) {
       setTimeout(() => {
@@ -175,7 +183,7 @@ const AppContent: React.FC = () => {
               <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
             </div>
           ) : profileExists ? (
-            (userData?.isPro || upsellDismissed) ? (
+            (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
               <MainApp />
             ) : (
               <OnboardingFlow 

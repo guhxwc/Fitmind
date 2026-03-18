@@ -7,8 +7,7 @@
     <meta http-equiv="Expires" content="0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>FitMind</title>
-    <link rel="icon" href="https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=256&h=256&fit=contain&trim=10">
-    <link rel="apple-touch-icon" href="https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=512&h=512&fit=contain&trim=10&bg=black">
+    <link rel="icon" href="https://i.imgur.com/T95MJyk.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -136,6 +135,41 @@
       }
       .dark .glass {
         background: rgba(28, 28, 30, 0.75);
+      }
+
+      /* Flame Animations */
+      .flame-container {
+        filter: drop-shadow(0 15px 25px rgba(255, 92, 0, 0.4));
+      }
+
+      .flame-outer {
+        transform-origin: 12px 22px;
+        animation: flameWiggleOuter 2.5s ease-in-out infinite alternate;
+      }
+
+      .flame-inner {
+        transform-origin: 12px 20px;
+        animation: flameWiggleInner 2s ease-in-out infinite alternate-reverse;
+      }
+
+      .flame-core {
+        transform-origin: 12px 18px;
+        animation: flamePulse 1.5s ease-in-out infinite alternate;
+      }
+
+      @keyframes flameWiggleOuter {
+        0% { transform: rotate(-2deg) scaleX(1); }
+        100% { transform: rotate(2deg) scaleX(1.05); }
+      }
+
+      @keyframes flameWiggleInner {
+        0% { transform: rotate(3deg) scaleX(1.1); }
+        100% { transform: rotate(-3deg) scaleX(0.95); }
+      }
+
+      @keyframes flamePulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.1); opacity: 1; }
       }
     </style>
     <script>

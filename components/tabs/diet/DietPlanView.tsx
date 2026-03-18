@@ -41,8 +41,14 @@ const IngredientRow: React.FC<{ ingredient: DietIngredient, onSwap: (ing: DietIn
     <div className="group flex items-center justify-between py-4 px-4 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl mb-2 last:mb-0 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all active:scale-[0.98]">
       <div className="flex-1">
         <p className="font-bold text-gray-900 dark:text-white text-[15px] leading-tight">{ingredient.name}</p>
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <span className="text-[10px] font-bold text-gray-400 bg-white dark:bg-gray-700 px-1.5 py-0.5 rounded border border-gray-100 dark:border-gray-600 uppercase">{ingredient.amount}</span>
+          {ingredient.calories !== undefined && (
+            <span className="text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{ingredient.calories} kcal</span>
+          )}
+          {ingredient.protein !== undefined && (
+            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{ingredient.protein}g prot</span>
+          )}
         </div>
       </div>
       <button 
@@ -76,6 +82,9 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
       colorClass = "bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400";
   }
 
+  const totalCalories = meal.ingredients.reduce((sum, ing) => sum + (ing.calories || 0), 0);
+  const totalProtein = meal.ingredients.reduce((sum, ing) => sum + (ing.protein || 0), 0);
+
   return (
     <div className="bg-white dark:bg-gray-900/60 backdrop-blur-md rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800/50 overflow-hidden transition-all duration-300 mb-4 last:mb-0">
       <div 
@@ -89,7 +98,15 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
                 </div>
                 <div>
                     <h3 className="font-extrabold text-gray-900 dark:text-white text-lg tracking-tight">{meal.name}</h3>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{meal.time}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{meal.time}</p>
+                        {totalCalories > 0 && (
+                            <span className="text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{Math.round(totalCalories)} kcal</span>
+                        )}
+                        {totalProtein > 0 && (
+                            <span className="text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{Math.round(totalProtein)}g prot</span>
+                        )}
+                    </div>
                 </div>
             </div>
             <div className={`w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center text-gray-400 transition-all duration-300 ${isOpen ? 'rotate-90 bg-black dark:bg-white text-white dark:text-black' : ''}`}>
@@ -117,14 +134,12 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
 };
 
 export const DietPlanView: React.FC = () => {
-  const { userData } = useAppContext();
+  const { userData, isGeneratingDiet, setIsGeneratingDiet, dietPlan, setDietPlan } = useAppContext();
   const { addToast } = useToast();
-  const [plan, setPlan] = useState<DietPlan | null>(null);
   const [selectedDay, setSelectedDay] = useState<Weekday>(() => {
     const days: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
     return days[new Date().getDay()];
   });
-  const [loading, setLoading] = useState(false);
   const [swappingIngredient, setSwappingIngredient] = useState<{mealId: string, ingredient: DietIngredient} | null>(null);
   const [swapOptions, setSwapOptions] = useState<DietIngredient[]>([]);
   const [swapLoading, setSwapLoading] = useState(false);
@@ -138,28 +153,28 @@ export const DietPlanView: React.FC = () => {
 
   useEffect(() => {
     const savedPlan = localStorage.getItem('diet_plan');
-    if (savedPlan) {
+    if (savedPlan && !dietPlan) {
         try {
-            setPlan(JSON.parse(savedPlan));
+            setDietPlan(JSON.parse(savedPlan));
         } catch (e) {
             console.error("Error parsing saved plan", e);
         }
     }
-  }, []);
+  }, [dietPlan, setDietPlan]);
 
   const handleQuizComplete = async (answers: DietQuizAnswers) => {
       if (!userData) return;
       setIsQuizOpen(false);
-      setLoading(true);
+      setIsGeneratingDiet(true);
       try {
           const newPlan = await dietService.generateDietPlan(userData, answers);
-          setPlan(newPlan);
+          setDietPlan(newPlan);
           localStorage.setItem('diet_plan', JSON.stringify(newPlan));
       } catch (error) {
           console.error("Error generating plan", error);
           addToast("Erro ao gerar dieta. Verifique sua conexão e tente novamente.", "error");
       } finally {
-          setLoading(false);
+          setIsGeneratingDiet(false);
       }
   };
 
@@ -201,18 +216,37 @@ export const DietPlanView: React.FC = () => {
   const confirmManualSwap = (foodItem: FoodItem) => {
       if (!swappingIngredient) return;
       
+      // Tenta extrair gramas do texto de quantidade original (ex: "100g", "200 gramas")
+      const amountText = swappingIngredient.ingredient.amount;
+      const gramMatch = amountText.match(/(\d+)\s*g/i);
+      let calories = 0;
+      let protein = 0;
+
+      if (gramMatch) {
+          const grams = parseInt(gramMatch[1]);
+          const calculated = foodDatabaseService.calcForPortion(foodItem, grams);
+          calories = calculated.calorias;
+          protein = calculated.proteinas;
+      } else {
+          // Se não for em gramas, assume 100g como base ou apenas usa os valores por 100g como estimativa
+          calories = foodItem.calorias;
+          protein = foodItem.proteinas;
+      }
+      
       const newIngredient: DietIngredient = {
           id: Math.random().toString(36).substr(2, 9),
           name: foodItem.nome,
-          amount: swappingIngredient.ingredient.amount // Keep original amount text
+          amount: swappingIngredient.ingredient.amount, // Mantém a quantidade original para consistência
+          calories,
+          protein
       };
       confirmSwap(newIngredient);
   };
 
   const confirmSwap = (newIngredient: DietIngredient) => {
-    if (!plan || !swappingIngredient) return;
+    if (!dietPlan || !swappingIngredient) return;
 
-    const newDays = plan.days.map(day => {
+    const newDays = dietPlan.days.map(day => {
         if (day.day !== selectedDay) return day;
         
         return {
@@ -230,8 +264,8 @@ export const DietPlanView: React.FC = () => {
         };
     });
 
-    const updatedPlan = { ...plan, days: newDays };
-    setPlan(updatedPlan);
+    const updatedPlan = { ...dietPlan, days: newDays };
+    setDietPlan(updatedPlan);
     localStorage.setItem('diet_plan', JSON.stringify(updatedPlan));
     setSwappingIngredient(null);
     setSwapOptions([]);
@@ -239,7 +273,7 @@ export const DietPlanView: React.FC = () => {
     setIsManualSearch(false);
   };
 
-  if (loading) {
+  if (isGeneratingDiet) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] space-y-8 animate-fade-in">
         <div className="relative w-24 h-24">
@@ -257,7 +291,7 @@ export const DietPlanView: React.FC = () => {
     );
   }
 
-  if (!plan) {
+  if (!dietPlan) {
       return (
           <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center animate-fade-in">
               <div className="w-28 h-28 bg-gradient-to-tr from-orange-100 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10 rounded-[40px] flex items-center justify-center mb-10 shadow-inner">
@@ -278,7 +312,15 @@ export const DietPlanView: React.FC = () => {
       )
   }
 
-  const currentDayData = plan.days.find(d => d.day === selectedDay);
+  const currentDayData = dietPlan.days.find(d => d.day === selectedDay);
+
+  const totalDayCalories = currentDayData?.meals.reduce((sum, meal) => 
+    sum + meal.ingredients.reduce((mSum, ing) => mSum + (ing.calories || 0), 0)
+  , 0) || 0;
+
+  const totalDayProtein = currentDayData?.meals.reduce((sum, meal) => 
+    sum + meal.ingredients.reduce((mSum, ing) => mSum + (ing.protein || 0), 0)
+  , 0) || 0;
 
   return (
     <div className="space-y-8 pb-40 animate-fade-in">
@@ -302,7 +344,15 @@ export const DietPlanView: React.FC = () => {
            <div className="space-y-5">
                <div className="flex items-center justify-between px-2">
                    <h3 className="font-extrabold text-gray-900 dark:text-white text-xl tracking-tight">Refeições</h3>
-                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full uppercase tracking-widest">{currentDayData.meals.length} Pratos</span>
+                   <div className="flex items-center gap-2">
+                       {totalDayCalories > 0 && (
+                           <span className="text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full border border-orange-100 dark:border-orange-800 uppercase tracking-widest">{Math.round(totalDayCalories)} kcal</span>
+                       )}
+                       {totalDayProtein > 0 && (
+                           <span className="text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full border border-blue-100 dark:border-blue-800 uppercase tracking-widest">{Math.round(totalDayProtein)}g prot</span>
+                       )}
+                       <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full uppercase tracking-widest">{currentDayData.meals.length} Pratos</span>
+                   </div>
                </div>
                
                {currentDayData.meals.length > 0 ? (
@@ -403,7 +453,15 @@ export const DietPlanView: React.FC = () => {
                                                 <div className="flex justify-between items-center">
                                                     <div className="flex-1 pr-4">
                                                         <span className="font-bold text-gray-900 dark:text-white block mb-1 text-sm leading-tight">{opt.name}</span>
-                                                        <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-widest">{opt.amount}</span>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="text-[10px] text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-md font-bold uppercase tracking-widest">{opt.amount}</span>
+                                                            {opt.calories !== undefined && (
+                                                                <span className="text-[10px] font-bold text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{opt.calories} kcal</span>
+                                                            )}
+                                                            {opt.protein !== undefined && (
+                                                                <span className="text-[10px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{opt.protein}g prot</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </button>
@@ -485,8 +543,10 @@ export const DietPlanView: React.FC = () => {
                                                 className="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-500 dark:hover:border-blue-500 transition-all bg-white dark:bg-gray-900 active:scale-[0.98] shadow-sm"
                                             >
                                                 <p className="font-bold text-gray-900 dark:text-white text-sm mb-1">{item.nome}</p>
-                                                <div className="flex items-center gap-3 text-[10px] text-gray-400 font-medium">
+                                                <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 font-medium">
                                                     <span>Base de dados TACO</span>
+                                                    <span className="text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{item.calorias} kcal/100g</span>
+                                                    <span className="text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{item.proteinas}g prot/100g</span>
                                                 </div>
                                             </button>
                                         ))

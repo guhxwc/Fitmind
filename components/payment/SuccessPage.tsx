@@ -17,34 +17,29 @@ export const SuccessPage: React.FC = () => {
     }, [session]);
 
     const activatePro = async () => {
-        const userId = session!.user.id;
+        if (!session) return;
+        const userId = session.user.id;
 
         try {
-            // Verifica se já está Pro (webhook pode ter chegado rápido)
+            // 1. Verifica se já está Pro (webhook pode ter chegado rápido)
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('is_pro, subscription_status, name')
+                .select('is_pro, subscription_status')
                 .eq('id', userId)
                 .maybeSingle();
 
             const alreadyPro = profile?.is_pro || profile?.subscription_status === 'active';
 
             if (alreadyPro) {
-                // Webhook já processou — só redireciona
                 await finish();
                 return;
             }
 
-            setStatusMsg('Confirmando com o servidor...');
-
-            if (profile) {
-                // Perfil existe — espera o webhook atualizar o status
-                // Não atualizamos is_pro aqui para evitar vulnerabilidade
-            } else {
-                // Perfil não existe — cria com dados do onboarding salvo
+            // 2. Se o perfil não existe, cria com dados do onboarding
+            if (!profile) {
                 const savedData = localStorage.getItem('onboarding_userData');
                 const parsed = savedData ? JSON.parse(savedData) : {};
-
+                
                 const { error } = await supabase.from('profiles').upsert({
                     id: userId,
                     name: parsed.name || 'Usuário',
@@ -67,17 +62,43 @@ export const SuccessPage: React.FC = () => {
                     goals: parsed.goals || null,
                     streak: 0,
                     last_activity_date: new Date().toISOString(),
-                    // is_pro e subscription_status serão atualizados pelo webhook
                 });
 
                 if (error) throw error;
+            }
+
+            // 3. Invoca a função de sync (opcional, mas recomendado se existir)
+            setStatusMsg('Sincronizando assinatura...');
+            try {
+                await supabase.functions.invoke('stripe-webhook-sync-profile');
+            } catch (e) {
+                console.warn('Falha ao invocar sync function:', e);
+            }
+
+            // 4. Polling (máximo 10 segundos)
+            setStatusMsg('Confirmando status PRO...');
+            let attempts = 0;
+            const maxAttempts = 5; // 5 vezes a cada 2 segundos = 10s
+            
+            while (attempts < maxAttempts) {
+                const { data: updatedProfile } = await supabase
+                    .from('profiles')
+                    .select('is_pro, subscription_status')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (updatedProfile?.is_pro || updatedProfile?.subscription_status === 'active') {
+                    break;
+                }
+                
+                attempts++;
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
 
             await finish();
 
         } catch (err) {
             console.error('Erro ao ativar PRO:', err);
-            // Mesmo com erro, redireciona — o webhook vai corrigir em background
             await finish();
         }
     };

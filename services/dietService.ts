@@ -28,7 +28,7 @@ export const dietService = {
 
         IMPORTANTE:
         1. Foque apenas nos NOMES dos pratos e ingredientes (ex: "Arroz integral", "Filé de tilápia grelhado", "Salada de alface e tomate").
-        2. Não inclua calorias, proteínas ou macronutrientes.
+        2. Inclua uma estimativa de calorias (em kcal, número inteiro) e proteínas (em gramas, número inteiro) para cada ingrediente.
         3. Seja específico e não genérico.
         4. Forneça uma quantidade sugerida em texto simples (ex: "2 colheres de sopa", "1 filé médio", "1 xícara").
         
@@ -44,11 +44,15 @@ export const dietService = {
                   "ingredients": [
                     { 
                       "name": "Ovos mexidos", 
-                      "amount": "2 unidades"
+                      "amount": "2 unidades",
+                      "calories": 140,
+                      "protein": 12
                     },
                     {
                       "name": "Pão integral",
-                      "amount": "2 fatias"
+                      "amount": "2 fatias",
+                      "calories": 120,
+                      "protein": 4
                     }
                   ]
                 },
@@ -97,7 +101,9 @@ export const dietService = {
           ingredients: mealData.ingredients.map((ingData: any) => ({
             id: Math.random().toString(36).substr(2, 9),
             name: ingData.name,
-            amount: ingData.amount
+            amount: ingData.amount,
+            calories: ingData.calories,
+            protein: ingData.protein
           }))
         }))
       }));
@@ -128,13 +134,17 @@ export const dietService = {
         Para cada substituto, forneça:
         1. O nome do prato/ingrediente.
         2. A quantidade sugerida em texto simples (ex: "100g", "2 unidades", "1 colher").
+        3. Uma estimativa de calorias (em kcal, número inteiro).
+        4. Uma estimativa de proteínas (em gramas, número inteiro).
 
         Retorne APENAS um JSON:
         {
           "suggestions": [
             {
               "name": "Batata doce cozida",
-              "amount": "1 xícara"
+              "amount": "1 xícara",
+              "calories": 114,
+              "protein": 2
             }
           ]
         }
@@ -152,7 +162,9 @@ export const dietService = {
       return suggestions.map((sug: any) => ({
           id: Math.random().toString(36).substr(2, 9),
           name: sug.name,
-          amount: sug.amount
+          amount: sug.amount,
+          calories: sug.calories,
+          protein: sug.protein
       }));
 
     } catch (error) {

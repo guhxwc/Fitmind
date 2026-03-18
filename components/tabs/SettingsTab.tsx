@@ -21,11 +21,15 @@ const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = (
 
 const SettingsItem: React.FC<{icon?: React.ReactNode, label: string, value?: string, onClick?: () => void, isDestructive?: boolean, isLast?: boolean}> = ({ icon, label, value, onClick, isDestructive, isLast }) => (
     <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
-        <button onClick={onClick} className={`flex items-center w-full py-3 pr-4 active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}>
+        <button 
+            onClick={onClick} 
+            disabled={!onClick}
+            className={`flex items-center w-full py-3 pr-4 transition-colors ${onClick ? 'active:bg-gray-100 dark:active:bg-gray-800' : 'cursor-default'} ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}
+        >
             {icon && <div className="text-gray-900 dark:text-white mr-3">{icon}</div>}
             <span className={`flex-grow text-left font-medium text-[17px] ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{label}</span>
             {value && <span className="text-gray-400 dark:text-gray-500 mr-2 text-[17px]">{value}</span>}
-            {!isDestructive && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+            {!isDestructive && onClick && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
         </button>
     </div>
 )
@@ -259,24 +263,16 @@ export const SettingsTab: React.FC = () => {
                     onClick={() => navigate('/settings/privacy')} 
                 />
                 {!userData.isPro ? (
-                    <>
-                        <SettingsItem 
-                            icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
-                            label="Assinar FitMind PRO" 
-                            onClick={() => setShowSubPage(true)} 
-                        />
-                        <SettingsItem 
-                            icon={<div className="bg-orange-500 p-1.5 rounded-md text-white"><SparklesIcon className="w-4 h-4"/></div>}
-                            label="Sincronizar Assinatura" 
-                            onClick={unlockPro} 
-                            isLast
-                        />
-                    </>
+                    <SettingsItem 
+                        icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
+                        label="Assinar FitMind PRO" 
+                        onClick={() => setShowSubPage(true)} 
+                        isLast
+                    />
                 ) : (
                     <SettingsItem 
                         icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><CheckCircleIcon className="w-4 h-4"/></div>}
-                        label="Status: Assinante PRO (Sincronizar)" 
-                        onClick={unlockPro}
+                        label="Status: Assinante PRO" 
                         isLast
                     />
                 )}

@@ -7,15 +7,16 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
     const { userData } = useAppContext();
     const [showAnimation, setShowAnimation] = useState(false);
     
+    const [showModal, setShowModal] = useState(false);
+    
     if (!userData) return null;
 
     const hasStreak = userData.streak > 0;
 
     const handleToggleAnimation = () => {
-        if (hasStreak) {
-            setShowAnimation(true);
-            setTimeout(() => setShowAnimation(false), 3000); // Show for 3 seconds
-        }
+        setShowModal(true);
+        setShowAnimation(true);
+        setTimeout(() => setShowAnimation(false), 3000); // Show for 3 seconds
     };
 
     return (
@@ -38,6 +39,45 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
                     {userData.streak}
                 </span>
             </div>
+
+            {showModal && (
+                <Portal>
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                        <div 
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+                            onClick={() => setShowModal(false)}
+                        />
+                        <div className="relative bg-white dark:bg-gray-900 rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl animate-pop-in">
+                            <div className="p-8 text-center">
+                                <div className="mb-6 flex justify-center">
+                                    <div className="relative w-24 h-24 flex items-center justify-center">
+                                        <div className={`absolute inset-0 bg-orange-500/20 rounded-full blur-xl ${hasStreak ? 'animate-pulse' : ''}`}></div>
+                                        <svg className={`w-16 h-16 ${hasStreak ? 'text-orange-500' : 'text-gray-400'}`} viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M11.5 2C11.5 2 10 5 10 7.5C10 10 12 11.5 12 14C12 16.5 10.5 18.5 8 19.5C11 21.5 15 21 17 18C19 15 18 11.5 16 9C14 6.5 11.5 2 11.5 2Z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
+                                    {userData.streak} {userData.streak === 1 ? 'Dia' : 'Dias'}
+                                </h2>
+                                <p className="text-gray-500 dark:text-gray-400 font-medium mb-8">
+                                    {hasStreak 
+                                        ? 'Incrível! Continue mantendo sua rotina saudável.' 
+                                        : 'Comece sua jornada hoje! Complete uma atividade para iniciar sua sequência.'}
+                                </p>
+                                
+                                <button 
+                                    onClick={() => setShowModal(false)}
+                                    className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-bold text-lg active:scale-95 transition-transform"
+                                >
+                                    Continuar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Portal>
+            )}
 
             {showAnimation && (
                 <Portal>

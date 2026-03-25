@@ -14,13 +14,24 @@ const SelectModal: React.FC<{
     onSelect: (val: string) => void; 
     onClose: () => void; 
     selectedValue: string;
-}> = ({ title, options, onSelect, onClose, selectedValue }) => (
+    description?: string;
+}> = ({ title, options, onSelect, onClose, selectedValue, description }) => (
     <div className="fixed inset-0 bg-black/60 z-[90] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
         <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] p-6 animate-slide-up max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
                 <button onClick={onClose} className="text-blue-500 font-semibold">Fechar</button>
             </div>
+            {description && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-6 flex gap-3 items-start">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-xl">💡</span>
+                    </div>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 font-medium leading-relaxed">
+                        {description}
+                    </p>
+                </div>
+            )}
             <div className="space-y-2 pb-8">
                 {options.map(opt => (
                     <button 
@@ -70,7 +81,7 @@ export const TreatmentSettings: React.FC = () => {
     const { addToast } = useToast();
     
     // State for modals
-    const [activeModal, setActiveModal] = useState<'medication' | 'frequency' | 'dose' | 'site' | 'time' | null>(null);
+    const [activeModal, setActiveModal] = useState<'medication' | 'frequency' | 'dose' | 'site' | 'time' | 'day' | null>(null);
 
     if (!userData) return null;
 
@@ -151,6 +162,12 @@ export const TreatmentSettings: React.FC = () => {
                         onClick={() => setActiveModal('site')}
                     />
                     <SettingRow 
+                        icon={<CalendarIcon className="w-5 h-5" />}
+                        label="Dia da Aplicação"
+                        value={userData.medication.nextApplication || 'Não definido'}
+                        onClick={() => setActiveModal('day')}
+                    />
+                    <SettingRow 
                         icon={<ClockIcon className="w-5 h-5" />}
                         label="Horário"
                         value={userData.medicationReminder?.time || '09:00'}
@@ -214,6 +231,16 @@ export const TreatmentSettings: React.FC = () => {
                     selectedValue={userData.medication.defaultSite || ''}
                     onClose={() => setActiveModal(null)}
                     onSelect={(val) => updateMedication('defaultSite', val)}
+                />
+            )}
+            {activeModal === 'day' && (
+                <SelectModal 
+                    title="Dia da Aplicação"
+                    description="O melhor dia para tomar o medicamento é no dia que você mais sente fome."
+                    options={WEEKDAYS}
+                    selectedValue={userData.medication.nextApplication}
+                    onClose={() => setActiveModal(null)}
+                    onSelect={(val) => updateMedication('nextApplication', val)}
                 />
             )}
             {activeModal === 'time' && (

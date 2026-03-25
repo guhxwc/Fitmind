@@ -250,14 +250,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] animate-pop-in shadow-2xl relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center sm:p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-[32px] animate-pop-in shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
             
             {/* Header Area (Sticky) */}
-            <div className="flex-shrink-0 pt-6 pb-2 px-6 relative">
+            <div className="flex-shrink-0 pt-12 sm:pt-6 pb-2 px-6 relative">
               <button 
                 onClick={onClose}
-                className="absolute top-4 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
+                className="absolute top-8 sm:top-4 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -286,19 +286,6 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                       <div className="text-left">
                         <p className="font-bold text-gray-900 dark:text-white">Manual</p>
                         <p className="text-xs text-gray-500">Preencha os dados da refeição</p>
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setMode('favorites')}
-                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
-                    >
-                      <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-600 dark:text-red-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-gray-900 dark:text-white">Favoritos</p>
-                        <p className="text-xs text-gray-500">Adicione refeições salvas</p>
                       </div>
                     </button>
 

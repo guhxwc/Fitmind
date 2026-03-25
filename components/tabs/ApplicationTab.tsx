@@ -72,24 +72,18 @@ const EditApplicationModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-8 w-full max-w-[360px] shadow-2xl border border-white/10 animate-scale-in relative" onClick={(e) => e.stopPropagation()}>
-                <button 
-                  onClick={onClose}
-                  className="absolute top-4 right-5 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-8">Editar Registro</h2>
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 sm:p-8 w-full max-w-[340px] shadow-2xl animate-scale-in relative" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Editar Registro</h2>
                 
-                <div className="space-y-8">
+                <div className="space-y-6">
                     <div>
-                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Dose Administrada</label>
+                        <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Dose Administrada</label>
                         <div className="relative">
                             {availableDoses.length > 0 ? (
                                 <select 
                                     value={dose} 
                                     onChange={(e) => setDose(e.target.value)}
-                                    className="w-full p-5 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent"
+                                    className="w-full p-4 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent"
                                 >
                                     {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
@@ -99,51 +93,51 @@ const EditApplicationModal: React.FC<{
                                     value={dose}
                                     onChange={(e) => setDose(e.target.value)}
                                     placeholder="Digite a dose (ex: 10 mg)"
-                                    className="w-full p-5 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent"
+                                    className="w-full p-4 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base outline-none focus:ring-2 focus:ring-blue-500 border border-transparent"
                                 />
                             )}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Data</label>
+                            <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Data</label>
                             <div className="relative">
                                 <input 
                                     type="date" 
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-4 pr-10 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent text-sm"
+                                    className="w-full p-4 pr-10 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10 relative"
                                 />
-                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900 dark:text-white pointer-events-none" />
                             </div>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Hora</label>
+                            <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Hora</label>
                             <div className="relative">
                                 <input 
                                     type="time" 
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
-                                    className="w-full p-4 pr-10 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent text-sm"
+                                    className="w-full p-4 pr-10 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10 relative"
                                 />
-                                <ClockIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <ClockIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900 dark:text-white pointer-events-none" />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-10 flex flex-col gap-4">
+                <div className="mt-8 flex flex-col gap-2">
                     <button 
                         onClick={handleSaveClick} 
                         disabled={isSaving} 
-                        className="w-full bg-black dark:bg-white text-white dark:text-black py-5 rounded-[24px] font-bold text-lg shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                        className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-[16px] font-bold text-base active:scale-95 transition-all disabled:opacity-50"
                     >
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                     <button 
                         onClick={() => setShowDeleteConfirm(true)} 
-                        className="w-full text-red-500 font-bold py-2 text-sm hover:text-red-600 transition-colors"
+                        className="w-full text-[#EF4444] font-bold py-3 text-sm hover:text-red-600 transition-colors"
                     >
                         Excluir Registro
                     </button>

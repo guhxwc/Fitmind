@@ -72,10 +72,15 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
   if (view === 'care_plan') {
       return (
         <Portal>
-            <div className="fixed inset-0 bg-black/60 z-[80] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
-                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md h-[85%] rounded-t-[32px] flex flex-col animate-slide-up shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                     
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full opacity-50"></div>
+                    <button 
+                      onClick={onClose}
+                      className="absolute top-4 right-5 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors z-10"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
 
                     <div className="p-8 pb-4 text-center">
                         <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm animate-pop-in">
@@ -120,15 +125,20 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md h-[90%] rounded-t-[32px] flex flex-col animate-slide-up shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
           
           <div className="flex items-center justify-between p-6 pb-2">
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-sm font-medium">
                 Cancelar
             </button>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Check-in de Saúde</h2>
-            <div className="w-14"></div> {/* Spacer for centering */}
+            <button 
+              onClick={onClose}
+              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </div>
 
           <div className="flex-grow overflow-y-auto px-6 pb-6 space-y-8">

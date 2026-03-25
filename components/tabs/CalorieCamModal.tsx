@@ -227,32 +227,35 @@ export const CalorieCamModal: React.FC<CalorieCamModalProps> = ({ onClose, onAdd
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col animate-slide-up" onClick={(e) => e.stopPropagation()}>
-          <div className="flex-shrink-0 flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CalorieCam</h2>
-            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] p-8 flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0 flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 uppercase tracking-tight">CalorieCam</h2>
+            <button 
+              onClick={onClose} 
+              className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
 
-          <div className="flex-grow overflow-y-auto">
+          <div className="flex-grow overflow-y-auto hide-scrollbar">
             {renderContent()}
           </div>
 
           {stage === 'results' && (
-            <div className="mt-auto pt-6 flex gap-3">
-              <button onClick={handleRetry} className="w-1/3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
+            <div className="mt-8 flex gap-3">
+              <button onClick={handleRetry} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 py-5 rounded-2xl text-lg font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
                 <ArrowPathIcon className="w-5 h-5" />
                 Tentar
               </button>
               <button
                 onClick={handleAdd}
                 disabled={!analysisResult || !analysisResult.foodName}
-                className="w-2/3 bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-semibold disabled:bg-gray-300 dark:disabled:bg-gray-600 flex items-center justify-center gap-2"
+                className="flex-[2] bg-black dark:bg-white text-white dark:text-black py-5 rounded-2xl text-lg font-bold disabled:opacity-50 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <PlusIcon className="w-6 h-6" />
-                Adicionar ao Diário
+                Adicionar
               </button>
             </div>
           )}

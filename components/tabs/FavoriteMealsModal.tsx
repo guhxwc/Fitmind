@@ -66,15 +66,15 @@ export const FavoriteMealsModal: React.FC<FavoriteMealsModalProps> = ({ onClose,
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={onClose}>
-            <div className="bg-white dark:bg-black w-full max-w-md h-[80vh] rounded-t-[32px] flex flex-col animate-slide-up shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-black rounded-t-[32px] z-10">
-                    <button onClick={onClose} className="p-2 -ml-2 bg-gray-50 dark:bg-gray-900 rounded-full active:scale-95 transition-transform">
+                    <button onClick={onClose} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-full active:scale-95 transition-transform">
                         <ChevronLeftIcon className="w-6 h-6 text-gray-900 dark:text-white" />
                     </button>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Refeições Favoritas</h2>
+                    <h2 className="text-xl font-extrabold text-gray-900 dark:text-white uppercase tracking-tight">Favoritos</h2>
                     <div className="w-10"></div>
                 </div>
 

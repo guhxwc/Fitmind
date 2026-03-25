@@ -250,17 +250,16 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full max-w-md rounded-t-[32px] animate-slide-up shadow-2xl relative max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] animate-pop-in shadow-2xl relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             
             {/* Header Area (Sticky) */}
-            <div className="flex-shrink-0 pt-4 pb-2 px-6 relative">
-              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto opacity-50"></div>
+            <div className="flex-shrink-0 pt-6 pb-2 px-6 relative">
               <button 
                 onClick={onClose}
-                className="absolute top-4 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
+                className="absolute top-4 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
 

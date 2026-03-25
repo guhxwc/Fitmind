@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import type { Weekday, ApplicationEntry, MedicationName, SideEffect, SideEffectEntry } from '../../types';
-import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon, LockIcon, WavesIcon, ChevronRightIcon } from '../core/Icons';
+import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon, LockIcon, WavesIcon, ChevronRightIcon, CalendarIcon, ClockIcon, XMarkIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { WEEKDAYS, MEDICATIONS } from '../../constants';
 import { useAppContext } from '../AppContext';
@@ -71,59 +71,80 @@ const EditApplicationModal: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-6 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-white/10" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Editar Registro</h2>
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-8 w-full max-w-[360px] shadow-2xl border border-white/10 animate-scale-in relative" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  onClick={onClose}
+                  className="absolute top-4 right-5 p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-8">Editar Registro</h2>
                 
-                <div className="space-y-6">
+                <div className="space-y-8">
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Dose Administrada</label>
-                        {availableDoses.length > 0 ? (
-                            <select 
-                                value={dose} 
-                                onChange={(e) => setDose(e.target.value)}
-                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                            >
-                                {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        ) : (
-                            <input 
-                                type="text"
-                                value={dose}
-                                onChange={(e) => setDose(e.target.value)}
-                                placeholder="Digite a dose (ex: 10 mg)"
-                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        )}
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Dose Administrada</label>
+                        <div className="relative">
+                            {availableDoses.length > 0 ? (
+                                <select 
+                                    value={dose} 
+                                    onChange={(e) => setDose(e.target.value)}
+                                    className="w-full p-5 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent"
+                                >
+                                    {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                            ) : (
+                                <input 
+                                    type="text"
+                                    value={dose}
+                                    onChange={(e) => setDose(e.target.value)}
+                                    placeholder="Digite a dose (ex: 10 mg)"
+                                    className="w-full p-5 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent"
+                                />
+                            )}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Data</label>
-                            <input 
-                                type="date" 
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Data</label>
+                            <div className="relative">
+                                <input 
+                                    type="date" 
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="w-full p-4 pr-10 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent text-sm"
+                                />
+                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Hora</label>
-                            <input 
-                                type="time" 
-                                value={time}
-                                onChange={(e) => setTime(e.target.value)}
-                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-3 block">Hora</label>
+                            <div className="relative">
+                                <input 
+                                    type="time" 
+                                    value={time}
+                                    onChange={(e) => setTime(e.target.value)}
+                                    className="w-full p-4 pr-10 rounded-[20px] bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 border border-transparent text-sm"
+                                />
+                                <ClockIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-8 flex flex-col gap-3">
-                    <button onClick={handleSaveClick} disabled={isSaving} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
+                <div className="mt-10 flex flex-col gap-4">
+                    <button 
+                        onClick={handleSaveClick} 
+                        disabled={isSaving} 
+                        className="w-full bg-black dark:bg-white text-white dark:text-black py-5 rounded-[24px] font-bold text-lg shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                    >
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
-                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full text-red-500 font-semibold py-2 text-sm">
+                    <button 
+                        onClick={() => setShowDeleteConfirm(true)} 
+                        className="w-full text-red-500 font-bold py-2 text-sm hover:text-red-600 transition-colors"
+                    >
                         Excluir Registro
                     </button>
                 </div>

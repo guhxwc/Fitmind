@@ -3,6 +3,12 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from './ToastProvider';
 
+const translateAuthError = (message: string) => {
+  if (message.includes('New password should be different from the old password')) return 'A nova senha deve ser diferente da antiga.';
+  if (message.includes('Password should be at least')) return 'A senha deve ter pelo menos 8 caracteres.';
+  return 'Ocorreu um erro inesperado. Tente novamente.';
+};
+
 export const ResetPasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,7 +57,7 @@ export const ResetPasswordPage: React.FC = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setLoading(false);
     } else {
       setLoading(false);
@@ -60,10 +66,18 @@ export const ResetPasswordPage: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/auth', { replace: true });
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto animate-fade-in">
       <div className="pt-4">
-        <button onClick={() => navigate(-1)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+        <button onClick={handleBack} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
       </div>

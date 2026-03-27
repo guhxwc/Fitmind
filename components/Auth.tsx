@@ -173,6 +173,17 @@ const AuthAnimation = () => {
   );
 }
 
+const translateAuthError = (message: string) => {
+  if (message.includes('Invalid login credentials')) return 'Email ou senha incorretos.';
+  if (message.includes('User already registered')) return 'Este email já está cadastrado.';
+  if (message.includes('Password should be at least')) return 'A senha deve ter pelo menos 8 caracteres.';
+  if (message.includes('Email not confirmed')) return 'Email não confirmado. Verifique sua caixa de entrada.';
+  if (message.includes('Token has expired or is invalid')) return 'O código expirou ou é inválido.';
+  if (message.includes('For security purposes, you can only request this after')) return 'Por segurança, aguarde alguns instantes antes de tentar novamente.';
+  if (message.includes('Signups not allowed for this instance')) return 'Cadastros estão desativados no momento.';
+  return 'Ocorreu um erro inesperado. Tente novamente.';
+};
+
 export const Auth: React.FC = () => {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -206,7 +217,7 @@ export const Auth: React.FC = () => {
       }
     });
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setLoading(false);
     }
     // On success, Supabase redirects.
@@ -223,7 +234,7 @@ export const Auth: React.FC = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
     }
     // O onAuthStateChange em App.tsx cuidará do resto
     setLoading(false);
@@ -243,7 +254,7 @@ export const Auth: React.FC = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
     } else {
       setMessage("Link de redefinição de senha enviado para o seu email.");
     }
@@ -278,7 +289,7 @@ export const Auth: React.FC = () => {
 
     if (signUpError) {
       console.error("Erro no SignUp:", signUpError);
-      setError(signUpError.message);
+      setError(translateAuthError(signUpError.message));
       setLoading(false);
       return;
     }
@@ -325,7 +336,7 @@ export const Auth: React.FC = () => {
 
     if (error) {
       console.error("Erro ao reenviar email:", error);
-      setError(error.message);
+      setError(translateAuthError(error.message));
     } else {
       console.log("Email de reenvio disparado com sucesso.");
       setMessage(`Novo link enviado para ${email}.`);
@@ -352,7 +363,7 @@ export const Auth: React.FC = () => {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error.message));
       setToken(Array(6).fill(''));
       inputRefs.current[0]?.focus();
     } else {

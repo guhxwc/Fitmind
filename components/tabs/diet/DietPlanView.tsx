@@ -133,6 +133,103 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
   );
 };
 
+const DietLoadingAnimation: React.FC = () => {
+  const [loadingText, setLoadingText] = useState("Analisando seu perfil...");
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const texts = [
+      "Analisando seu perfil e objetivos...",
+      "Calculando suas necessidades calóricas...",
+      "Selecionando os melhores alimentos...",
+      "Equilibrando macronutrientes...",
+      "Montando seu cardápio personalizado...",
+      "Ajustando as porções...",
+      "Finalizando os últimos detalhes..."
+    ];
+    
+    let currentIndex = 0;
+    const textInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % texts.length;
+      setLoadingText(texts[currentIndex]);
+    }, 3500);
+
+    // Fake progress that slows down as it gets closer to 95%
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 30) return prev + 2;
+        if (prev < 60) return prev + 1;
+        if (prev < 85) return prev + 0.5;
+        if (prev < 95) return prev + 0.1;
+        return prev;
+      });
+    }, 200);
+
+    return () => {
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[70vh] space-y-8 animate-fade-in px-6">
+      <div className="relative w-32 h-32 flex items-center justify-center">
+        {/* Outer glowing ring */}
+        <div className="absolute inset-0 rounded-full bg-orange-500/10 dark:bg-orange-500/20 blur-xl animate-pulse"></div>
+        
+        {/* Progress circle */}
+        <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle 
+            className="text-gray-100 dark:text-gray-800" 
+            strokeWidth="4" 
+            stroke="currentColor" 
+            fill="transparent" 
+            r="46" 
+            cx="50" 
+            cy="50" 
+          />
+          <circle 
+            className="text-orange-500 transition-all duration-300 ease-out" 
+            strokeWidth="4" 
+            strokeDasharray={289.026} 
+            strokeDashoffset={289.026 - (289.026 * progress) / 100} 
+            strokeLinecap="round" 
+            stroke="currentColor" 
+            fill="transparent" 
+            r="46" 
+            cx="50" 
+            cy="50" 
+          />
+        </svg>
+
+        {/* Inner pulsing icon */}
+        <div className="absolute inset-2 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center shadow-lg border border-gray-50 dark:border-gray-800">
+          <Utensils className="w-10 h-10 text-orange-500 animate-bounce" style={{ animationDuration: '2s' }} />
+        </div>
+      </div>
+
+      <div className="text-center w-full max-w-xs">
+        <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight">Criando sua Dieta</h3>
+        
+        {/* Progress bar container */}
+        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4">
+          <div 
+            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-300 ease-out rounded-full"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+
+        {/* Dynamic text */}
+        <div className="h-12 flex items-center justify-center">
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 animate-fade-in" key={loadingText}>
+            {loadingText}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const DietPlanView: React.FC = () => {
   const { userData, isGeneratingDiet, setIsGeneratingDiet, dietPlan, setDietPlan } = useAppContext();
   const { addToast } = useToast();
@@ -274,21 +371,7 @@ export const DietPlanView: React.FC = () => {
   };
 
   if (isGeneratingDiet) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] space-y-8 animate-fade-in">
-        <div className="relative w-24 h-24">
-            <div className="absolute inset-0 border-4 border-gray-100 dark:border-gray-800 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-orange-500 animate-pulse" />
-            </div>
-        </div>
-        <div className="text-center space-y-2">
-            <p className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Criando sua Mágica...</p>
-            <p className="text-sm text-gray-400 font-medium">Seu nutricionista IA está montando o cardápio perfeito.</p>
-        </div>
-      </div>
-    );
+    return <DietLoadingAnimation />;
   }
 
   if (!dietPlan) {

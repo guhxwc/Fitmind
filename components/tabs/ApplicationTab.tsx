@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import type { Weekday, ApplicationEntry, MedicationName, SideEffect, SideEffectEntry } from '../../types';
 import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon, LockIcon, WavesIcon, ChevronRightIcon, CalendarIcon, ClockIcon, XMarkIcon } from '../core/Icons';
@@ -70,20 +71,20 @@ const EditApplicationModal: React.FC<{
         }
     };
 
-    return (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 sm:p-8 w-full max-w-[340px] shadow-2xl animate-scale-in relative" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Editar Registro</h2>
+    return createPortal(
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-[28px] p-6 w-full max-w-[300px] shadow-2xl animate-scale-in relative" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 text-center">Editar Registro</h2>
                 
-                <div className="space-y-6">
+                <div className="space-y-5">
                     <div>
-                        <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Dose Administrada</label>
+                        <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block text-center">Dose Administrada</label>
                         <div className="relative">
                             {availableDoses.length > 0 ? (
                                 <select 
                                     value={dose} 
                                     onChange={(e) => setDose(e.target.value)}
-                                    className="w-full p-4 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent"
+                                    className="w-full h-[50px] px-4 rounded-[14px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent block leading-normal text-center"
                                 >
                                     {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
@@ -93,35 +94,35 @@ const EditApplicationModal: React.FC<{
                                     value={dose}
                                     onChange={(e) => setDose(e.target.value)}
                                     placeholder="Digite a dose (ex: 10 mg)"
-                                    className="w-full p-4 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base outline-none focus:ring-2 focus:ring-blue-500 border border-transparent"
+                                    className="w-full h-[50px] px-4 rounded-[14px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent block leading-normal text-center"
                                 />
                             )}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Data</label>
-                            <div className="relative">
+                    <div className="flex flex-col gap-3">
+                        <div className="w-full">
+                            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block text-center">Data</label>
+                            <div className="relative h-[50px] bg-[#F4F5F7] dark:bg-gray-800 rounded-[14px] overflow-hidden">
                                 <input 
                                     type="date" 
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-4 pr-10 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10 relative"
+                                    className="absolute inset-0 w-full h-full px-4 bg-transparent text-black dark:text-white font-semibold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent appearance-none text-center z-10"
                                 />
-                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900 dark:text-white pointer-events-none" />
+                                <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 z-0" />
                             </div>
                         </div>
-                        <div>
-                            <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Hora</label>
-                            <div className="relative">
+                        <div className="w-full">
+                            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block text-center">Hora</label>
+                            <div className="relative h-[50px] bg-[#F4F5F7] dark:bg-gray-800 rounded-[14px] overflow-hidden">
                                 <input 
                                     type="time" 
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
-                                    className="w-full p-4 pr-10 rounded-[16px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10 relative"
+                                    className="absolute inset-0 w-full h-full px-4 bg-transparent text-black dark:text-white font-semibold text-sm outline-none focus:ring-2 focus:ring-blue-500 border border-transparent appearance-none text-center z-10"
                                 />
-                                <ClockIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900 dark:text-white pointer-events-none" />
+                                <ClockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 z-0" />
                             </div>
                         </div>
                     </div>
@@ -131,7 +132,7 @@ const EditApplicationModal: React.FC<{
                     <button 
                         onClick={handleSaveClick} 
                         disabled={isSaving} 
-                        className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-[16px] font-bold text-base active:scale-95 transition-all disabled:opacity-50"
+                        className="w-full bg-black dark:bg-white text-white dark:text-black h-[50px] rounded-[16px] font-bold text-base shadow-xl active:scale-95 transition-all disabled:opacity-50"
                     >
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
@@ -155,7 +156,8 @@ const EditApplicationModal: React.FC<{
                 onCancel={() => setShowDeleteConfirm(false)}
                 isDestructive={true}
             />
-        </div>
+        </div>,
+        document.body
     );
 };
 

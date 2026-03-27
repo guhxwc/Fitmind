@@ -14,6 +14,8 @@ import { InitialSettings } from './components/tabs/InitialSettings';
 import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { SuccessPage } from './components/payment/SuccessPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { useToast } from './components/ToastProvider';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -21,6 +23,7 @@ const AppContent: React.FC = () => {
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   useEffect(() => {
     if (!contextLoading && userData) {
@@ -33,6 +36,9 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
     if (window.location.hash && window.location.hash.includes('access_token=')) {
+      if (window.location.hash.includes('type=signup')) {
+        addToast("Conta verificada e criada com sucesso!", "success");
+      }
       setTimeout(() => {
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }, 500);
@@ -52,6 +58,10 @@ const AppContent: React.FC = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password');
+      }
+      
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
@@ -172,6 +182,7 @@ const AppContent: React.FC = () => {
   return (
     <Routes>
       <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/success" element={<SuccessPage />} />

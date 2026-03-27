@@ -229,6 +229,27 @@ export const Auth: React.FC = () => {
     setLoading(false);
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Por favor, insira seu email para redefinir a senha.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage("Link de redefinição de senha enviado para o seu email.");
+    }
+    setLoading(false);
+  };
+
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -241,8 +262,8 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.");
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.");
       setLoading(false);
       return;
     }
@@ -334,6 +355,8 @@ export const Auth: React.FC = () => {
       setError(error.message);
       setToken(Array(6).fill(''));
       inputRefs.current[0]?.focus();
+    } else {
+      addToast("Conta verificada e criada com sucesso!", "success");
     }
     // O onAuthStateChange em App.tsx cuidará do resto
     setLoading(false);
@@ -424,7 +447,20 @@ export const Auth: React.FC = () => {
                   </div>
                 )}
                 
+                {!isSignupView && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleResetPassword}
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  </div>
+                )}
+                
                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                {message && <p className="text-green-500 text-sm text-center">{message}</p>}
 
                 <div className="pt-2">
                   <button

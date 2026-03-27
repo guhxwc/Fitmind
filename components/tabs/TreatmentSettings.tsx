@@ -7,6 +7,8 @@ import { useToast } from '../ToastProvider';
 import { SyringeIcon, CalendarIcon, ClockIcon, MapPinIcon, ChevronRightIcon, ChevronLeftIcon } from '../core/Icons';
 import { MEDICATIONS, WEEKDAYS } from '../../constants';
 import type { MedicationName, Weekday } from '../../types';
+import { TimePicker } from '../core/TimePicker';
+import Portal from '../core/Portal';
 
 const SelectModal: React.FC<{ 
     title: string; 
@@ -244,18 +246,17 @@ export const TreatmentSettings: React.FC = () => {
                 />
             )}
             {activeModal === 'time' && (
-                <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center backdrop-blur-sm" onClick={() => setActiveModal(null)}>
-                    <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-2xl shadow-xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 text-center">Horário do Lembrete</h3>
-                        <input 
-                            type="time" 
-                            className="bg-gray-100 dark:bg-gray-800 text-3xl p-4 rounded-xl font-bold text-center w-full mb-6 dark:text-white"
-                            defaultValue={userData.medicationReminder?.time || '09:00'}
-                            onChange={(e) => updateReminderTime(e.target.value)}
-                        />
-                        <button onClick={() => setActiveModal(null)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Confirmar</button>
+                <Portal>
+                    <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setActiveModal(null)}>
+                        <div onClick={e => e.stopPropagation()}>
+                            <TimePicker 
+                                value={userData.medicationReminder?.time || '09:00'} 
+                                onChange={(newTime) => updateReminderTime(newTime)} 
+                                onClose={() => setActiveModal(null)} 
+                            />
+                        </div>
                     </div>
-                </div>
+                </Portal>
             )}
         </div>
     );

@@ -9,6 +9,8 @@ import { useToast } from '../ToastProvider';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { DEFAULT_USER_DATA } from '../../constants';
 import { ConfirmModal } from '../ConfirmModal';
+import { TimePicker } from '../core/TimePicker';
+import Portal from '../core/Portal';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -50,6 +52,33 @@ const ToggleItem: React.FC<{ icon: React.ReactNode, label: string, isEnabled: bo
         </div>
     </div>
 );
+
+const CustomTimeInput: React.FC<{ value: string, onChange: (val: string) => void }> = ({ value, onChange }) => {
+    const [showPicker, setShowPicker] = useState(false);
+    return (
+        <>
+            <button 
+                onClick={() => setShowPicker(true)}
+                className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right min-w-[60px]"
+            >
+                {value}
+            </button>
+            {showPicker && (
+                <Portal>
+                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowPicker(false)}>
+                        <div onClick={e => e.stopPropagation()}>
+                            <TimePicker 
+                                value={value} 
+                                onChange={onChange} 
+                                onClose={() => setShowPicker(false)} 
+                            />
+                        </div>
+                    </div>
+                </Portal>
+            )}
+        </>
+    );
+};
 
 const NotificationSettings: React.FC = () => {
     const { userData, setUserData } = useAppContext();
@@ -136,7 +165,7 @@ const NotificationSettings: React.FC = () => {
                             <SyringeIcon className="w-4 h-4 text-purple-500"/>
                             <span className="text-gray-900 dark:text-white text-sm">Medicação</span>
                         </div>
-                        <input type="time" value={localSettings.medicationTime} onChange={(e) => handleTimeChange('medicationTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.medicationTime} onChange={(val) => updateSettings('medicationTime', val)} />
                     </div>
                     {/* Breakfast */}
                     <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
@@ -144,7 +173,7 @@ const NotificationSettings: React.FC = () => {
                             <CoffeeIcon className="w-4 h-4 text-orange-500"/>
                             <span className="text-gray-900 dark:text-white text-sm">Café da Manhã</span>
                         </div>
-                        <input type="time" value={localSettings.breakfastTime} onChange={(e) => handleTimeChange('breakfastTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.breakfastTime} onChange={(val) => updateSettings('breakfastTime', val)} />
                     </div>
                     {/* Lunch */}
                     <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
@@ -152,7 +181,7 @@ const NotificationSettings: React.FC = () => {
                             <span className="text-base">🥗</span>
                             <span className="text-gray-900 dark:text-white text-sm">Almoço</span>
                         </div>
-                        <input type="time" value={localSettings.lunchTime} onChange={(e) => handleTimeChange('lunchTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.lunchTime} onChange={(val) => updateSettings('lunchTime', val)} />
                     </div>
                     {/* Snack */}
                     <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
@@ -160,7 +189,7 @@ const NotificationSettings: React.FC = () => {
                             <AppleIcon className="w-4 h-4 text-green-500"/>
                             <span className="text-gray-900 dark:text-white text-sm">Lanche</span>
                         </div>
-                        <input type="time" value={localSettings.snackTime} onChange={(e) => handleTimeChange('snackTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.snackTime} onChange={(val) => updateSettings('snackTime', val)} />
                     </div>
                     {/* Dinner */}
                     <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
@@ -168,7 +197,7 @@ const NotificationSettings: React.FC = () => {
                             <span className="text-base">🍽️</span>
                             <span className="text-gray-900 dark:text-white text-sm">Jantar</span>
                         </div>
-                        <input type="time" value={localSettings.dinnerTime} onChange={(e) => handleTimeChange('dinnerTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.dinnerTime} onChange={(val) => updateSettings('dinnerTime', val)} />
                     </div>
                     {/* Checkin */}
                     <div className="flex items-center justify-between py-2 pr-4">
@@ -176,7 +205,7 @@ const NotificationSettings: React.FC = () => {
                             <WavesIcon className="w-4 h-4 text-blue-500"/>
                             <span className="text-gray-900 dark:text-white text-sm">Check-in Bem-estar</span>
                         </div>
-                        <input type="time" value={localSettings.checkinTime} onChange={(e) => handleTimeChange('checkinTime', e)} className="bg-transparent text-gray-500 dark:text-gray-400 font-medium outline-none text-right" />
+                        <CustomTimeInput value={localSettings.checkinTime} onChange={(val) => updateSettings('checkinTime', val)} />
                     </div>
                 </div>
             )}

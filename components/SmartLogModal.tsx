@@ -250,37 +250,34 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center sm:p-4 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white dark:bg-black w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-[32px] animate-pop-in shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white dark:bg-black w-full max-w-[360px] rounded-[32px] animate-pop-in shadow-2xl relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             
-            {/* Header Area (Sticky) */}
-            <div className="flex-shrink-0 pt-12 sm:pt-6 pb-2 px-6 relative">
+            {/* Header Area */}
+            <div className="flex-shrink-0 pt-8 pb-2 px-8 relative">
               <button 
                 onClick={onClose}
-                className="absolute top-8 sm:top-4 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
+                className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 z-20"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-grow overflow-y-auto p-6 pt-2 hide-scrollbar">
+            <div className="flex-grow overflow-y-auto p-8 pt-2 hide-scrollbar">
               {mode === 'menu' && (
                 <div className="animate-fade-in">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                        <SparklesIcon className="w-8 h-8 text-white" />
-                    </div>
+                  <div className="mb-8">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Registro Inteligente</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Escolha como deseja registrar hoje</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Como deseja registrar hoje?</p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 mb-4">
                     <button 
                       onClick={() => setMode('manual')}
-                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all"
+                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all"
                     >
-                      <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400">
+                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-sm">
                         <KeyboardIcon className="w-6 h-6" />
                       </div>
                       <div className="text-left">
@@ -297,14 +294,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                           addToast("Recurso exclusivo para assinantes PRO", "info");
                         }
                       }}
-                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all relative overflow-hidden"
                     >
                       {!userData?.isPro && (
                         <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
                           <LockIcon className="w-2.5 h-2.5" /> PRO
                         </div>
                       )}
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm">
                         <SparklesIcon className="w-6 h-6" />
                       </div>
                       <div className="text-left">
@@ -321,14 +318,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                           addToast("Recurso exclusivo para assinantes PRO", "info");
                         }
                       }}
-                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all relative overflow-hidden"
                     >
                       {!userData?.isPro && (
                         <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
                           <LockIcon className="w-2.5 h-2.5" /> PRO
                         </div>
                       )}
-                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-sm">
                         <MicrophoneIcon className="w-6 h-6" />
                       </div>
                       <div className="text-left">
@@ -345,14 +342,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                           addToast("Recurso exclusivo para assinantes PRO", "info");
                         }
                       }}
-                      className="flex items-center gap-4 p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 active:scale-[0.98] transition-all relative overflow-hidden"
+                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all relative overflow-hidden"
                     >
                       {!userData?.isPro && (
                         <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
                           <LockIcon className="w-2.5 h-2.5" /> PRO
                         </div>
                       )}
-                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400">
+                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 shadow-sm">
                         <CameraIcon className="w-6 h-6" />
                       </div>
                       <div className="text-left">

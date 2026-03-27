@@ -103,27 +103,14 @@ export const PrivacySettings: React.FC = () => {
     const { userData, session } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
-    const [isResetting, setIsResetting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isCanceling, setIsCanceling] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     if (!userData || !session) return null;
 
-    const handlePasswordReset = async () => {
-        if (!session.user.email) return;
-        setIsResetting(true);
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
-            redirectTo: window.location.origin + '/#/settings/account',
-        });
-
-        if (error) {
-            addToast("Erro ao solicitar troca: " + error.message, 'error');
-        } else {
-            addToast(`Email de redefinição enviado para ${session.user.email}`, 'success');
-        }
-        setIsResetting(false);
+    const handlePasswordReset = () => {
+        navigate('/reset-password');
     };
 
     const handleCancelSubscription = async () => {
@@ -213,7 +200,7 @@ export const PrivacySettings: React.FC = () => {
                     <ActionItem 
                         icon={<KeyIcon className="w-5 h-5"/>}
                         colorClass="bg-blue-500"
-                        label={isResetting ? "Enviando email..." : "Alterar Senha"}
+                        label="Alterar Senha"
                         onClick={handlePasswordReset}
                     />
                     <ActionItem 

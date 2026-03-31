@@ -17,10 +17,10 @@ export const WeightGoals: React.FC = () => {
     if (!userData) return null;
 
     const paces = [
-        { value: 0.25, label: '0.25 kg/semana' },
-        { value: 0.5, label: '0.5 kg/semana' },
-        { value: 0.75, label: '0.75 kg/semana' },
-        { value: 1, label: '1 kg/semana' },
+        { value: 0.25, label: '0.25 kg', desc: 'Lento e fácil de manter' },
+        { value: 0.5, label: '0.50 kg', desc: 'Recomendado para a maioria' },
+        { value: 0.75, label: '0.75 kg', desc: 'Exige mais dedicação' },
+        { value: 1, label: '1.00 kg', desc: 'Intenso, requer foco total' },
     ];
 
     const handleSave = async () => {
@@ -59,68 +59,69 @@ export const WeightGoals: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-ios-bg dark:bg-ios-dark-bg animate-fade-in pb-32">
-            <header className="sticky top-0 z-10 bg-ios-bg/80 dark:bg-ios-dark-bg/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 px-4 py-4 flex items-center justify-between">
-                <button onClick={() => navigate('/settings')} className="flex items-center text-blue-500 active:opacity-70 transition-opacity">
-                    <ChevronLeftIcon className="w-6 h-6" />
-                    <span className="text-[17px] font-medium ml-1">Ajustes</span>
-                </button>
-                <h1 className="text-[17px] font-semibold text-gray-900 dark:text-white">Metas de Peso</h1>
-                <div className="w-20"></div> {/* Spacer for centering */}
-            </header>
+        <div className="min-h-screen bg-gray-50 dark:bg-black font-sans pb-32">
+            {/* Header */}
+            <div className="sticky top-0 z-20 bg-gray-50/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+                <div className="px-4 h-14 flex items-center justify-between">
+                    <button onClick={() => navigate('/settings')} className="p-2 -ml-2 text-gray-600 dark:text-gray-300 active:scale-95 transition-transform">
+                        <ChevronLeftIcon className="w-6 h-6" />
+                    </button>
+                    <h1 className="font-bold text-lg text-gray-900 dark:text-white">Metas de Peso</h1>
+                    <div className="w-10"></div>
+                </div>
+            </div>
 
-            <div className="p-5 space-y-8">
-                {/* Meta de Peso */}
-                <section>
-                    <h2 className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 ml-4">Peso Meta</h2>
-                    <div className="bg-ios-card dark:bg-ios-dark-card rounded-[10px] p-4 shadow-sm flex items-center justify-between">
+            <div className="p-5 space-y-8 animate-fade-in">
+                
+                {/* Meta de Peso - Apple Health Style */}
+                <section className="flex flex-col items-center justify-center py-6">
+                    <div className="flex items-baseline gap-1 relative">
                         <input 
                             type="number" 
                             value={targetWeight}
                             onChange={(e) => setTargetWeight(e.target.value)}
-                            className="bg-transparent text-gray-900 dark:text-white text-2xl font-bold outline-none w-full"
-                            placeholder="Ex: 70.5"
+                            className="bg-transparent text-gray-900 dark:text-white text-[5rem] leading-none font-black outline-none w-48 text-center tracking-tighter"
+                            placeholder="0.0"
                             step="0.1"
                         />
-                        <span className="text-gray-400 dark:text-gray-500 font-semibold text-xl">kg</span>
+                        <span className="text-gray-400 dark:text-gray-500 font-bold text-2xl absolute -right-6 bottom-4">kg</span>
                     </div>
-                    <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-2 ml-4 leading-relaxed">
-                        Este é o peso que você deseja atingir ao final da sua jornada.
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 font-medium uppercase tracking-widest">Seu Peso Objetivo</p>
                 </section>
 
                 {/* Meta Semanal */}
                 <section>
-                    <h2 className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 ml-4">Meta Semanal</h2>
-                    <div className="bg-ios-card dark:bg-ios-dark-card rounded-[10px] overflow-hidden shadow-sm">
-                        <div className="px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50">
-                            <p className="text-[15px] font-medium text-gray-900 dark:text-white">
-                                Escolha a velocidade que deseja perder peso
-                            </p>
-                        </div>
+                    <h2 className="text-[13px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 ml-2">Ritmo Semanal</h2>
+                    <div className="bg-white dark:bg-gray-900 rounded-[24px] overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800">
                         {paces.map((p, index) => (
                             <button 
                                 key={p.value}
                                 onClick={() => setPace(p.value)}
-                                className={`w-full flex items-center justify-between px-4 py-3 bg-ios-card dark:bg-ios-dark-card active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${index !== paces.length - 1 ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}
+                                className={`w-full flex items-center justify-between p-4 bg-white dark:bg-gray-900 active:bg-gray-50 dark:active:bg-gray-800 transition-colors ${index !== paces.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
                             >
-                                <span className={`text-[17px] ${pace === p.value ? 'text-blue-500 font-semibold' : 'text-gray-900 dark:text-white'}`}>
-                                    {p.label}
-                                </span>
-                                {pace === p.value && <CheckCircleIcon className="w-5 h-5 text-blue-500" />}
+                                <div className="flex flex-col items-start text-left">
+                                    <span className={`text-[17px] font-semibold ${pace === p.value ? 'text-blue-600 dark:text-blue-500' : 'text-gray-900 dark:text-white'}`}>
+                                        {p.label} / semana
+                                    </span>
+                                    <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                        {p.desc}
+                                    </span>
+                                </div>
+                                {pace === p.value && (
+                                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center">
+                                        <CheckCircleIcon className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+                                    </div>
+                                )}
                             </button>
                         ))}
                     </div>
-                    <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-2 ml-4 leading-relaxed">
-                        Perder peso de forma gradual (0.25-0.5 kg/semana) é mais sustentável a longo prazo.
-                    </p>
                 </section>
 
                 {/* Aviso Médico */}
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-[10px] p-4 flex gap-3 items-start">
-                    <span className="text-xl">⚠️</span>
-                    <p className="text-[13px] text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium">
-                        Sempre consulte seu médico antes de definir metas agressivas de perda de peso.
+                <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 rounded-[20px] p-4 flex gap-3 items-start">
+                    <span className="text-xl">💡</span>
+                    <p className="text-[13px] text-orange-800 dark:text-orange-200 leading-relaxed font-medium">
+                        Perder peso de forma gradual (0.25 a 0.5 kg por semana) é mais saudável e sustentável a longo prazo.
                     </p>
                 </div>
 
@@ -128,7 +129,7 @@ export const WeightGoals: React.FC = () => {
                 <button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="w-full bg-blue-500 text-white py-3.5 rounded-xl font-bold text-[17px] active:scale-95 transition-transform disabled:opacity-50 mt-4"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold text-[17px] active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20 mt-4"
                 >
                     {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>

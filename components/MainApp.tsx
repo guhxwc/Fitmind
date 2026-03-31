@@ -55,6 +55,40 @@ export const MainApp: React.FC = () => {
     }
   }, [fetchData, addToast]);
 
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const scrollToTop = () => {
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+        mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
+      }
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // Target the #root element which is the scroll container in index.html
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        rootElement.scrollTop = 0;
+        rootElement.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    };
+
+    // Executa imediatamente e em vários frames para garantir
+    scrollToTop();
+    
+    const timeoutId = setTimeout(scrollToTop, 0);
+    const timeoutId2 = setTimeout(scrollToTop, 100);
+    const rafId = requestAnimationFrame(scrollToTop);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId2);
+      cancelAnimationFrame(rafId);
+    };
+  }, [location.pathname]);
+
   const handleFabAction = (action: 'application' | 'photo' | 'weight' | 'activity' | 'side_effect' | 'meal') => {
       switch (action) {
           case 'meal':
@@ -159,7 +193,11 @@ export const MainApp: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-ios-bg dark:bg-ios-dark-bg max-w-md mx-auto shadow-2xl overflow-hidden relative">
       <NotificationManager />
       <CelebrationManager />
-      <main className="flex-grow overflow-y-auto hide-scrollbar pb-40 pt-safe-top">
+      <main 
+        key={location.pathname}
+        ref={mainRef} 
+        className="flex-grow overflow-y-auto hide-scrollbar pb-40 pt-safe-top"
+      >
         <Routes>
           <Route path="/" element={<SummaryTab />} />
           <Route path="/applications" element={<ApplicationTab />} />

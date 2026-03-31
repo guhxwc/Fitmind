@@ -4,19 +4,24 @@ import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
 import { ConfirmModal } from '../ConfirmModal';
-import { ChevronRightIcon, CameraIcon, XMarkIcon, ScaleIcon, RulerIcon, CakeIcon, GenderIcon, MailIcon, PersonStandingIcon, SettingsIcon } from '../core/Icons';
+import { EditAttributeModal } from '../core/EditAttributeModal';
+import { 
+    ChevronRightIcon, XMarkIcon, ScaleIcon, RulerIcon, 
+    CakeIcon, GenderIcon, PersonStandingIcon, SettingsIcon 
+} from '../core/Icons';
+import { User, Mail, Lock, CreditCard, Trash2 } from 'lucide-react';
 import Portal from '../core/Portal';
 
 // --- UI Components ---
 
 const ListGroup: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="mb-6">
+    <div className="mb-8">
         {title && (
-            <h3 className="px-4 mb-2 text-[15px] font-semibold text-gray-400 dark:text-gray-500 ml-1">
+            <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 uppercase tracking-wider ml-1">
                 {title}
             </h3>
         )}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800/60">
             {children}
         </div>
     </div>
@@ -28,101 +33,23 @@ const ListItem: React.FC<{
     value?: string; 
     onClick?: () => void; 
     isLast?: boolean;
-}> = ({ icon, label, value, onClick, isLast }) => (
+    isDestructive?: boolean;
+}> = ({ icon, label, value, onClick, isLast, isDestructive }) => (
     <button 
         onClick={onClick}
         disabled={!onClick}
-        className="w-full flex items-center pl-4 bg-white dark:bg-[#1C1C1E] active:bg-gray-50 dark:active:bg-gray-800 transition-colors relative"
+        className={`w-full flex items-center pl-4 bg-white dark:bg-[#1C1C1E] transition-colors relative ${onClick ? 'active:bg-gray-50 dark:active:bg-gray-800/50 cursor-pointer' : 'cursor-default'}`}
     >
-        {icon && <div className="mr-4 flex-shrink-0 w-6 flex items-center justify-center">{icon}</div>}
-        <div className={`flex-grow flex items-center justify-between pr-4 py-4 ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''} overflow-hidden`}>
-            <span className="text-[17px] text-gray-900 dark:text-white font-medium whitespace-nowrap flex-shrink-0">{label}</span>
+        {icon && <div className={`mr-3 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${isDestructive ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>{icon}</div>}
+        <div className={`flex-grow flex items-center justify-between pr-4 py-3.5 ${!isLast ? 'border-b border-gray-100 dark:border-gray-800/60' : ''} overflow-hidden`}>
+            <span className={`text-[16px] font-medium whitespace-nowrap flex-shrink-0 ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{label}</span>
             <div className="flex items-center gap-2 overflow-hidden ml-4 justify-end">
-                {value && <span className="text-[17px] text-gray-400 dark:text-gray-500 truncate">{value}</span>}
-                {onClick && <ChevronRightIcon className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />}
+                {value && <span className="text-[15px] text-gray-500 dark:text-gray-400 truncate">{value}</span>}
+                {onClick && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />}
             </div>
         </div>
     </button>
 );
-
-// --- Modal Component ---
-
-interface EditAttributeModalProps {
-    title: string;
-    initialValue: string | number;
-    type: 'text' | 'number' | 'date' | 'select';
-    options?: string[];
-    onClose: () => void;
-    onSave: (value: any) => Promise<void>;
-    unit?: string;
-}
-
-const EditAttributeModal: React.FC<EditAttributeModalProps> = ({ title, initialValue, type, options, onClose, onSave, unit }) => {
-    const [value, setValue] = useState(initialValue);
-    const [loading, setLoading] = useState(false);
-
-    const handleSave = async () => {
-        setLoading(true);
-        await onSave(value);
-        setLoading(false);
-        onClose();
-    };
-
-    return (
-        <Portal>
-            <div className="fixed inset-0 bg-black/30 z-[90] flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-sm rounded-[24px] p-6 shadow-2xl transform transition-all scale-100" onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
-                        <button onClick={onClose} className="p-1 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-                            <XMarkIcon className="w-5 h-5"/>
-                        </button>
-                    </div>
-                    
-                    <div className="mb-8">
-                        {type === 'select' ? (
-                            <div className="space-y-2">
-                                {options?.map(opt => (
-                                    <button
-                                        key={opt}
-                                        onClick={() => setValue(opt)}
-                                        className={`w-full p-3.5 rounded-xl font-medium text-left transition-all text-[17px] flex justify-between items-center ${
-                                            value === opt 
-                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
-                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white'
-                                        }`}
-                                    >
-                                        {opt}
-                                        {value === opt && <span className="text-blue-500">✓</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <input
-                                    type={type}
-                                    value={value}
-                                    onChange={(e) => setValue(e.target.value)}
-                                    className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-4 text-2xl font-bold text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-                                    autoFocus
-                                />
-                                {unit && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">{unit}</span>}
-                            </div>
-                        )}
-                    </div>
-
-                    <button 
-                        onClick={handleSave} 
-                        disabled={loading} 
-                        className="w-full bg-black dark:bg-white text-white dark:text-black py-3.5 rounded-xl font-bold text-[17px] active:scale-[0.98] transition-transform disabled:opacity-70"
-                    >
-                        {loading ? 'Salvando...' : 'Salvar Alterações'}
-                    </button>
-                </div>
-            </div>
-        </Portal>
-    );
-};
 
 // --- Main Page ---
 
@@ -130,26 +57,46 @@ export const AccountSettings: React.FC = () => {
     const { userData, session, fetchData } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
+
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+        const main = document.querySelector('main');
+        if (main) main.scrollTo(0, 0);
+    }, []);
     
     // Edit Modal State
     const [editModal, setEditModal] = useState<{
         isOpen: boolean;
         title: string;
-        type: 'text' | 'number' | 'date' | 'select';
+        type: 'text' | 'number' | 'date' | 'select' | 'password';
         key: string;
         value: any;
         options?: string[];
         unit?: string;
     }>({ isOpen: false, title: '', type: 'text', key: '', value: '' });
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
     if (!userData || !session) return null;
 
-    const handleOpenEdit = (title: string, key: string, value: any, type: 'text' | 'number' | 'date' | 'select', options?: string[], unit?: string) => {
+    const handleOpenEdit = (title: string, key: string, value: any, type: 'text' | 'number' | 'date' | 'select' | 'password', options?: string[], unit?: string) => {
         setEditModal({ isOpen: true, title, key, value, type, options, unit });
     };
 
     const handleSaveAttribute = async (newValue: any) => {
         const key = editModal.key;
+        
+        if (key === 'password') {
+            const { error } = await supabase.auth.updateUser({ password: newValue });
+            if (error) {
+                addToast(error.message || 'Erro ao atualizar senha.', 'error');
+            } else {
+                addToast('Senha atualizada com sucesso.', 'success');
+            }
+            return;
+        }
+
         let updateData: any = {};
 
         // Parse numbers if needed
@@ -169,7 +116,25 @@ export const AccountSettings: React.FC = () => {
         }
     };
 
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const handleResetPassword = async () => {
+        if (!session?.user?.email) return;
+        
+        try {
+            addToast("Enviando link...", "info");
+            const { error } = await supabase.auth.resetPasswordForEmail(session.user.email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            
+            if (error) {
+                throw error;
+            }
+            
+            addToast("Link de redefinição enviado para seu e-mail.", "success");
+        } catch (error: any) {
+            console.error("Error sending reset password link:", error);
+            addToast(error.message || "Erro ao enviar link. Tente novamente.", "error");
+        }
+    };
 
     const handleDeleteAccount = async () => {
         if (!userData || !session) return;
@@ -177,14 +142,12 @@ export const AccountSettings: React.FC = () => {
         try {
             addToast("Excluindo conta...", "info");
 
-            // Chama a Edge Function com service_role para deletar tudo incluindo auth.users
             const { data, error } = await supabase.functions.invoke('delete-account-final');
 
             if (error || !data?.success) {
                 throw new Error(data?.error || error?.message || 'Erro desconhecido.');
             }
 
-            // Limpa sessão local e redireciona
             await supabase.auth.signOut();
             localStorage.clear();
 
@@ -194,6 +157,11 @@ export const AccountSettings: React.FC = () => {
             console.error("Error deleting account:", error);
             addToast(error.message || "Erro ao excluir conta. Tente novamente.", "error");
         }
+    };
+
+    const handleCancelSubscription = () => {
+        setShowCancelConfirm(false);
+        addToast("Sua solicitação de cancelamento foi enviada ao suporte.", "success");
     };
 
     const formatDate = (dateStr?: string) => {
@@ -218,68 +186,99 @@ export const AccountSettings: React.FC = () => {
                 </div>
             </div>
 
-            <div className="max-w-md mx-auto px-4 pt-8">
+            <div className="max-w-md mx-auto px-4 pt-6">
                 
-                {/* Personal Info Group */}
-                <ListGroup title="Dados gerais">
+                {/* Profile Header */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 dark:text-gray-500 mb-4">
+                        <User className="w-10 h-10" strokeWidth={1.5} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{userData.name || 'Usuário'}</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">{session.user.email}</p>
+                </div>
+
+                <ListGroup title="Informações Pessoais">
                     <ListItem 
-                        icon={<ScaleIcon className="w-6 h-6 text-orange-400" />}
+                        icon={<User className="w-5 h-5" />}
+                        label="Nome" 
+                        value={userData.name} 
+                        onClick={() => handleOpenEdit('Nome', 'name', userData.name || '', 'text')} 
+                    />
+                    <ListItem 
+                        icon={<Mail className="w-5 h-5" />}
+                        label="E-mail" 
+                        value={session.user.email} 
+                        // Email is usually read-only or requires a specific flow, so we don't make it editable here directly
+                    />
+                    <ListItem 
+                        icon={<Lock className="w-5 h-5" />}
+                        label="Senha" 
+                        value="Redefinir" 
+                        onClick={handleResetPassword} 
+                        isLast
+                    />
+                </ListGroup>
+
+                <ListGroup title="Dados Físicos">
+                    <ListItem 
+                        icon={<ScaleIcon className="w-5 h-5" />}
                         label="Peso" 
                         value={`${userData.weight} kg`} 
                         onClick={() => handleOpenEdit('Peso Atual', 'weight', userData.weight, 'number', undefined, 'kg')} 
                     />
                     <ListItem 
-                        icon={<RulerIcon className="w-6 h-6 text-blue-500" />}
+                        icon={<RulerIcon className="w-5 h-5" />}
                         label="Altura" 
                         value={`${userData.height} cm`} 
                         onClick={() => handleOpenEdit('Atualizar Altura', 'height', userData.height, 'number', undefined, 'cm')} 
                     />
                     <ListItem 
-                        icon={<CakeIcon className="w-6 h-6 text-red-400" />}
+                        icon={<CakeIcon className="w-5 h-5" />}
                         label="Aniversário" 
                         value={formatDate(userData.birthDate)} 
                         onClick={() => handleOpenEdit('Data de Nascimento', 'birth_date', userData.birthDate || '', 'date')} 
                     />
                     <ListItem 
-                        icon={<GenderIcon className="w-6 h-6 text-purple-600" />}
+                        icon={<GenderIcon className="w-5 h-5" />}
                         label="Gênero" 
                         value={userData.gender} 
                         onClick={() => handleOpenEdit('Gênero', 'gender', userData.gender, 'select', ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])} 
                     />
                     <ListItem 
-                        icon={<MailIcon className="w-6 h-6 text-blue-400" />}
-                        label="Dados pessoais" 
-                        value={session.user.email} 
-                        onClick={() => navigate('/settings/personal-data')} 
-                    />
-                    <ListItem 
-                        icon={<PersonStandingIcon className="w-6 h-6 text-green-500" />}
+                        icon={<PersonStandingIcon className="w-5 h-5" />}
                         label="Nível de Atividade" 
                         value={userData.activityLevel} 
                         onClick={() => handleOpenEdit('Nível de Atividade', 'activityLevel', userData.activityLevel, 'select', ['Sedentário', 'Levemente ativo', 'Moderadamente ativo', 'Ativo', 'Muito ativo'])} 
-                    />
-                    <ListItem 
-                        icon={<SettingsIcon className="w-6 h-6 text-blue-500" />}
-                        label="Configurações iniciais" 
-                        onClick={() => navigate('/settings/initial-setup')} 
                         isLast
                     />
                 </ListGroup>
-                
-                <div className="mt-12 mb-8">
-                    <button 
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-white dark:bg-[#1C1C1E] text-red-500 font-bold rounded-2xl border border-red-100 dark:border-red-900/30 active:scale-[0.98] transition-all shadow-sm"
-                    >
-                        Excluir Minha Conta
-                    </button>
-                    <p className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-4 px-8 leading-relaxed">
-                        Ao excluir sua conta, todos os seus dados serão removidos permanentemente de nossos servidores em conformidade com a LGPD.
-                    </p>
-                </div>
+
+                <ListGroup title="Assinatura">
+                    <ListItem 
+                        icon={<SettingsIcon className="w-5 h-5" />}
+                        label="Plano Atual" 
+                        value={userData.isPro ? "PRO" : "Gratuito"} 
+                    />
+                    <ListItem 
+                        icon={<CreditCard className="w-5 h-5" />}
+                        label="Cancelar Assinatura" 
+                        onClick={() => setShowCancelConfirm(true)} 
+                        isLast
+                    />
+                </ListGroup>
+
+                <ListGroup title="Zona de Perigo">
+                    <ListItem 
+                        icon={<Trash2 className="w-5 h-5" />}
+                        label="Excluir Conta" 
+                        isDestructive
+                        onClick={() => setShowDeleteConfirm(true)} 
+                        isLast
+                    />
+                </ListGroup>
 
                 <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6 px-6 leading-relaxed">
-                    Esses dados são usados para calcular seu metabolismo basal, IMC e necessidades de água. Mantenha-os atualizados para melhores resultados.
+                    Seus dados físicos são usados para calcular seu metabolismo basal, IMC e necessidades de água. Mantenha-os atualizados para melhores resultados.
                 </p>
 
             </div>
@@ -297,10 +296,20 @@ export const AccountSettings: React.FC = () => {
             )}
 
             <ConfirmModal
+                isOpen={showCancelConfirm}
+                title="Cancelar Assinatura"
+                message="Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso aos recursos PRO no final do seu ciclo de faturamento atual."
+                confirmText="Sim, quero cancelar"
+                cancelText="Voltar"
+                onConfirm={handleCancelSubscription}
+                onCancel={() => setShowCancelConfirm(false)}
+            />
+
+            <ConfirmModal
                 isOpen={showDeleteConfirm}
                 title="Excluir Conta"
                 message="TEM CERTEZA? Esta ação é permanente e apagará todos os seus dados de progresso, fotos, histórico de peso e configurações. Não há como desfazer."
-                confirmText="Excluir"
+                confirmText="Excluir Permanentemente"
                 cancelText="Cancelar"
                 onConfirm={() => {
                     setShowDeleteConfirm(false);

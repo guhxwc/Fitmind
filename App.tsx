@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
@@ -15,7 +15,40 @@ import { TermsPage } from './components/legal/TermsPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { SuccessPage } from './components/payment/SuccessPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { ReferralDashboard } from './components/ReferralDashboard';
 import { useToast } from './components/ToastProvider';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      
+      // Target the #root element which is the scroll container in index.html
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        rootElement.scrollTop = 0;
+        rootElement.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    };
+
+    scrollToTop();
+    const timeoutId = setTimeout(scrollToTop, 0);
+    const timeoutId2 = setTimeout(scrollToTop, 100);
+    const rafId = requestAnimationFrame(scrollToTop);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId2);
+      cancelAnimationFrame(rafId);
+    };
+  }, [pathname]);
+
+  return null;
+};
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -34,6 +67,11 @@ const AppContent: React.FC = () => {
   }, [userData, contextLoading]);
 
   useEffect(() => {
+    // Desativar a restauração automática de scroll do navegador
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
     // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
     if (window.location.hash && window.location.hash.includes('access_token=')) {
       if (window.location.hash.includes('type=signup')) {
@@ -180,38 +218,42 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/success" element={<SuccessPage />} />
-      
-      <Route path="/*" element={
-        session ? (
-          profileExists === null ? (
-            <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
-              <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
-            </div>
-          ) : profileExists ? (
-            (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
-              <MainApp />
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
+        
+        <Route path="/*" element={
+          session ? (
+            profileExists === null ? (
+              <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+                <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+              </div>
+            ) : profileExists ? (
+              (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
+                <MainApp />
+              ) : (
+                <OnboardingFlow 
+                  onComplete={handleOnboardingComplete} 
+                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
+                />
+              )
             ) : (
-              <OnboardingFlow 
-                onComplete={handleOnboardingComplete} 
-                initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
-              />
+              <OnboardingFlow onComplete={handleOnboardingComplete} />
             )
           ) : (
-            <OnboardingFlow onComplete={handleOnboardingComplete} />
+            <Navigate to="/auth" />
           )
-        ) : (
-          <Navigate to="/auth" />
-        )
-      } />
-      
-      <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
-    </Routes>
+        } />
+        
+        <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
+      </Routes>
+    </>
   );
 };
 

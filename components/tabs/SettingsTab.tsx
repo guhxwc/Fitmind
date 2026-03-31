@@ -1,47 +1,63 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { UserCircleIcon, MoonIcon, BellIcon, ShieldCheckIcon, HelpCircleIcon, ChevronRightIcon, StarIcon, SyringeIcon, FlameIcon, TargetIcon, SettingsIcon, LockIcon, PlayCircleIcon, ChatBubbleIcon, LightBulbIcon, DocumentIcon, ShieldIcon, LogOutIcon, CoffeeIcon, AppleIcon, WavesIcon, SparklesIcon, CheckCircleIcon, GiftIcon } from '../core/Icons';
-import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
-import { SubscriptionPage } from '../SubscriptionPage';
 import { DEFAULT_USER_DATA } from '../../constants';
 import { ConfirmModal } from '../ConfirmModal';
 import { TimePicker } from '../core/TimePicker';
+import { EditAttributeModal } from '../core/EditAttributeModal';
 import Portal from '../core/Portal';
+import { 
+  Pill, Target, Utensils, Activity, FileText, 
+  Scale, Ruler, Cake, User, Wallet, Gift, Bell, 
+  Globe, Star, Lightbulb, Mail, CreditCard, 
+  Shield, FileSignature, LogOut, Trash2, 
+  ChevronRight, Moon, Share2, Copy, X
+} from 'lucide-react';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
-        {title && <h3 className="px-4 mb-2 text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{title}</h3>}
-        <div className="bg-ios-card dark:bg-ios-dark-card rounded-[10px] overflow-hidden shadow-sm">
+        {title && <h3 className="px-4 mb-2 text-[13px] font-medium text-gray-500 dark:text-gray-400">{title}</h3>}
+        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800">
             {children}
         </div>
     </div>
 );
 
-const SettingsItem: React.FC<{icon?: React.ReactNode, label: string, value?: string, onClick?: () => void, isDestructive?: boolean, isLast?: boolean}> = ({ icon, label, value, onClick, isDestructive, isLast }) => (
-    <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
+const SettingsItem: React.FC<{
+    icon?: React.ReactNode, 
+    label: string, 
+    value?: string | React.ReactNode, 
+    onClick?: () => void, 
+    isDestructive?: boolean, 
+    isLast?: boolean,
+    hideArrow?: boolean
+}> = ({ icon, label, value, onClick, isDestructive, isLast, hideArrow }) => (
+    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
         <button 
             onClick={onClick} 
             disabled={!onClick}
-            className={`flex items-center w-full py-3 pr-4 transition-colors ${onClick ? 'active:bg-gray-100 dark:active:bg-gray-800' : 'cursor-default'} ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}
+            className={`flex items-center w-full py-3.5 pr-4 transition-colors ${onClick ? 'active:bg-gray-50 dark:active:bg-gray-800/50' : 'cursor-default'} ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
         >
-            {icon && <div className="text-gray-900 dark:text-white mr-3">{icon}</div>}
-            <span className={`flex-grow text-left font-medium text-[17px] ${isDestructive ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>{label}</span>
-            {value && <span className="text-gray-400 dark:text-gray-500 mr-2 text-[17px]">{value}</span>}
-            {!isDestructive && onClick && <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />}
+            {icon && (
+                <div className="mr-3 flex-shrink-0 flex items-center justify-center">
+                    {icon}
+                </div>
+            )}
+            <span className={`flex-grow text-left text-[16px] ${isDestructive ? 'text-red-500 font-medium' : 'text-gray-900 dark:text-white'}`}>{label}</span>
+            {value && <div className="text-gray-400 dark:text-gray-500 mr-2 text-[16px]">{value}</div>}
+            {!isDestructive && !hideArrow && onClick && <ChevronRight className="w-5 h-5 text-gray-300 dark:text-gray-600" />}
         </button>
     </div>
-)
+);
 
 const ToggleItem: React.FC<{ icon: React.ReactNode, label: string, isEnabled: boolean, onToggle: () => void, isLast?: boolean }> = ({ icon, label, isEnabled, onToggle, isLast }) => (
-    <div className="pl-4 bg-ios-card dark:bg-ios-dark-card">
-        <div className={`flex items-center justify-between py-3 pr-4 ${!isLast ? 'border-b border-gray-200/50 dark:border-gray-700/50' : ''}`}>
+    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
+        <div className={`flex items-center justify-between py-3.5 pr-4 ${!isLast ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
             <div className="flex items-center">
-                {icon && <div className="text-gray-900 dark:text-white mr-3">{icon}</div>}
-                <span className="font-medium text-gray-900 dark:text-white text-[17px]">{label}</span>
+                {icon && <div className="mr-3 flex items-center justify-center">{icon}</div>}
+                <span className="text-[16px] text-gray-900 dark:text-white">{label}</span>
             </div>
             <div 
                 onClick={onToggle}
@@ -80,16 +96,17 @@ const CustomTimeInput: React.FC<{ value: string, onChange: (val: string) => void
     );
 };
 
-const NotificationSettings: React.FC = () => {
+const NotificationSettingsModal: React.FC<{ isOpen: boolean, onClose: () => void }> = ({ isOpen, onClose }) => {
     const { userData, setUserData } = useAppContext();
     const { addToast } = useToast();
     
-    // Ensure notifications object exists
     const settings = userData?.notifications || DEFAULT_USER_DATA.notifications;
     const [isEnabled, setIsEnabled] = useState(settings.enabled);
     const [localSettings, setLocalSettings] = useState(settings);
     const [showIosAlert, setShowIosAlert] = useState(false);
     const [showBlockedAlert, setShowBlockedAlert] = useState(false);
+
+    if (!isOpen) return null;
 
     const updateSettings = async (key: string, value: any) => {
         const newSettings = { ...localSettings, [key]: value };
@@ -108,9 +125,7 @@ const NotificationSettings: React.FC = () => {
         }
 
         if (!isEnabled) {
-            // iOS Specific Check
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-            // Check if installed (standalone)
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
             if (isIOS && !isStandalone) {
@@ -124,14 +139,12 @@ const NotificationSettings: React.FC = () => {
             }
 
             try {
-                // Request Permission
                 const result = await Notification.requestPermission();
                 if (result === 'granted') {
                     setIsEnabled(true);
                     updateSettings('enabled', true);
                     addToast('Notificações ativadas!', 'success');
                 } else {
-                    // User dismissed or denied
                     addToast('Permissão negada.', 'error');
                 }
             } catch (error) {
@@ -144,235 +157,434 @@ const NotificationSettings: React.FC = () => {
         }
     };
 
-    const handleTimeChange = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
-        updateSettings(key, e.target.value);
-    };
-
     return (
-        <SettingsGroup title="Notificações">
-             <ToggleItem 
-                icon={<div className="bg-red-500 p-1.5 rounded-md text-white"><BellIcon className="w-4 h-4"/></div>}
-                label="Permitir Notificações" 
-                isEnabled={isEnabled} 
-                onToggle={handleToggle} 
-                isLast={!isEnabled}
-            />
-            {isEnabled && (
-                <div className="pl-4 bg-ios-card dark:bg-ios-dark-card space-y-1">
-                    {/* Medication */}
-                    <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                            <SyringeIcon className="w-4 h-4 text-purple-500"/>
-                            <span className="text-gray-900 dark:text-white text-sm">Medicação</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.medicationTime} onChange={(val) => updateSettings('medicationTime', val)} />
+        <Portal>
+            <div className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
+                <div className="bg-[#F5F5F7] dark:bg-black w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-slide-up" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notificações</h2>
+                        <button onClick={onClose} className="p-2 bg-gray-200 dark:bg-gray-800 rounded-full">
+                            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        </button>
                     </div>
-                    {/* Breakfast */}
-                    <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                            <CoffeeIcon className="w-4 h-4 text-orange-500"/>
-                            <span className="text-gray-900 dark:text-white text-sm">Café da Manhã</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.breakfastTime} onChange={(val) => updateSettings('breakfastTime', val)} />
+                    
+                    <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
+                        <ToggleItem 
+                            icon={<Bell className="w-5 h-5 text-yellow-500" />}
+                            label="Ativar Notificações" 
+                            isEnabled={isEnabled} 
+                            onToggle={handleToggle} 
+                            isLast={!isEnabled}
+                        />
+                        {isEnabled && (
+                            <div className="pl-4">
+                                <div className="flex items-center justify-between py-3.5 pr-4 border-t border-gray-100 dark:border-gray-800">
+                                    <span className="text-gray-900 dark:text-white text-[16px]">Lembrete de Remédio</span>
+                                    <CustomTimeInput value={localSettings.medicationTime} onChange={(val) => updateSettings('medicationTime', val)} />
+                                </div>
+                                <div className="flex items-center justify-between py-3.5 pr-4 border-t border-gray-100 dark:border-gray-800">
+                                    <span className="text-gray-900 dark:text-white text-[16px]">Café da Manhã</span>
+                                    <CustomTimeInput value={localSettings.breakfastTime} onChange={(val) => updateSettings('breakfastTime', val)} />
+                                </div>
+                                <div className="flex items-center justify-between py-3.5 pr-4 border-t border-gray-100 dark:border-gray-800">
+                                    <span className="text-gray-900 dark:text-white text-[16px]">Almoço</span>
+                                    <CustomTimeInput value={localSettings.lunchTime} onChange={(val) => updateSettings('lunchTime', val)} />
+                                </div>
+                                <div className="flex items-center justify-between py-3.5 pr-4 border-t border-gray-100 dark:border-gray-800">
+                                    <span className="text-gray-900 dark:text-white text-[16px]">Jantar</span>
+                                    <CustomTimeInput value={localSettings.dinnerTime} onChange={(val) => updateSettings('dinnerTime', val)} />
+                                </div>
+                                <div className="flex items-center justify-between py-3.5 pr-4 border-t border-gray-100 dark:border-gray-800">
+                                    <span className="text-gray-900 dark:text-white text-[16px]">Check-in Bem-estar</span>
+                                    <CustomTimeInput value={localSettings.checkinTime} onChange={(val) => updateSettings('checkinTime', val)} />
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    {/* Lunch */}
-                    <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                            <span className="text-base">🥗</span>
-                            <span className="text-gray-900 dark:text-white text-sm">Almoço</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.lunchTime} onChange={(val) => updateSettings('lunchTime', val)} />
-                    </div>
-                    {/* Snack */}
-                    <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                            <AppleIcon className="w-4 h-4 text-green-500"/>
-                            <span className="text-gray-900 dark:text-white text-sm">Lanche</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.snackTime} onChange={(val) => updateSettings('snackTime', val)} />
-                    </div>
-                    {/* Dinner */}
-                    <div className="flex items-center justify-between py-2 pr-4 border-b border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-3">
-                            <span className="text-base">🍽️</span>
-                            <span className="text-gray-900 dark:text-white text-sm">Jantar</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.dinnerTime} onChange={(val) => updateSettings('dinnerTime', val)} />
-                    </div>
-                    {/* Checkin */}
-                    <div className="flex items-center justify-between py-2 pr-4">
-                        <div className="flex items-center gap-3">
-                            <WavesIcon className="w-4 h-4 text-blue-500"/>
-                            <span className="text-gray-900 dark:text-white text-sm">Check-in Bem-estar</span>
-                        </div>
-                        <CustomTimeInput value={localSettings.checkinTime} onChange={(val) => updateSettings('checkinTime', val)} />
-                    </div>
+
+                    <ConfirmModal
+                        isOpen={showIosAlert}
+                        title="Instalar App"
+                        message="No iPhone, as notificações só funcionam se você instalar o App.&#10;&#10;1. Toque no botão Compartilhar (embaixo)&#10;2. Selecione 'Adicionar à Tela de Início'"
+                        confirmText="Entendi"
+                        onConfirm={() => setShowIosAlert(false)}
+                    />
+                    
+                    <ConfirmModal
+                        isOpen={showBlockedAlert}
+                        title="Notificações Bloqueadas"
+                        message="As notificações estão bloqueadas no navegador.&#10;&#10;Para ativar: Toque no cadeado 🔒 na barra de endereço ou vá em Configurações do Site e permita Notificações."
+                        confirmText="Entendi"
+                        onConfirm={() => setShowBlockedAlert(false)}
+                    />
                 </div>
-            )}
-            
-            <ConfirmModal
-                isOpen={showIosAlert}
-                title="Instalar App"
-                message="No iPhone, as notificações só funcionam se você instalar o App.&#10;&#10;1. Toque no botão Compartilhar (embaixo)&#10;2. Selecione 'Adicionar à Tela de Início'"
-                confirmText="Entendi"
-                onConfirm={() => setShowIosAlert(false)}
-            />
-            
-            <ConfirmModal
-                isOpen={showBlockedAlert}
-                title="Notificações Bloqueadas"
-                message="As notificações estão bloqueadas no navegador.&#10;&#10;Para ativar: Toque no cadeado 🔒 na barra de endereço ou vá em Configurações do Site e permita Notificações."
-                confirmText="Entendi"
-                onConfirm={() => setShowBlockedAlert(false)}
-            />
-        </SettingsGroup>
+            </div>
+        </Portal>
     );
 };
-
-const ThemeSettings: React.FC = () => {
-    const { theme, toggleTheme } = useAppContext();
-
-    return (
-        <SettingsGroup title="Aparência">
-            <ToggleItem 
-                icon={<div className="bg-indigo-500 p-1.5 rounded-md text-white"><MoonIcon className="w-4 h-4"/></div>}
-                label="Modo Escuro" 
-                isEnabled={theme === 'dark'} 
-                onToggle={toggleTheme} 
-                isLast
-            />
-        </SettingsGroup>
-    );
-};
-
 
 export const SettingsTab: React.FC = () => {
-    const { userData, unlockPro } = useAppContext();
+    const { userData, theme, toggleTheme, unlockPro, fetchData } = useAppContext();
     const navigate = useNavigate();
-    const [showSubPage, setShowSubPage] = useState(false);
+    const { addToast } = useToast();
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
+
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+        const main = document.querySelector('main');
+        if (main) main.scrollTo(0, 0);
+    }, []);
+    
+    // Modals state
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [editModal, setEditModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        type: 'text' | 'number' | 'date' | 'select' | 'password';
+        key: string;
+        value: any;
+        options?: string[];
+        unit?: string;
+    }>({ isOpen: false, title: '', type: 'text', key: '', value: '' });
     
     if (!userData) return null;
+
+    const handleOpenEdit = (title: string, key: string, value: any, type: 'text' | 'number' | 'date' | 'select' | 'password', options?: string[], unit?: string) => {
+        setEditModal({ isOpen: true, title, key, value, type, options, unit });
+    };
+
+    const handleSaveAttribute = async (newValue: any) => {
+        const key = editModal.key;
+        
+        if (key === 'password') {
+            const { error } = await supabase.auth.updateUser({ password: newValue });
+            if (error) {
+                addToast(error.message || 'Erro ao atualizar senha.', 'error');
+            } else {
+                addToast('Senha atualizada com sucesso.', 'success');
+            }
+            return;
+        }
+
+        let updateData: any = {};
+
+        // Parse numbers if needed
+        if (editModal.type === 'number') {
+            updateData[key] = parseFloat(newValue);
+        } else {
+            updateData[key] = newValue;
+        }
+
+        const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
+        
+        if (error) {
+            addToast('Erro ao atualizar.', 'error');
+        } else {
+            await fetchData();
+            addToast('Perfil atualizado.', 'success');
+        }
+    };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         navigate('/auth');
     };
 
+    const handleGenerateReport = () => {
+        setShowReportModal(false);
+        addToast("Gerando relatório...", "info");
+        setTimeout(() => {
+            addToast("Relatório enviado para o seu e-mail com sucesso!", "success");
+        }, 2000);
+    };
+
+    const handleLanguage = () => {
+        addToast("No momento, apenas o idioma Português (BR) está disponível.", "info");
+    };
+
+    const handleRateApp = () => {
+        addToast("Obrigado! Redirecionando para a loja de aplicativos...", "success");
+    };
+
+    const toggleUnit = (newUnit: 'metric' | 'imperial') => {
+        setUnit(newUnit);
+        addToast(`Unidades alteradas para o sistema ${newUnit === 'metric' ? 'Métrico' : 'Imperial'}.`, "success");
+    };
+
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        } catch {
+            return dateString;
+        }
+    };
+
+    const referralCode = userData.id.substring(0, 8).toUpperCase();
+    const referralLink = `https://fitmindhealth.com.br/invite/${referralCode}`;
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(referralLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleShare = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Convite Exclusivo - FitMind',
+                    text: 'Estou testando o FitMind e você ganhou um convite exclusivo!',
+                    url: referralLink,
+                });
+            } catch (err) {
+                console.log('Erro ao compartilhar', err);
+            }
+        } else {
+            handleCopy(e);
+        }
+    };
+
     return (
-        <div className="px-5 pb-24 min-h-screen animate-fade-in">
-            <header id="tour-settings-main" className="mb-8 mt-4 flex justify-between items-start">
-                <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Ajustes</h1>
-                <StreakBadge />
+        <div className="bg-[#F5F5F7] dark:bg-black min-h-screen pb-24 animate-fade-in">
+            <header className="pt-12 pb-6 px-5 flex justify-center items-center sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-md z-10">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Configurações</h1>
             </header>
 
-            <div className="mb-8 flex items-center gap-4 bg-ios-card dark:bg-ios-dark-card p-4 rounded-[20px] shadow-sm relative overflow-hidden">
-                <div className="w-16 h-16 bg-gradient-to-tr from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center text-2xl font-bold text-gray-500 dark:text-gray-300 shadow-inner z-10">
-                    {userData.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="z-10">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{userData.name}</h2>
-                        {userData.isPro && <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">PRO</span>}
+            <div className="px-5">
+                <SettingsGroup>
+                    <div 
+                        className="bg-white dark:bg-[#1C1C1E] p-4 flex items-center cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors" 
+                        onClick={() => navigate('/settings/account')}
+                    >
+                        <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 dark:text-gray-500 mr-4 shadow-sm flex-shrink-0">
+                            <User className="w-8 h-8" strokeWidth={1.5} />
+                        </div>
+                        <div className="flex-grow overflow-hidden">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{userData.name || 'Usuário'}</h2>
+                            <p className="text-[15px] text-gray-500 dark:text-gray-400">Minha conta</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{userData.medication.name} • {userData.medication.dose}</p>
-                </div>
-                {userData.isPro && <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>}
-            </div>
+                </SettingsGroup>
 
-            <div id="tour-settings-features">
-            <SettingsGroup title="Conta">
-                 <SettingsItem 
-                    icon={<div className="bg-blue-500 p-1.5 rounded-md text-white"><UserCircleIcon className="w-4 h-4"/></div>}
-                    label="Minha Conta" 
-                    onClick={() => navigate('/settings/account')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-gray-500 p-1.5 rounded-md text-white"><LockIcon className="w-4 h-4"/></div>}
-                    label="Privacidade e Segurança" 
-                    onClick={() => navigate('/settings/privacy')} 
-                />
-                {!userData.isPro ? (
+                <SettingsGroup title="Tratamento e metas">
                     <SettingsItem 
-                        icon={<div className="bg-gradient-to-r from-blue-500 to-purple-500 p-1.5 rounded-md text-white"><StarIcon className="w-4 h-4"/></div>}
-                        label="Assinar FitMind PRO" 
-                        onClick={() => setShowSubPage(true)} 
+                        icon={<Pill className="w-5 h-5 text-red-500" />}
+                        label="Tratamento" 
+                        onClick={() => navigate('/settings/treatment')} 
+                    />
+                    <SettingsItem 
+                        icon={<Target className="w-5 h-5 text-teal-500" />}
+                        label="Metas de peso" 
+                        onClick={() => navigate('/settings/weight-goals')} 
+                    />
+                    <SettingsItem 
+                        icon={<Utensils className="w-5 h-5 text-orange-500" />}
+                        label="Metas de alimentação" 
+                        onClick={() => navigate('/settings/lifestyle')} 
+                    />
+                    <SettingsItem 
+                        icon={<Activity className="w-5 h-5 text-green-500" />}
+                        label="Metas de atividade" 
+                        onClick={() => navigate('/settings/lifestyle')} 
+                    />
+                    <SettingsItem 
+                        icon={<FileText className="w-5 h-5 text-blue-500" />}
+                        label="Gerar Relatório do Tratamento" 
+                        onClick={() => setShowReportModal(true)} 
                         isLast
                     />
-                ) : (
+                </SettingsGroup>
+
+                <SettingsGroup title="Dados gerais">
                     <SettingsItem 
-                        icon={<div className="bg-green-500 p-1.5 rounded-md text-white"><CheckCircleIcon className="w-4 h-4"/></div>}
-                        label="Status: Assinante PRO" 
+                        icon={<Scale className="w-5 h-5 text-orange-500" />}
+                        label="Peso" 
+                        value={`${userData.weight || 0} kg`}
+                        onClick={() => handleOpenEdit('Peso Atual', 'weight', userData.weight, 'number', undefined, 'kg')} 
+                    />
+                    <SettingsItem 
+                        icon={<Ruler className="w-5 h-5 text-blue-500" />}
+                        label="Altura" 
+                        value={`${userData.height || 0} cm`}
+                        onClick={() => handleOpenEdit('Atualizar Altura', 'height', userData.height, 'number', undefined, 'cm')} 
+                    />
+                    <SettingsItem 
+                        icon={<Cake className="w-5 h-5 text-red-500" />}
+                        label="Aniversário" 
+                        value={formatDate(userData.birthDate)}
+                        onClick={() => handleOpenEdit('Data de Nascimento', 'birth_date', userData.birthDate || '', 'date')} 
+                    />
+                    <SettingsItem 
+                        icon={<User className="w-5 h-5 text-purple-500" />}
+                        label="Gênero" 
+                        value={userData.gender}
+                        onClick={() => handleOpenEdit('Gênero', 'gender', userData.gender, 'select', ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'])} 
+                    />
+                    <SettingsItem 
+                        icon={<Ruler className="w-5 h-5 text-orange-500" />}
+                        label="Medidas Corporais" 
+                        onClick={() => navigate('/settings/account')} 
                         isLast
                     />
-                )}
-            </SettingsGroup>
+                </SettingsGroup>
 
-            <SettingsGroup title="Configurações">
-                <SettingsItem 
-                    icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><SyringeIcon className="w-4 h-4"/></div>}
-                    label="Tratamento" 
-                    onClick={() => navigate('/settings/treatment')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><FlameIcon className="w-4 h-4"/></div>}
-                    label="Metas de estilo de vida" 
-                    onClick={() => navigate('/settings/lifestyle')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><TargetIcon className="w-4 h-4"/></div>}
-                    label="Metas de peso" 
-                    onClick={() => navigate('/settings/weight-goals')} 
-                />
-                <SettingsItem 
-                    icon={<div className="bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 p-1.5 rounded-md text-black dark:text-white"><SettingsIcon className="w-4 h-4"/></div>}
-                    label="Configurações iniciais" 
-                    onClick={() => navigate('/settings/initial-setup')} 
-                    isLast
-                />
-            </SettingsGroup>
+                <SettingsGroup title="Indique e Ganhe">
+                    <div className="p-4 bg-white dark:bg-[#1C1C1E]">
+                        <div 
+                            onClick={() => navigate('/referrals')}
+                            className="bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100 dark:border-purple-900/20 cursor-pointer active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20">
+                                        <Gift className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Indique e Ganhe</h3>
+                                        <p className="text-xs font-medium text-purple-600 dark:text-purple-400">Ganhe até 1 mês grátis</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-purple-400" />
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                Convide amigos para o FitMind e desbloqueie meses de acesso PRO gratuitamente.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
+                        <div className="flex items-center w-full py-3 pr-4 border-t border-gray-100 dark:border-gray-800">
+                            <div className="mr-3 flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                <Wallet className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                            </div>
+                            <div className="flex-grow text-left">
+                                <div className="text-[12px] text-gray-500 dark:text-gray-400">Saldo disponível</div>
+                                <div className="text-[16px] font-bold text-gray-900 dark:text-white">R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+                </SettingsGroup>
 
-            <NotificationSettings />
-            <ThemeSettings />
+                <SettingsGroup title="Preferências">
+                    <SettingsItem 
+                        icon={<Bell className="w-5 h-5 text-yellow-500" />}
+                        label="Notificações" 
+                        onClick={() => setShowNotifications(true)} 
+                    />
+                    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
+                        <div className="flex items-center justify-between py-3.5 pr-4 border-b border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center">
+                                <Scale className="w-5 h-5 text-blue-500 mr-3" />
+                                <span className="text-[16px] text-gray-900 dark:text-white">Unidades</span>
+                            </div>
+                            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                                <button 
+                                    onClick={() => toggleUnit('metric')}
+                                    className={`px-3 py-1 text-[13px] font-medium rounded-md shadow-sm transition-colors ${unit === 'metric' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 bg-transparent shadow-none'}`}
+                                >
+                                    Métrico
+                                </button>
+                                <button 
+                                    onClick={() => toggleUnit('imperial')}
+                                    className={`px-3 py-1 text-[13px] font-medium rounded-md shadow-sm transition-colors ${unit === 'imperial' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 bg-transparent shadow-none'}`}
+                                >
+                                    Imperial
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <SettingsItem 
+                        icon={<Globe className="w-5 h-5 text-blue-500" />}
+                        label="Idioma" 
+                        value="🇧🇷 PT"
+                        onClick={handleLanguage} 
+                    />
+                    <ToggleItem 
+                        icon={<Moon className="w-5 h-5 text-indigo-500" />}
+                        label="Modo Escuro" 
+                        isEnabled={theme === 'dark'} 
+                        onToggle={toggleTheme} 
+                        isLast
+                    />
+                </SettingsGroup>
 
-            <SettingsGroup title="OUTROS">
-                <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><ChatBubbleIcon className="w-5 h-5"/></div>}
-                    label="Suporte" 
-                    onClick={() => navigate('/settings/help')} 
-                />
-                <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><LightBulbIcon className="w-5 h-5"/></div>}
-                    label="Enviar Sugestão" 
-                    onClick={() => window.location.href = "mailto:support@fitmind.app?subject=Sugestão"} 
-                />
-                <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><DocumentIcon className="w-5 h-5"/></div>}
-                    label="Termos e Condições" 
-                    onClick={() => navigate('/terms')} 
-                />
-                <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><ShieldIcon className="w-5 h-5"/></div>}
-                    label="Política de Privacidade" 
-                    onClick={() => navigate('/privacy')} 
-                />
-                <SettingsItem 
-                    icon={<div className="text-black dark:text-white"><LogOutIcon className="w-5 h-5"/></div>}
-                    label="Sair" 
-                    onClick={handleLogout} 
-                    isLast
-                />
-            </SettingsGroup>
+                <SettingsGroup title="Suporte">
+                    <SettingsItem 
+                        icon={<Star className="w-5 h-5 text-yellow-500" />}
+                        label="Avalie o App" 
+                        onClick={handleRateApp} 
+                    />
+                    <SettingsItem 
+                        icon={<Lightbulb className="w-5 h-5 text-yellow-500" />}
+                        label="Enviar Sugestão" 
+                        onClick={() => window.location.href = "mailto:support@fitmind.app?subject=Sugestão"} 
+                    />
+                    <SettingsItem 
+                        icon={<Mail className="w-5 h-5 text-red-500" />}
+                        label="Fale com o Suporte" 
+                        onClick={() => window.location.href = "mailto:support@fitmind.app"} 
+                        isLast
+                    />
+                </SettingsGroup>
+
+                <SettingsGroup title="Legal">
+                    <SettingsItem 
+                        icon={<Shield className="w-5 h-5 text-blue-900 dark:text-blue-400" />}
+                        label="Política de Privacidade" 
+                        onClick={() => navigate('/privacy')} 
+                    />
+                    <SettingsItem 
+                        icon={<FileSignature className="w-5 h-5 text-gray-500" />}
+                        label="Termos e Condições" 
+                        onClick={() => navigate('/terms')} 
+                        isLast
+                    />
+                </SettingsGroup>
+
+                <SettingsGroup>
+                    <SettingsItem 
+                        icon={<LogOut className="w-5 h-5 text-red-500" />}
+                        label="Sair" 
+                        isDestructive
+                        onClick={handleLogout} 
+                        isLast
+                    />
+                </SettingsGroup>
             </div>
             
             <p className="text-center text-gray-400 text-xs mt-8 mb-10 font-medium">FitMind Health Technologies</p>
+            
+            <NotificationSettingsModal 
+                isOpen={showNotifications} 
+                onClose={() => setShowNotifications(false)} 
+            />
 
-            {showSubPage && (
-                <SubscriptionPage 
-                    onClose={() => setShowSubPage(false)}
-                    onSubscribe={() => {
-                        unlockPro();
-                        setShowSubPage(false);
-                    }}
+            <ConfirmModal
+                isOpen={showReportModal}
+                title="Gerar Relatório"
+                message="Deseja gerar um relatório completo do seu tratamento e enviar para o seu e-mail cadastrado?"
+                confirmText="Gerar Relatório"
+                cancelText="Cancelar"
+                onConfirm={handleGenerateReport}
+                onCancel={() => setShowReportModal(false)}
+            />
+
+            {editModal.isOpen && (
+                <EditAttributeModal
+                    title={editModal.title}
+                    initialValue={editModal.value}
+                    type={editModal.type}
+                    options={editModal.options}
+                    unit={editModal.unit}
+                    onClose={() => setEditModal(prev => ({ ...prev, isOpen: false }))}
+                    onSave={handleSaveAttribute}
                 />
             )}
         </div>

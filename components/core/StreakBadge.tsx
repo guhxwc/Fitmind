@@ -5,8 +5,6 @@ import Portal from './Portal';
 
 export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
     const { userData } = useAppContext();
-    const [showAnimation, setShowAnimation] = useState(false);
-    
     const [showModal, setShowModal] = useState(false);
     
     if (!userData) return null;
@@ -15,8 +13,6 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
 
     const handleToggleAnimation = () => {
         setShowModal(true);
-        setShowAnimation(true);
-        setTimeout(() => setShowAnimation(false), 3000); // Show for 3 seconds
     };
 
     return (
@@ -25,17 +21,33 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
                 onClick={handleToggleAnimation}
                 className={`flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full shadow-sm transition-all duration-300 cursor-pointer active:scale-95 ${
                     hasStreak 
-                        ? 'bg-gradient-to-r from-orange-500 to-red-600 border border-orange-400 text-white shadow-orange-500/30' 
+                        ? 'bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400' 
                         : 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500'
                 } ${className}`}
             >
                 <div className={`${hasStreak ? 'animate-pulse' : ''}`}>
-                    <svg className={`w-4 h-4 ${hasStreak ? 'fill-white text-white' : 'text-gray-400 dark:text-gray-500'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.5 2C11.5 2 10 5 10 7.5C10 10 12 11.5 12 14C12 16.5 10.5 18.5 8 19.5C11 21.5 15 21 17 18C19 15 18 11.5 16 9C14 6.5 11.5 2 11.5 2Z" fill="currentColor"/>
-                        <path d="M9.5 8C9.5 8 8.5 10 8.5 11.5C8.5 13 9.5 14 9.5 15.5C9.5 17 8.5 18.5 7 19C8.5 20 11 19.5 12 18C13 16.5 12.5 14.5 11.5 13C10.5 11.5 9.5 8 9.5 8Z" fill="currentColor" opacity="0.8"/>
+                    <svg className={`w-5 h-5 ${hasStreak ? 'drop-shadow-sm' : 'grayscale opacity-50'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        {/* Sparkles */}
+                        <path d="M18 4L18.5 5.5L20 6L18.5 6.5L18 8L17.5 6.5L16 6L17.5 5.5L18 4Z" fill={hasStreak ? "#FFB300" : "#9CA3AF"} />
+                        <path d="M6 8L6.5 9.5L8 10L6.5 10.5L6 12L5.5 10.5L4 10L5.5 9.5L6 8Z" fill={hasStreak ? "#FFB300" : "#9CA3AF"} />
+                        
+                        {/* Main Flame */}
+                        <path d="M12 2C12 2 5 8.5 5 14.5C5 18.64 8.13 22 12 22C15.87 22 19 18.64 19 14.5C19 8.5 12 2 12 2Z" fill={hasStreak ? "url(#cuteFireGradBadge)" : "#D1D5DB"}/>
+                        <path d="M12 8.5C12 8.5 8 12.5 8 16C8 18.21 9.79 20 12 20C14.21 20 16 18.21 16 16C16 12.5 12 8.5 12 8.5Z" fill={hasStreak ? "#FFD700" : "#9CA3AF"}/>
+                        <path d="M12 13C12 13 10 15 10 16.5C10 17.6 10.9 18.5 12 18.5C13.1 18.5 14 17.6 14 16.5C14 15 12 13 12 13Z" fill={hasStreak ? "#FFF4D2" : "#D1D5DB"}/>
+                        
+                        {hasStreak && (
+                            <defs>
+                                <linearGradient id="cuteFireGradBadge" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#FFB300" />
+                                    <stop offset="35%" stopColor="#FF6B00" />
+                                    <stop offset="100%" stopColor="#E61A00" />
+                                </linearGradient>
+                            </defs>
+                        )}
                     </svg>
                 </div>
-                <span className={`text-sm font-bold font-mono leading-none ${hasStreak ? 'text-white' : ''}`}>
+                <span className={`text-sm font-bold font-mono leading-none ${hasStreak ? 'text-orange-600 dark:text-orange-400' : ''}`}>
                     {userData.streak}
                 </span>
             </div>
@@ -112,32 +124,6 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
                             >
                                 Continuar
                             </button>
-                        </div>
-                    </div>
-                </Portal>
-            )}
-
-            {showAnimation && (
-                <Portal>
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none overflow-hidden">
-                        <div className="relative scale-[4] md:scale-[6] animate-pop-in">
-                            <div className="flame-container">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
-                                    <defs>
-                                        <linearGradient id="fireGradAnim" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stopColor="#FFB300" />
-                                            <stop offset="35%" stopColor="#FF6B00" />
-                                            <stop offset="100%" stopColor="#E61A00" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path className="flame-outer" fill="url(#fireGradAnim)" 
-                                          d="M12 2C12 2 5 8.5 5 14.5C5 18.64 8.13 22 12 22C15.87 22 19 18.64 19 14.5C19 8.5 12 2 12 2Z" />
-                                    <path className="flame-inner" fill="#FFD700" 
-                                          d="M12 8.5C12 8.5 8 12.5 8 16C8 18.21 9.79 20 12 20C14.21 20 16 18.21 16 16C16 12.5 12 8.5 12 8.5Z" />
-                                    <path className="flame-core" fill="#FFF4D2" 
-                                          d="M12 13C12 13 10 15 10 16.5C10 17.6 10.9 18.5 12 18.5C13.1 18.5 14 17.6 14 16.5C14 15 12 13 12 13Z" />
-                                </svg>
-                            </div>
                         </div>
                     </div>
                 </Portal>

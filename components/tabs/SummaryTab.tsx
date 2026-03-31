@@ -4,7 +4,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
-import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, LunchIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon, CalendarIcon } from '../core/Icons';
+import { WaterDropIcon, FlameIcon, LeafIcon, EditIcon, CoffeeIcon, LunchIcon, UtensilsIcon, AppleIcon, PlusIcon, MinusIcon, SparklesIcon, SyringeIcon, ChevronRightIcon, LockIcon, SettingsIcon, WavesIcon, ListIcon, ScaleIcon, DumbbellIcon, DietIcon, CalendarIcon, ChevronDownIcon } from '../core/Icons';
 import { StreakBadge } from '../core/StreakBadge';
 import { ManualMealModal } from './ManualMealModal';
 import { SmartLogModal } from '../SmartLogModal';
@@ -418,16 +418,17 @@ export const SummaryTab: React.FC = () => {
       {/* Header */}
       <header className="flex justify-between items-end pt-4">
         <div>
-            <div 
+            <button 
                 id="tour-calendar"
                 onClick={() => setIsDatePickerOpen(true)}
-                className="relative inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full mb-2 cursor-pointer active:scale-95 transition-transform"
+                className="relative inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 px-3.5 py-1.5 rounded-full mb-2 cursor-pointer active:scale-95 transition-all shadow-sm border border-gray-200/50 dark:border-gray-700/50 group"
             >
-                <CalendarIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
+                <CalendarIcon className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-widest group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                     {isToday ? 'Hoje' : selectedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </span>
-            </div>
+                <ChevronDownIcon className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 ml-0.5 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+            </button>
             <h1 id="tour-summary-header" className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Resumo</h1>
         </div>
         <div className="flex items-center gap-3">

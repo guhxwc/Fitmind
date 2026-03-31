@@ -6,8 +6,19 @@ import { ChevronLeftIcon, LockIcon } from '../core/Icons';
 export const PrivacyPage: React.FC = () => {
     const navigate = useNavigate();
 
+    React.useEffect(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const root = document.getElementById('root');
+        if (root) {
+            root.scrollTop = 0;
+            root.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }, []);
+
     return (
-        <div className="min-h-screen bg-[#F2F2F7] dark:bg-black font-sans animate-fade-in flex flex-col">
+        <div className="bg-[#F2F2F7] dark:bg-black font-sans animate-fade-in flex flex-col">
             <div className="sticky top-0 z-20 bg-[#F2F2F7]/90 dark:bg-black/90 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800">
                 <div className="px-4 h-14 flex items-center justify-between max-w-md mx-auto">
                     <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-blue-500 hover:text-blue-600 font-medium text-[17px] flex items-center gap-1">
@@ -19,7 +30,7 @@ export const PrivacyPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto px-5 py-6 max-w-md mx-auto pb-24 text-gray-800 dark:text-gray-300 text-[15px] leading-relaxed">
+            <div className="flex-grow px-5 py-6 max-w-md mx-auto pb-24 text-gray-800 dark:text-gray-300 text-[15px] leading-relaxed">
                 
                 {/* Header Discreto */}
                 <div className="mb-10 text-center px-4">

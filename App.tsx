@@ -17,6 +17,7 @@ import { SuccessPage } from './components/payment/SuccessPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { ReferralDashboard } from './components/ReferralDashboard';
 import { useToast } from './components/ToastProvider';
+import { NotificationSystem } from './components/NotificationSystem';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -220,6 +221,7 @@ const AppContent: React.FC = () => {
   return (
     <>
       <ScrollToTop />
+      <NotificationSystem />
       <Routes>
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

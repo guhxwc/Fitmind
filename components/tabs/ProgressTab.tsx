@@ -216,7 +216,7 @@ const SymptomHistoryModal: React.FC<{
 };
 
 const SinglePhotoViewerModal: React.FC<{photo: ProgressPhoto, onClose: () => void, onDelete: (photo: ProgressPhoto) => void}> = ({ photo, onClose, onDelete }) => (
-    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fade-in backdrop-blur-md" onClick={onClose}>
         <div className="relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <img 
                 src={photo.photo_url} 
@@ -250,7 +250,7 @@ const PhotoComparisonModal: React.FC<{ photos: ProgressPhoto[]; onClose: () => v
     const sortedPhotos = [...photos].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-white dark:bg-gray-900 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md h-[90vh] sm:h-[80vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
                 {view === 'select' ? (
                     <>
@@ -312,12 +312,11 @@ const PhotoComparisonModal: React.FC<{ photos: ProgressPhoto[]; onClose: () => v
 // --- Componente Principal ---
 
 export const ProgressTab: React.FC = () => {
-  const { userData, weightHistory, setWeightHistory, progressPhotos, setProgressPhotos, updateStreak, sideEffects, theme } = useAppContext();
+  const { userData, weightHistory, setWeightHistory, progressPhotos, setProgressPhotos, updateStreak, sideEffects, theme, isWeightModalOpen, setIsWeightModalOpen } = useAppContext();
   const { addToast } = useToast();
   
   // Estados
   const [view, setView] = useState<'overview' | 'photos'>('overview');
-  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<ProgressPhoto | null>(null);
   const [viewingSymptom, setViewingSymptom] = useState<string | null>(null);
@@ -379,17 +378,6 @@ export const ProgressTab: React.FC = () => {
           maxCount: maxCount
       };
   }, [sideEffects]);
-
-  const handleAddWeight = async (newWeight: number) => {
-      if(!userData) return;
-      const { data } = await supabase.from('weight_history').insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight }).select();
-      if(data) {
-          setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-          setIsWeightModalOpen(false);
-          updateStreak();
-          addToast("Peso registrado!", "success");
-      }
-  };
 
   const handleAddPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files?.[0] || !userData) return;
@@ -587,7 +575,6 @@ export const ProgressTab: React.FC = () => {
           </div>
       )}
 
-      {isWeightModalOpen && <RegisterWeightModal onSave={handleAddWeight} onClose={() => setIsWeightModalOpen(false)} />}
       {viewingPhoto && <SinglePhotoViewerModal photo={viewingPhoto} onClose={() => setViewingPhoto(null)} onDelete={(photo) => setPhotoToDelete(photo)} />}
       {isComparisonModalOpen && <PhotoComparisonModal photos={progressPhotos} onClose={() => setIsComparisonModalOpen(false)} />}
       

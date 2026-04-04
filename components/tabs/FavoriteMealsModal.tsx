@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useToast } from '../ToastProvider';
 import { ChevronLeftIcon, PlusIcon, FlameIcon, TrashIcon } from '../core/Icons';
 import type { FavoriteMeal, Meal } from '../../types';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface FavoriteMealsModalProps {
     onClose: () => void;
@@ -15,6 +16,8 @@ export const FavoriteMealsModal: React.FC<FavoriteMealsModalProps> = ({ onClose,
     const { addToast } = useToast();
     const [favorites, setFavorites] = useState<FavoriteMeal[]>([]);
     const [loading, setLoading] = useState(true);
+
+    useScrollLock(true);
 
     useEffect(() => {
         fetchFavorites();
@@ -66,7 +69,7 @@ export const FavoriteMealsModal: React.FC<FavoriteMealsModalProps> = ({ onClose,
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
             <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}

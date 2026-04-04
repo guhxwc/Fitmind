@@ -323,7 +323,7 @@ const ActiveSessionView: React.FC<{
     const progress = totalSets > 0 ? Math.round((totalCompleted / totalSets) * 100) : 0;
 
     return (
-        <div className="fixed inset-0 bg-gray-50 dark:bg-black z-50 flex flex-col animate-slide-up h-[100dvh]">
+        <div className="fixed inset-0 bg-gray-50 dark:bg-black z-[100] flex flex-col animate-slide-up h-[100dvh]">
             {/* Header */}
             <div className="pt-safe-top px-5 pb-4 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 z-20 sticky top-0 shadow-sm">
                 <div className="flex justify-between items-center mb-3 mt-2">
@@ -706,7 +706,7 @@ const SwapWorkoutModal: React.FC<{
     onFreestyle: () => void
 }> = ({ plan, onClose, onSelect, onFreestyle }) => (
     <Portal>
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
             <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] p-6 flex flex-col animate-slide-up max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">Trocar Treino de Hoje</h2>

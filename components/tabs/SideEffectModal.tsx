@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { SideEffectEntry, SideEffect, SideEffectName, SideEffectIntensity } from '../../types';
 import Portal from '../core/Portal';
 import { SparklesIcon, CheckCircleIcon, ShieldCheckIcon, ChevronRightIcon } from '../core/Icons';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface SideEffectModalProps {
   date: Date;
@@ -40,6 +41,8 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
   const [notes, setNotes] = useState(initialEntry?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
 
+  useScrollLock(true);
+
   const toggleEffect = (name: SideEffectName | string) => {
     const existingEffect = effects.find(e => e.name === name);
     if (existingEffect) {
@@ -72,7 +75,7 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
   if (view === 'care_plan') {
       return (
         <Portal>
-            <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
                 <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                     
                     <button 
@@ -125,7 +128,7 @@ export const SideEffectModal: React.FC<SideEffectModalProps> = ({ date, initialE
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
         <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-[32px] flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
           
           <div className="flex items-center justify-between p-6 pb-2">

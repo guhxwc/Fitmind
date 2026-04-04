@@ -9,7 +9,7 @@ interface ProUpsellModalProps {
 
 export const ProUpsellModal: React.FC<ProUpsellModalProps> = ({ onClose, onUnlock }) => {
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6" onClick={onClose}>
             <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm text-center animate-pop-in" onClick={(e) => e.stopPropagation()}>
                 <div className="w-16 h-16 bg-gray-900 dark:bg-gray-100 text-white dark:text-black rounded-2xl mx-auto flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

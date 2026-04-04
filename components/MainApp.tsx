@@ -27,15 +27,12 @@ import { NotificationManager } from './NotificationManager';
 import { CelebrationManager } from './CelebrationManager';
 
 export const MainApp: React.FC = () => {
-  const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData } = useAppContext();
+  const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useToast();
   
   // Global Modals State
-  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
-  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
-  const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Escutar parâmetros da Stripe na URL principal
@@ -130,6 +127,28 @@ export const MainApp: React.FC = () => {
       if(data) {
           setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
           await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
+          
+          // Update local state immediately for UX
+          setUserData(prev => {
+              if (!prev) return null;
+              
+              let newGoals = prev.goals;
+              let newLastWeightGoalUpdate = prev.lastWeightGoalUpdate || prev.weight;
+
+              // Check if we should recalculate goals (every 5kg)
+              if (Math.abs(newWeight - (prev.lastWeightGoalUpdate || prev.weight)) >= 5) {
+                  newGoals = calculateGoals(newWeight, prev.activityLevel, prev.height, prev.age, prev.gender);
+                  newLastWeightGoalUpdate = newWeight;
+              }
+
+              return { 
+                  ...prev, 
+                  weight: newWeight, 
+                  goals: newGoals, 
+                  lastWeightGoalUpdate: newLastWeightGoalUpdate 
+              };
+          });
+
           setIsWeightModalOpen(false);
           updateStreak();
           addToast("Peso atualizado!", "success");
@@ -221,7 +240,13 @@ export const MainApp: React.FC = () => {
 
       {isMealModalOpen && (
           <SmartLogModal 
-            onClose={() => setIsMealModalOpen(false)} 
+            initialMealType={initialMealType}
+            initialMode={initialMode as any}
+            onClose={() => {
+                setIsMealModalOpen(false);
+                setInitialMealType('');
+                setInitialMode('');
+            }} 
           />
       )}
       {isWeightModalOpen && (

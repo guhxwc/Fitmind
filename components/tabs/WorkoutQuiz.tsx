@@ -298,7 +298,7 @@ export const WorkoutQuiz: React.FC<WorkoutQuizProps> = ({ onComplete, onClose })
 
   return (
     <Portal>
-        <div className="fixed inset-0 bg-white dark:bg-black z-50 flex flex-col animate-fade-in">
+        <div className="fixed inset-0 bg-white dark:bg-black z-[100] flex flex-col animate-fade-in">
             
             <QuizHeader 
                 onBack={prevStep} 

@@ -54,7 +54,7 @@ const ListItem: React.FC<{
 // --- Main Page ---
 
 export const AccountSettings: React.FC = () => {
-    const { userData, session, fetchData } = useAppContext();
+    const { userData, session, fetchData, calculateGoals } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
 
@@ -98,12 +98,30 @@ export const AccountSettings: React.FC = () => {
         }
 
         let updateData: any = {};
+        let finalValue = newValue;
 
         // Parse numbers if needed
         if (editModal.type === 'number') {
-            updateData[key] = parseFloat(newValue);
-        } else {
-            updateData[key] = newValue;
+            finalValue = parseFloat(newValue);
+        }
+        updateData[key] = finalValue;
+
+        // If physical data changes, recalculate goals
+        const physicalKeys = ['weight', 'height', 'birth_date', 'gender', 'activityLevel'];
+        if (physicalKeys.includes(key)) {
+            const currentWeight = key === 'weight' ? finalValue : userData.weight;
+            const currentHeight = key === 'height' ? finalValue : userData.height;
+            const currentGender = key === 'gender' ? finalValue : userData.gender;
+            const currentActivity = key === 'activityLevel' ? finalValue : userData.activityLevel;
+            
+            let currentAge = userData.age;
+            if (key === 'birth_date') {
+                currentAge = new Date().getFullYear() - new Date(finalValue).getFullYear();
+                updateData.age = currentAge; // Update age in DB too
+            }
+
+            const newGoals = calculateGoals(currentWeight, currentActivity, currentHeight, currentAge, currentGender);
+            updateData.goals = newGoals;
         }
 
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);

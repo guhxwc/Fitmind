@@ -9,20 +9,24 @@ import { CalorieCamModal } from './tabs/CalorieCamModal';
 import { ManualMealModal } from './tabs/ManualMealModal';
 import { FavoriteMealsModal } from './tabs/FavoriteMealsModal';
 import { GoogleGenAI } from "@google/genai";
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface SmartLogModalProps {
   onClose: () => void;
   initialMealType?: string;
+  initialMode?: LogMode;
 }
 
 type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'manual' | 'favorites';
 
-export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType }) => {
-  const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData } = useAppContext();
+export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType, initialMode }) => {
+  const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData, calculateGoals } = useAppContext();
   const { addToast } = useToast();
-  const [mode, setMode] = useState<LogMode>('menu');
+  const [mode, setMode] = useState<LogMode>(initialMode || 'menu');
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  useScrollLock(true);
   
   // Voice Recording State
   const [isRecording, setIsRecording] = useState(false);
@@ -171,7 +175,25 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       }
 
       if (result.weight_kg && result.weight_kg > 0) {
-          setUserData(prev => prev ? ({ ...prev, weight: result.weight_kg }) : null);
+          setUserData(prev => {
+              if (!prev) return null;
+              
+              let newGoals = prev.goals;
+              let newLastWeightGoalUpdate = prev.lastWeightGoalUpdate || prev.weight;
+
+              // Check if we should recalculate goals (every 5kg)
+              if (Math.abs(result.weight_kg - (prev.lastWeightGoalUpdate || prev.weight)) >= 5) {
+                  newGoals = calculateGoals(result.weight_kg, prev.activityLevel, prev.height, prev.age, prev.gender);
+                  newLastWeightGoalUpdate = result.weight_kg;
+              }
+
+              return { 
+                  ...prev, 
+                  weight: result.weight_kg, 
+                  goals: newGoals, 
+                  lastWeightGoalUpdate: newLastWeightGoalUpdate 
+              };
+          });
           
           const { data: weightData } = await supabase.from('weight_history').insert({ 
               user_id: userData.id, 
@@ -183,7 +205,16 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
              setWeightHistory(prev => [...prev, weightData[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
           }
           
-          await supabase.from('profiles').update({ weight: result.weight_kg }).eq('id', userData.id);
+          // Update profile in DB with new goals if they changed
+          const updatePayload: any = { weight: result.weight_kg };
+          const currentWeight = result.weight_kg;
+          if (Math.abs(currentWeight - (userData.lastWeightGoalUpdate || userData.weight)) >= 5) {
+              const newGoals = calculateGoals(currentWeight, userData.activityLevel, userData.height, userData.age, userData.gender);
+              updatePayload.goals = newGoals;
+              updatePayload.last_weight_goal_update = currentWeight;
+          }
+          
+          await supabase.from('profiles').update(updatePayload).eq('id', userData.id);
       }
 
       updateStreak();
@@ -250,7 +281,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
         <div className="bg-white dark:bg-black w-full max-w-[360px] rounded-[32px] animate-pop-in shadow-2xl relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             
             {/* Header Area */}

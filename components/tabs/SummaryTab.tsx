@@ -131,7 +131,7 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
         let newLastWeightGoalUpdate = userData.lastWeightGoalUpdate || currentWeight;
 
         if (Math.abs(newWeight - (userData.lastWeightGoalUpdate || currentWeight)) >= 5) {
-            newGoals = calculateGoals(newWeight, userData.activityLevel);
+            newGoals = calculateGoals(newWeight, userData.activityLevel, userData.height, userData.age, userData.gender);
             newLastWeightGoalUpdate = newWeight;
         }
 
@@ -248,14 +248,10 @@ const DailyRecordItem: React.FC<{
 );
 
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory } = useAppContext();
+  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType } = useAppContext();
   const navigate = useNavigate();
-  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
-  const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
-  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   
   // Pro Features Logic
@@ -271,7 +267,7 @@ export const SummaryTab: React.FC = () => {
   const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 5));
   
   const openAddMeal = (type: string) => {
-      setSelectedMealType(type);
+      setInitialMealType(type);
       setIsMealModalOpen(true);
   };
 
@@ -297,7 +293,6 @@ export const SummaryTab: React.FC = () => {
   const handleAddMeal = (newMealData: Omit<Meal, 'id' | 'time'>) => {
     const newMeal: Meal = {
         ...newMealData,
-        type: selectedMealType as any,
         id: new Date().toISOString(),
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     };
@@ -322,18 +317,6 @@ export const SummaryTab: React.FC = () => {
         setIsSideEffectModalOpen(false);
     }
     if (error) console.error("Error saving side effects:", error);
-  };
-
-  const handleAddWeight = async (newWeight: number) => {
-      if(!userData) return;
-      const { data } = await supabase.from('weight_history').insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight }).select();
-      if(data) {
-          setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-          await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
-          setUserData(prev => prev ? ({ ...prev, weight: newWeight }) : null);
-          setIsWeightModalOpen(false);
-          updateStreak();
-      }
   };
 
   const getMealStats = (type: string, startTime: number, endTime: number) => {
@@ -669,33 +652,10 @@ export const SummaryTab: React.FC = () => {
           )}
       </section>
 
-      {isMealModalOpen && (
-        <SmartLogModal
-            initialMealType={selectedMealType}
-            onClose={() => setIsMealModalOpen(false)}
-        />
-      )}
-
       {isSmartLogOpen && (
           <SmartLogModal onClose={() => setIsSmartLogOpen(false)} />
       )}
       
-      {isSideEffectModalOpen && (
-          <SideEffectModal 
-            date={new Date()} 
-            initialEntry={sideEffects.find(se => se.date === new Date().toISOString().split('T')[0])}
-            onClose={() => setIsSideEffectModalOpen(false)} 
-            onSave={handleSaveSideEffects} 
-          />
-      )}
-      
-      {isWeightModalOpen && (
-          <RegisterWeightModal 
-            onClose={() => setIsWeightModalOpen(false)} 
-            onSave={handleAddWeight} 
-          />
-      )}
-
       {isDatePickerOpen && (
           <DatePickerModal
               initialDate={selectedDate}

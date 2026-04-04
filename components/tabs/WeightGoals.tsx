@@ -33,7 +33,7 @@ export const WeightGoals: React.FC = () => {
             return;
         }
 
-        const newGoals = calculateGoals(newTargetWeight, userData.activityLevel);
+        const newGoals = calculateGoals(newTargetWeight, userData.activityLevel, userData.height, userData.age, userData.gender);
 
         const updatedData = {
             ...userData,

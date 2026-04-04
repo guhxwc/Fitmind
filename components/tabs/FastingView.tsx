@@ -409,7 +409,7 @@ const FastingPlansView: React.FC<{ onClose: () => void, onSelect: (plan: string)
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-gray-50 dark:bg-black z-50 overflow-y-auto overscroll-none animate-slide-up">
+      <div className="fixed inset-0 bg-gray-50 dark:bg-black z-[100] overflow-y-auto overscroll-none animate-slide-up">
         <div className="p-5 pb-20 min-h-full">
           <header className="flex items-center justify-between mb-8 sticky top-0 bg-gray-50/95 dark:bg-black/95 backdrop-blur-md z-20 pt-12 pb-2 -mx-5 px-5">
             <div className="flex items-center gap-4">

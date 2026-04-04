@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Meal } from '../../types';
 import { PlusIcon } from '../core/Icons';
 import Portal from '../core/Portal';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface ManualMealModalProps {
   onClose: () => void;
@@ -39,6 +40,8 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
   const [protein, setProtein] = useState('');
   const [mealType, setMealType] = useState(initialMealType || 'Almoço');
 
+  useScrollLock(true);
+
   const mealTypes = ['Café da manhã', 'Almoço', 'Jantar', 'Lanche'];
 
   const handleSave = () => {
@@ -60,7 +63,7 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
 
   return (
     <Portal>
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
         <div className="bg-white dark:bg-black w-full max-w-md rounded-[32px] p-8 flex flex-col animate-pop-in shadow-2xl relative max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
           <div className="flex-shrink-0 flex items-center justify-between mb-6">
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 uppercase tracking-tight">Registrar Refeição</h2>

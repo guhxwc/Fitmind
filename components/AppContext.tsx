@@ -42,11 +42,21 @@ interface AppContextType {
   theme: Theme;
   toggleTheme: () => void;
   unlockPro: () => Promise<void>;
-  calculateGoals: (weight: number, activityLevel: ActivityLevel) => UserData['goals'];
+  calculateGoals: (weight: number, activityLevel: ActivityLevel, height?: number, age?: number, gender?: string) => UserData['goals'];
   isGeneratingDiet: boolean;
   setIsGeneratingDiet: React.Dispatch<React.SetStateAction<boolean>>;
   isGeneratingWorkout: boolean;
   setIsGeneratingWorkout: React.Dispatch<React.SetStateAction<boolean>>;
+  isMealModalOpen: boolean;
+  setIsMealModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isWeightModalOpen: boolean;
+  setIsWeightModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isSideEffectModalOpen: boolean;
+  setIsSideEffectModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  initialMealType: string;
+  setInitialMealType: React.Dispatch<React.SetStateAction<string>>;
+  initialMode: string;
+  setInitialMode: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +81,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
   const [isGeneratingDiet, setIsGeneratingDiet] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
+  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
+  const [initialMealType, setInitialMealType] = useState('');
+  const [initialMode, setInitialMode] = useState('');
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
@@ -100,10 +115,31 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  const calculateGoals = (weight: number, activityLevel: ActivityLevel) => {
+  const calculateGoals = (weight: number, activityLevel: ActivityLevel, height?: number, age?: number, gender?: string) => {
+      // 1. Water: 35ml per kg
       const water = weight * 0.035;
-      const calories = weight * 30;
-      const protein = weight * 1.6;
+      
+      // 2. Calories (BMR/TMB using Mifflin-St Jeor)
+      // If we don't have height/age/gender, fallback to simple weight * 30
+      let calories = weight * 30;
+      if (height && age && gender) {
+          const s = gender === 'Masculino' ? 5 : -161;
+          const bmr = (10 * weight) + (6.25 * height) - (5 * age) + s;
+          
+          // Apply activity multiplier
+          const multipliers: Record<ActivityLevel, number> = {
+              'Sedentário': 1.2,
+              'Levemente ativo': 1.375,
+              'Moderadamente ativo': 1.55,
+              'Ativo': 1.725,
+              'Muito ativo': 1.9
+          };
+          calories = bmr * (multipliers[activityLevel] || 1.2);
+      }
+
+      // 3. Protein: 1.6g to 2.2g per kg (using 1.8g as balanced default)
+      const protein = weight * 1.8;
+
       return {
           water: parseFloat(water.toFixed(1)),
           calories: Math.round(calories),
@@ -439,7 +475,17 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       isGeneratingDiet,
       setIsGeneratingDiet,
       isGeneratingWorkout,
-      setIsGeneratingWorkout
+      setIsGeneratingWorkout,
+      isMealModalOpen,
+      setIsMealModalOpen,
+      isWeightModalOpen,
+      setIsWeightModalOpen,
+      isSideEffectModalOpen,
+      setIsSideEffectModalOpen,
+      initialMealType,
+      setInitialMealType,
+      initialMode,
+      setInitialMode
     }}>
       {children}
     </AppContext.Provider>
@@ -488,6 +534,16 @@ export const useAppContext = () => {
         setIsGeneratingDiet: () => {},
         isGeneratingWorkout: false,
         setIsGeneratingWorkout: () => {},
+        isMealModalOpen: false,
+        setIsMealModalOpen: () => {},
+        isWeightModalOpen: false,
+        setIsWeightModalOpen: () => {},
+        isSideEffectModalOpen: false,
+        setIsSideEffectModalOpen: () => {},
+        initialMealType: '',
+        setInitialMealType: () => {},
+        initialMode: '',
+        setInitialMode: () => {},
     } as unknown as AppContextType;
   }
   return context;

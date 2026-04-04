@@ -175,7 +175,7 @@ export const DietQuiz: React.FC<DietQuizProps> = ({ onComplete, onClose }) => {
 
   return (
     <Portal>
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/40 z-[100] flex items-end justify-center" onClick={onClose}>
         <div className="bg-white dark:bg-black w-full max-w-md h-[90%] rounded-t-3xl p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
             <QuizHeader onClose={onClose} step={step} totalSteps={questions.length} />
             <div className="flex-grow overflow-y-auto">

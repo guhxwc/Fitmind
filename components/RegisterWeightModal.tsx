@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import Portal from './core/Portal';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface RegisterWeightModalProps {
     onClose: () => void;
@@ -9,10 +10,11 @@ interface RegisterWeightModalProps {
 
 export const RegisterWeightModal: React.FC<RegisterWeightModalProps> = ({ onClose, onSave }) => {
     const [weight, setWeight] = useState('');
+    useScrollLock(true);
     
     return (
         <Portal>
-            <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+            <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-6 backdrop-blur-md animate-fade-in" onClick={onClose}>
                 <div className="bg-white dark:bg-gray-900 rounded-[32px] p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Registrar Peso</h2>
                     <div className="relative my-8">

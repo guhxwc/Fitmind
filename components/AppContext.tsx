@@ -283,7 +283,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         (payload) => {
           console.log('Detectada mudança de perfil em tempo real:', payload.new);
           const updatedUserData = formatProfileToUserData(payload.new);
-          
+
           // Se o usuário acabou de se tornar PRO
           if (updatedUserData.isPro && !userData?.isPro) {
               addToast("Assinatura PRO ativada com sucesso!", "success");
@@ -292,8 +292,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                   localStorage.setItem('trigger_pro_tour', 'true');
               }
           }
-          
-          setUserData(updatedUserData);
+
+          // Preserva campos de peso gerenciados localmente para evitar race condition
+          // com o salvamento debounced dos botões +/- (SummaryTab).
+          // Este listener existe para capturar mudanças do Stripe (isPro, etc.),
+          // não para sincronizar peso — que tem seu próprio fluxo de salvamento.
+          setUserData(prev => {
+            if (!prev) return updatedUserData;
+            return {
+              ...updatedUserData,
+              weight: prev.weight,
+              goals: prev.goals,
+              lastWeightGoalUpdate: prev.lastWeightGoalUpdate,
+            };
+          });
         }
       )
       .subscribe();

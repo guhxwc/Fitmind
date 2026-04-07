@@ -282,28 +282,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         },
         (payload) => {
           console.log('Detectada mudança de perfil em tempo real:', payload.new);
-          const updatedUserData = formatProfileToUserData(payload.new);
+          const newProfile = formatProfileToUserData(payload.new);
 
           // Se o usuário acabou de se tornar PRO
-          if (updatedUserData.isPro && !userData?.isPro) {
+          if (newProfile.isPro && !userData?.isPro) {
               addToast("Assinatura PRO ativada com sucesso!", "success");
-              // Só dispara o tour se não estivermos na página de sucesso (que já tem sua lógica)
               if (window.location.hash !== '#/payment/success') {
                   localStorage.setItem('trigger_pro_tour', 'true');
               }
           }
 
-          // Preserva campos de peso gerenciados localmente para evitar race condition
-          // com o salvamento debounced dos botões +/- (SummaryTab).
-          // Este listener existe para capturar mudanças do Stripe (isPro, etc.),
-          // não para sincronizar peso — que tem seu próprio fluxo de salvamento.
+          // Este listener existe APENAS para capturar mudanças do Stripe (isPro, subscription).
+          // Todos os outros campos (peso, goals, streak, etc.) são gerenciados localmente
+          // e NÃO devem ser sobrescritos aqui para evitar race conditions.
           setUserData(prev => {
-            if (!prev) return updatedUserData;
+            if (!prev) return newProfile;
             return {
-              ...updatedUserData,
-              weight: prev.weight,
-              goals: prev.goals,
-              lastWeightGoalUpdate: prev.lastWeightGoalUpdate,
+              ...prev,
+              isPro: newProfile.isPro,
+              subscriptionStatus: newProfile.subscriptionStatus,
             };
           });
         }
@@ -439,8 +436,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
       }
       
-      const updatedUser = { ...userData, streak: newStreak, lastActivityDate: today.toISOString() };
-      setUserData(updatedUser);
+      setUserData(prev => prev ? { ...prev, streak: newStreak, lastActivityDate: today.toISOString() } : null);
       
       await supabase.from('profiles').update({ 
           streak: newStreak, 

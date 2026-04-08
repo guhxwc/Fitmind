@@ -57,6 +57,8 @@ interface AppContextType {
   setInitialMealType: React.Dispatch<React.SetStateAction<string>>;
   initialMode: string;
   setInitialMode: React.Dispatch<React.SetStateAction<string>>;
+  weightMilestoneData: { oldWeight: number; newWeight: number } | null;
+  setWeightMilestoneData: React.Dispatch<React.SetStateAction<{ oldWeight: number; newWeight: number } | null>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -86,10 +88,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
   const [initialMealType, setInitialMealType] = useState('');
   const [initialMode, setInitialMode] = useState('');
+  const [weightMilestoneData, setWeightMilestoneData] = useState<{ oldWeight: number; newWeight: number } | null>(null);
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
   const dailyRecordIdRef = useRef<number | null>(null);
+  
+  const lastWeightUpdateRef = useRef<number>(0);
   
   const { addToast } = useToast();
 
@@ -231,7 +236,22 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         ]);
 
         if (profileRes.data) {
-          setUserData(formatProfileToUserData(profileRes.data));
+          const fetchedUserData = formatProfileToUserData(profileRes.data);
+          setUserData(prev => {
+            if (!prev) return fetchedUserData;
+            
+            const isRecentLocalUpdate = Date.now() - lastWeightUpdateRef.current < 3000;
+            if (isRecentLocalUpdate && fetchedUserData.weight !== prev.weight) {
+                console.log('DEBUG: fetchData ignorando peso do banco devido a update local recente');
+                return {
+                    ...fetchedUserData,
+                    weight: prev.weight,
+                    goals: prev.goals,
+                    lastWeightGoalUpdate: prev.lastWeightGoalUpdate
+                };
+            }
+            return fetchedUserData;
+          });
         } else {
           setUserData(null);
         }
@@ -293,7 +313,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               }
           }
           
-          setUserData(updatedUserData);
+          setUserData(prev => {
+            if (!prev) return updatedUserData;
+            
+            // Se houve alteração de peso no banco, verificamos se é um "eco" do nosso próprio update
+            const isWeightChange = payload.new.weight !== prev.weight;
+            const isRecentLocalUpdate = Date.now() - lastWeightUpdateRef.current < 3000; // 3 segundos de "lock"
+            
+            if (isWeightChange && isRecentLocalUpdate) {
+                console.log('DEBUG: Ignorando update de peso do banco (eco local detectado)');
+                return {
+                  ...updatedUserData,
+                  weight: prev.weight,
+                  goals: prev.goals,
+                  lastWeightGoalUpdate: prev.lastWeightGoalUpdate,
+                };
+            }
+            
+            return updatedUserData;
+          });
         }
       )
       .subscribe();
@@ -427,8 +465,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
       }
       
-      const updatedUser = { ...userData, streak: newStreak, lastActivityDate: today.toISOString() };
-      setUserData(updatedUser);
+      setUserData(prev => prev ? { ...prev, streak: newStreak, lastActivityDate: today.toISOString() } : null);
       
       await supabase.from('profiles').update({ 
           streak: newStreak, 
@@ -436,11 +473,28 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }).eq('id', userData.id);
   };
 
+  const setUserDataWithTimestamp: React.Dispatch<React.SetStateAction<UserData | null>> = (value) => {
+    if (typeof value === 'function') {
+        setUserData(prev => {
+            const next = (value as any)(prev);
+            if (prev && next && prev.weight !== next.weight) {
+                lastWeightUpdateRef.current = Date.now();
+            }
+            return next;
+        });
+    } else {
+        if (userData && value && userData.weight !== value.weight) {
+            lastWeightUpdateRef.current = Date.now();
+        }
+        setUserData(value);
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       session,
       userData,
-      setUserData,
+      setUserData: setUserDataWithTimestamp,
       weightHistory,
       setWeightHistory,
       progressPhotos,
@@ -485,7 +539,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       initialMealType,
       setInitialMealType,
       initialMode,
-      setInitialMode
+      setInitialMode,
+      weightMilestoneData,
+      setWeightMilestoneData
     }}>
       {children}
     </AppContext.Provider>
@@ -544,6 +600,8 @@ export const useAppContext = () => {
         setInitialMealType: () => {},
         initialMode: '',
         setInitialMode: () => {},
+        weightMilestoneData: null,
+        setWeightMilestoneData: () => {},
     } as unknown as AppContextType;
   }
   return context;

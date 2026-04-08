@@ -169,7 +169,7 @@ const AppContent: React.FC = () => {
       name: userData.name || 'Usuário',
       gender: userData.gender,
       age: userData.age,
-      birth_date: userData.birthDate || null,
+      birth_date: (userData.birthDate && typeof userData.birthDate === 'string' && userData.birthDate.includes('-')) ? userData.birthDate : null,
       height: userData.height,
       weight: userData.weight,
       target_weight: userData.targetWeight,

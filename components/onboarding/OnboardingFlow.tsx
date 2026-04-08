@@ -27,6 +27,8 @@ import { useToast } from '../ToastProvider';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { supabase } from '../../supabaseClient';
 
+import { useAppContext } from '../AppContext';
+
 // Funnel Steps
 import { 
   StepDuration, 
@@ -44,6 +46,8 @@ interface OnboardingFlowProps {
 }
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, initialData, initialStep }) => {
+  const { calculateGoals } = useAppContext();
+  
   // Initialize step from props if available, else localStorage, else 0
   const [step, setStep] = useState(() => {
     if (initialStep !== undefined) return initialStep;
@@ -134,7 +138,25 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   const prevStep = () => setStep((prev) => Math.max(0, prev - 1));
 
   const updateUserData = (updates: Partial<Omit<UserData, 'id'>>) => {
-    setUserData((prev) => ({ ...prev, ...updates }));
+    setUserData((prev) => {
+      const newData = { ...prev, ...updates };
+      
+      // If physical data changes, recalculate goals
+      const physicalKeys = ['weight', 'height', 'age', 'gender', 'activityLevel'];
+      const hasPhysicalUpdate = Object.keys(updates).some(key => physicalKeys.includes(key));
+      
+      if (hasPhysicalUpdate) {
+        newData.goals = calculateGoals(
+          newData.weight, 
+          newData.activityLevel, 
+          newData.height, 
+          newData.age, 
+          newData.gender
+        );
+      }
+      
+      return newData;
+    });
   };
 
   const handleComplete = () => {

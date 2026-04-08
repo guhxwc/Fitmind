@@ -118,57 +118,9 @@ const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: numbe
 );
 
 const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
-    const { userData, setUserData, setWeightHistory, calculateGoals } = useAppContext();
-    const debounceTimer = useRef<number | null>(null);
+    const { userData } = useAppContext();
 
     if (!userData) return null;
-
-    const handleWeightUpdate = (change: number) => {
-        const currentWeight = userData.weight;
-        const newWeight = parseFloat((currentWeight + change).toFixed(1));
-
-        let newGoals = userData.goals;
-        let newLastWeightGoalUpdate = userData.lastWeightGoalUpdate || currentWeight;
-
-        if (Math.abs(newWeight - (userData.lastWeightGoalUpdate || currentWeight)) >= 5) {
-            newGoals = calculateGoals(newWeight, userData.activityLevel, userData.height, userData.age, userData.gender);
-            newLastWeightGoalUpdate = newWeight;
-        }
-
-        setUserData(prev => prev ? ({ ...prev, weight: newWeight, goals: newGoals, lastWeightGoalUpdate: newLastWeightGoalUpdate }) : null);
-        
-        const todayStr = new Date().toISOString().split('T')[0];
-        setWeightHistory(prev => {
-            const existingEntryIndex = prev.findIndex(w => w.date.startsWith(todayStr));
-            if (existingEntryIndex > -1) {
-                const updatedHistory = [...prev];
-                updatedHistory[existingEntryIndex] = { ...updatedHistory[existingEntryIndex], weight: newWeight };
-                return updatedHistory;
-            } else {
-                return [{ id: -1, user_id: userData.id, date: new Date().toISOString(), weight: newWeight }, ...prev];
-            }
-        });
-
-        if (debounceTimer.current) {
-            clearTimeout(debounceTimer.current);
-        }
-        
-        debounceTimer.current = window.setTimeout(async () => {
-            try {
-                await supabase.from('profiles').update({ 
-                    weight: newWeight, 
-                    goals: newGoals,
-                    last_weight_goal_update: newLastWeightGoalUpdate
-                }).eq('id', userData.id);
-                 await supabase
-                    .from('weight_history')
-                    .insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight });
-
-            } catch (error) {
-                console.error("Failed to update weight in DB:", error);
-            }
-        }, 1000);
-    };
 
     const progressPercentage = userData.startWeight !== userData.targetWeight 
         ? Math.max(5, Math.min(((userData.startWeight - userData.weight) / (userData.startWeight - userData.targetWeight)) * 100, 100))
@@ -178,7 +130,7 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
         <div id="tour-weight-card" className="bg-ios-card dark:bg-ios-dark-card p-6 rounded-[24px] shadow-soft flex flex-col items-center text-center">
              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 w-full text-left">Controle de Peso</h3>
              <div className="flex items-center justify-between w-full mb-6">
-                 <button onClick={() => handleWeightUpdate(-0.1)} className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-90 transition-transform">
+                 <button onClick={onOpenModal} className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center active:scale-90 transition-transform">
                      <MinusIcon className="w-6 h-6" />
                  </button>
                  
@@ -187,7 +139,7 @@ const WeightCard: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
                      <span className="text-base font-semibold text-gray-400 ml-1">kg</span>
                  </div>
 
-                 <button onClick={() => handleWeightUpdate(0.1)} className="w-12 h-12 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+                 <button onClick={onOpenModal} className="w-12 h-12 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center active:scale-90 transition-transform shadow-lg">
                      <PlusIcon className="w-6 h-6" />
                  </button>
              </div>

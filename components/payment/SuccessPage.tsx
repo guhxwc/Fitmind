@@ -79,7 +79,7 @@ export const SuccessPage: React.FC = () => {
                     name: parsed.name || 'Usuário',
                     gender: parsed.gender || null,
                     age: parsed.age || null,
-                    birth_date: parsed.birthDate || null,
+                    birth_date: (parsed.birthDate && typeof parsed.birthDate === 'string' && parsed.birthDate.includes('-')) ? parsed.birthDate : null,
                     height: parsed.height || null,
                     weight: parsed.weight || null,
                     target_weight: parsed.targetWeight || null,

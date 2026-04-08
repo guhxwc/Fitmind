@@ -25,9 +25,10 @@ import type { Meal } from '../types';
 import { useToast } from './ToastProvider';
 import { NotificationManager } from './NotificationManager';
 import { CelebrationManager } from './CelebrationManager';
+import { WeightMilestoneModal } from './WeightMilestoneModal';
 
 export const MainApp: React.FC = () => {
-  const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals } = useAppContext();
+  const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useToast();
@@ -123,11 +124,57 @@ export const MainApp: React.FC = () => {
 
   const handleAddWeight = async (newWeight: number) => {
       if(!userData) return;
-      const { data } = await supabase.from('weight_history').insert({ user_id: userData.id, date: new Date().toISOString(), weight: newWeight }).select();
-      if(data) {
-          setWeightHistory(prev => [...prev, data[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-          await supabase.from('profiles').update({ weight: newWeight }).eq('id', userData.id);
+      if (isNaN(newWeight)) {
+          addToast("Por favor, insira um peso válido.", "error");
+          return;
+      }
+
+      const prevWeight = userData.weight;
+      
+      try {
+          // 1. Update Profile first (usually has simpler RLS)
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ weight: newWeight })
+            .eq('id', userData.id);
           
+          if (profileError) throw profileError;
+
+          // 2. Insert or Update Weight History (one entry per day)
+          const todayStr = new Date().toISOString().split('T')[0];
+          
+          const { data: existingEntry } = await supabase
+            .from('weight_history')
+            .select('id')
+            .eq('user_id', userData.id)
+            .gte('date', `${todayStr}T00:00:00`)
+            .lte('date', `${todayStr}T23:59:59`)
+            .maybeSingle();
+
+          let historyResult;
+          if (existingEntry) {
+              historyResult = await supabase
+                .from('weight_history')
+                .update({ weight: newWeight, date: new Date().toISOString() })
+                .eq('id', existingEntry.id)
+                .select();
+          } else {
+              historyResult = await supabase
+                .from('weight_history')
+                .insert({ 
+                    user_id: userData.id, 
+                    date: new Date().toISOString(), 
+                    weight: newWeight 
+                })
+                .select();
+          }
+
+          const { data, error: historyError } = historyResult;
+
+          // Even if select() fails or returns empty due to RLS, 
+          // if there's no error, the insert likely succeeded.
+          if (historyError) throw historyError;
+
           // Update local state immediately for UX
           setUserData(prev => {
               if (!prev) return null;
@@ -149,9 +196,31 @@ export const MainApp: React.FC = () => {
               };
           });
 
+          if (data && data.length > 0) {
+              const updatedEntry = data[0];
+              setWeightHistory(prev => {
+                  const filtered = prev.filter(item => item.id !== updatedEntry.id);
+                  return [updatedEntry, ...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+              });
+          } else {
+              // Fallback if select() returned nothing but no error
+              setWeightHistory(prev => {
+                  const today = new Date().toISOString().split('T')[0];
+                  const filtered = prev.filter(item => !item.date.startsWith(today));
+                  return [{ id: Date.now(), user_id: userData.id, date: new Date().toISOString(), weight: newWeight }, ...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+              });
+          }
+
           setIsWeightModalOpen(false);
           updateStreak();
-          addToast("Peso atualizado!", "success");
+          addToast("Peso registrado com sucesso!", "success");
+          
+          if (userData.isPro && newWeight !== prevWeight) {
+              setWeightMilestoneData({ oldWeight: prevWeight, newWeight });
+          }
+      } catch (error: any) {
+          console.error("Error saving weight:", error);
+          addToast("Erro ao salvar peso: " + (error.message || "Erro desconhecido"), "error");
       }
   };
 
@@ -212,6 +281,7 @@ export const MainApp: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-ios-bg dark:bg-ios-dark-bg max-w-md mx-auto shadow-2xl overflow-hidden relative">
       <NotificationManager />
       <CelebrationManager />
+      <WeightMilestoneModal />
       <main 
         key={location.pathname}
         ref={mainRef} 

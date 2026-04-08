@@ -316,6 +316,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   // ---------------------------------------------------------
   // TOASTS / CELEBRAÇÕES (Priority 0)
   // ---------------------------------------------------------
+  /* Weight notifications disabled in favor of WeightMilestoneModal
   {
     id: 'weight_lost_toast',
     type: 'toast',
@@ -348,6 +349,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     primaryAction: { label: 'Entendi', action: 'dismiss' },
     evaluateTrigger: (ctx) => ctx.weightDiff !== null && ctx.weightDiff > 0,
   },
+  */
   {
     id: 'water_goal_toast',
     type: 'toast',

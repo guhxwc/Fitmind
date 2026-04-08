@@ -94,7 +94,7 @@ export const TreatmentSettings: React.FC = () => {
         const newMedication = { ...userData.medication, [key]: value };
         
         // Optimistic Update
-        setUserData({ ...userData, medication: newMedication });
+        setUserData(prev => prev ? { ...prev, medication: newMedication } : null);
 
         const { error } = await supabase
             .from('profiles')
@@ -111,7 +111,7 @@ export const TreatmentSettings: React.FC = () => {
         const newReminder = { ...userData.medicationReminder, time: newTime };
         
         // Optimistic Update
-        setUserData({ ...userData, medicationReminder: newReminder as any });
+        setUserData(prev => prev ? { ...prev, medicationReminder: newReminder as any } : null);
 
         const { error } = await supabase
             .from('profiles')
@@ -196,7 +196,7 @@ export const TreatmentSettings: React.FC = () => {
                     onClose={() => setActiveModal(null)}
                     onSelect={async (val) => {
                         // This field is on root userData, separate logic
-                        setUserData({...userData, applicationFrequency: val});
+                        setUserData(prev => prev ? {...prev, applicationFrequency: val} : null);
                         await supabase.from('profiles').update({ application_frequency: val }).eq('id', userData.id);
                     }}
                 />

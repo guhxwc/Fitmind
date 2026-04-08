@@ -107,17 +107,20 @@ export const AccountSettings: React.FC = () => {
         updateData[key] = finalValue;
 
         // If physical data changes, recalculate goals
-        const physicalKeys = ['weight', 'height', 'birth_date', 'gender', 'activityLevel'];
+        const physicalKeys = ['weight', 'height', 'birth_date', 'gender', 'activity_level'];
         if (physicalKeys.includes(key)) {
             const currentWeight = key === 'weight' ? finalValue : userData.weight;
             const currentHeight = key === 'height' ? finalValue : userData.height;
             const currentGender = key === 'gender' ? finalValue : userData.gender;
-            const currentActivity = key === 'activityLevel' ? finalValue : userData.activityLevel;
+            const currentActivity = key === 'activity_level' ? finalValue : userData.activityLevel;
             
             let currentAge = userData.age;
-            if (key === 'birth_date') {
-                currentAge = new Date().getFullYear() - new Date(finalValue).getFullYear();
-                updateData.age = currentAge; // Update age in DB too
+            if (key === 'birth_date' && typeof finalValue === 'string' && finalValue.includes('-')) {
+                const birthYear = new Date(finalValue).getFullYear();
+                if (!isNaN(birthYear)) {
+                    currentAge = new Date().getFullYear() - birthYear;
+                    updateData.age = currentAge; // Update age in DB too
+                }
             }
 
             const newGoals = calculateGoals(currentWeight, currentActivity, currentHeight, currentAge, currentGender);
@@ -266,7 +269,7 @@ export const AccountSettings: React.FC = () => {
                         icon={<PersonStandingIcon className="w-5 h-5" />}
                         label="Nível de Atividade" 
                         value={userData.activityLevel} 
-                        onClick={() => handleOpenEdit('Nível de Atividade', 'activityLevel', userData.activityLevel, 'select', ['Sedentário', 'Levemente ativo', 'Moderadamente ativo', 'Ativo', 'Muito ativo'])} 
+                        onClick={() => handleOpenEdit('Nível de Atividade', 'activity_level', userData.activityLevel, 'select', ['Sedentário', 'Levemente ativo', 'Moderadamente ativo', 'Ativo', 'Muito ativo'])} 
                         isLast
                     />
                 </ListGroup>

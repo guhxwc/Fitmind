@@ -5,9 +5,10 @@ import { useAppContext } from './AppContext';
 import { NOTIFICATIONS, AppNotification, NotificationContext } from '../lib/notifications';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useScrollLock } from '../hooks/useScrollLock';
+import { WEEKDAYS } from '../constants';
 
 export const NotificationSystem: React.FC = () => {
-    const { userData, meals, currentWater, quickAddProtein, weightHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode } = useAppContext();
+    const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData } = useAppContext();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -18,7 +19,7 @@ export const NotificationSystem: React.FC = () => {
     const [currentCtx, setCurrentCtx] = useState<NotificationContext | null>(null);
     const [sessionStartTime] = useState(Date.now());
 
-    useScrollLock(!!activeModal);
+    useScrollLock(!!activeModal || !!weightMilestoneData);
 
     // Auto-dismiss toast after 5 seconds
     useEffect(() => {
@@ -51,15 +52,22 @@ export const NotificationSystem: React.FC = () => {
             
             // USER REQUEST: Notifications ONLY for PRO users. No exceptions.
             if (!userData.isPro) return;
+
+            // Don't show new notifications if one is already active or weight milestone is showing
+            if (activeModal || activeToast || weightMilestoneData) return;
             
             const now = new Date().getTime();
-            
-            // Don't show new notifications if one is already active
-            if (activeModal || activeToast) return;
 
             // Build Context
             const totalProtein = meals.reduce((sum, m) => sum + m.protein, 0) + quickAddProtein;
             const proteinGoal = userData?.goals?.protein || 100;
+            
+            const lastDoseDate = applicationHistory && applicationHistory.length > 0 
+                ? new Date(applicationHistory[0].date) 
+                : null;
+                
+            const doseDayOfWeek = WEEKDAYS.indexOf(userData.medication.nextApplication);
+            const isDaily = userData.applicationFrequency === 'Diariamente';
 
             const ctx: NotificationContext = {
                 userData,
@@ -74,8 +82,8 @@ export const NotificationSystem: React.FC = () => {
                 isSubscriber: userData?.isPro || false,
                 subscriberDays: 0, // Mocked
                 lastWeightRecordDate: weightHistory.length > 0 ? new Date(weightHistory[0].date) : null,
-                lastDoseDate: null, // Mocked
-                doseDayOfWeek: 1, // Mocked
+                lastDoseDate,
+                doseDayOfWeek: isDaily ? new Date().getDay() : (doseDayOfWeek !== -1 ? doseDayOfWeek : 1),
                 hasLoggedSideEffectToday: false, // Mocked
                 hasStrongSideEffect: false, // Mocked
                 proteinProgress: totalProtein / proteinGoal,
@@ -148,7 +156,7 @@ export const NotificationSystem: React.FC = () => {
         evaluate();
         const interval = setInterval(evaluate, 10000);
         return () => clearInterval(interval);
-    }, [userData, meals, currentWater, quickAddProtein, weightHistory, activeModal, activeToast, dismissedInSession]);
+    }, [userData, meals, currentWater, quickAddProtein, weightHistory, activeModal, activeToast, dismissedInSession, weightMilestoneData]);
 
     const handleAction = (notification: AppNotification, action: string) => {
         // Handle dismiss/snooze logic

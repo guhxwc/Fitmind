@@ -113,7 +113,7 @@ const NotificationSettingsModal: React.FC<{ isOpen: boolean, onClose: () => void
         setLocalSettings(newSettings);
         
         if (userData) {
-            setUserData({ ...userData, notifications: newSettings });
+            setUserData(prev => prev ? { ...prev, notifications: newSettings } : null);
             await supabase.from('profiles').update({ notifications: newSettings }).eq('id', userData.id);
         }
     };
@@ -269,12 +269,34 @@ export const SettingsTab: React.FC = () => {
         }
 
         let updateData: any = {};
+        let finalValue = newValue;
 
         // Parse numbers if needed
         if (editModal.type === 'number') {
-            updateData[key] = parseFloat(newValue);
-        } else {
-            updateData[key] = newValue;
+            finalValue = parseFloat(newValue);
+        }
+        updateData[key] = finalValue;
+
+        // If physical data changes, recalculate goals
+        const physicalKeys = ['weight', 'height', 'birth_date', 'gender', 'activity_level'];
+        if (physicalKeys.includes(key)) {
+            const currentWeight = key === 'weight' ? finalValue : userData.weight;
+            const currentHeight = key === 'height' ? finalValue : userData.height;
+            const currentGender = key === 'gender' ? finalValue : userData.gender;
+            const currentActivity = key === 'activity_level' ? finalValue : userData.activityLevel;
+            
+            let currentAge = userData.age;
+            if (key === 'birth_date' && typeof finalValue === 'string' && finalValue.includes('-')) {
+                const birthYear = new Date(finalValue).getFullYear();
+                if (!isNaN(birthYear)) {
+                    currentAge = new Date().getFullYear() - birthYear;
+                    updateData.age = currentAge; // Update age in DB too
+                }
+            }
+
+            const { calculateGoals } = useAppContext();
+            const newGoals = calculateGoals(currentWeight, currentActivity, currentHeight, currentAge, currentGender);
+            updateData.goals = newGoals;
         }
 
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);

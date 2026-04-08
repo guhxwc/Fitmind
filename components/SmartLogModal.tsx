@@ -20,7 +20,7 @@ interface SmartLogModalProps {
 type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'manual' | 'favorites';
 
 export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType, initialMode }) => {
-  const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData, calculateGoals } = useAppContext();
+  const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
   const { addToast } = useToast();
   const [mode, setMode] = useState<LogMode>(initialMode || 'menu');
   const [input, setInput] = useState('');
@@ -175,6 +175,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       }
 
       if (result.weight_kg && result.weight_kg > 0) {
+          const prevWeight = userData.weight;
           setUserData(prev => {
               if (!prev) return null;
               
@@ -215,10 +216,16 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
           }
           
           await supabase.from('profiles').update(updatePayload).eq('id', userData.id);
+          
+          if (userData.isPro && result.weight_kg !== prevWeight) {
+              setWeightMilestoneData({ oldWeight: prevWeight, newWeight: result.weight_kg });
+          }
       }
 
       updateStreak();
-      addToast('Registrado com sucesso!', 'success');
+      if (!result.weight_kg) {
+          addToast('Registrado com sucesso!', 'success');
+      }
       onClose();
 
     } catch (error) {

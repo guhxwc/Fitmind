@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Portal from './core/Portal';
 import { useScrollLock } from '../hooks/useScrollLock';
+import { useToast } from './ToastProvider';
 
 interface RegisterWeightModalProps {
     onClose: () => void;
@@ -10,7 +11,22 @@ interface RegisterWeightModalProps {
 
 export const RegisterWeightModal: React.FC<RegisterWeightModalProps> = ({ onClose, onSave }) => {
     const [weight, setWeight] = useState('');
+    const { addToast } = useToast();
     useScrollLock(true);
+    
+    const handleSave = () => {
+        if (!weight) return;
+        
+        const normalizedWeight = weight.replace(',', '.');
+        const parsedWeight = parseFloat(normalizedWeight);
+        
+        if (isNaN(parsedWeight) || parsedWeight <= 0) {
+            addToast("Por favor, insira um peso válido maior que zero.", "error");
+            return;
+        }
+        
+        onSave(parsedWeight);
+    };
     
     return (
         <Portal>
@@ -19,7 +35,8 @@ export const RegisterWeightModal: React.FC<RegisterWeightModalProps> = ({ onClos
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Registrar Peso</h2>
                     <div className="relative my-8">
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={weight}
                             onChange={(e) => setWeight(e.target.value)}
                             className="w-full h-24 px-4 text-center text-5xl font-bold bg-gray-100 dark:bg-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
@@ -30,7 +47,7 @@ export const RegisterWeightModal: React.FC<RegisterWeightModalProps> = ({ onClos
                     </div>
                     <div className="flex gap-3">
                         <button onClick={onClose} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-2xl font-bold text-lg">Cancelar</button>
-                        <button onClick={() => onSave(parseFloat(weight))} disabled={!weight} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg disabled:opacity-50 shadow-lg">Salvar</button>
+                        <button onClick={handleSave} disabled={!weight} className="flex-1 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-lg disabled:opacity-50 shadow-lg">Salvar</button>
                     </div>
                 </div>
             </div>

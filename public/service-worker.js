@@ -79,8 +79,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: 'https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=192&h=192&fit=contain&trim=10',
-    badge: 'https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=96&h=96&fit=contain&trim=10',
+    icon: 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/android-chrome-192x192.png',
+    badge: 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/favicon-32x32.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/', // URL de destino

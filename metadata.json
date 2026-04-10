@@ -1,6 +1,6 @@
 {
   "name": "Fitmind Health",
-  "description": "Fitmind Health é o primeiro sistema operacional completo desenhado especificamente para quem usa Ozempic, Mounjaro e Wegovy. Maximize seus resultados com segurança.",
+  "description": "Fitmind Health: O app nº 1 para potencializar seu emagrecimento com Ozempic, Mounjaro e Wegovy. Acompanhe peso, dieta e sintomas em um só lugar.",
   "requestFramePermissions": [
     "camera"
   ]

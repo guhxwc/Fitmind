@@ -79,8 +79,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: 'https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=192&h=192&fit=contain&trim=10',
-    badge: 'https://wsrv.nl/?url=i.imgur.com/ODw5n6r.png&w=96&h=96&fit=contain&trim=10',
+    icon: 'https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=192&h=192&fit=contain&trim=10',
+    badge: 'https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=96&h=96&fit=contain&trim=10',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/', // URL de destino

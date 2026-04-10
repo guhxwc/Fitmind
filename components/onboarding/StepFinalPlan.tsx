@@ -12,7 +12,8 @@ import {
     BookOpenIcon,
     ScaleIcon,
     ChevronLeftIcon,
-    XMarkIcon
+    XMarkIcon,
+    CheckCircleIcon
 } from '../core/Icons';
 
 interface StepFinalPlanProps {
@@ -127,7 +128,7 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, da
                   </div>
 
                   {/* SVG Chart Compacto */}
-                  <div className="relative h-32 w-full mb-4">
+                  <div className="relative h-32 w-full mb-4 pointer-events-none">
                       {animateChart && (
                           <svg className="w-full h-full overflow-visible" viewBox="0 0 400 120" preserveAspectRatio="none">
                               <defs>
@@ -240,14 +241,43 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, da
                   </div>
               </div>
 
+              {/* Nutritionist Block */}
+              <div className="mt-6 relative p-6 rounded-[28px] bg-gradient-to-b from-gray-50 to-white dark:from-[#1C1C1E] dark:to-[#0A0A0A] border border-gray-200 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none mb-6">
+                  {/* Badge flutuante */}
+                  <div className="absolute -top-3 left-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-sm flex items-center gap-1.5">
+                      <ShieldCheckIcon className="w-3.5 h-3.5" />
+                      Plano Validado
+                  </div>
+                  
+                  <div className="flex items-start gap-4 mt-2">
+                      <div className="w-14 h-14 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center shrink-0 shadow-sm">
+                          <span className="text-lg font-medium text-gray-900 dark:text-white">AS</span>
+                      </div>
+                      <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="font-extrabold text-gray-900 dark:text-white text-base tracking-tight">Allan Stachuk</h3>
+                              <span className="text-blue-500"><CheckCircleIcon className="w-4 h-4" /></span>
+                          </div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Nutricionista Oficial • CRN 13901</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium italic">
+                              "Seu plano foi estruturado e validado clinicamente para garantir máxima segurança e resultados no seu tratamento."
+                          </p>
+                      </div>
+                  </div>
+              </div>
+
               {/* Disclaimer */}
-              <p className="text-center text-[10px] text-gray-400 dark:text-gray-600 font-medium px-4 leading-relaxed">
-                  As metas e cálculos são estimativas baseadas nos dados fornecidos. Sempre consulte seu médico.
-              </p>
+              <div className="pb-6">
+                  <p className="text-center text-[10px] text-gray-400 dark:text-gray-600 font-medium px-4 leading-relaxed">
+                      As metas e cálculos são estimativas baseadas nos dados fornecidos. Sempre consulte seu médico.
+                  </p>
+              </div>
+
+              <div className="pb-8">
+                  <OnboardingFooter onContinue={onNext} label="Começar Jornada" />
+              </div>
           </div>
       </div>
-
-      <OnboardingFooter onContinue={onNext} label="Começar Jornada" />
     </OnboardingScreen>
   );
 };

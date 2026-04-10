@@ -223,11 +223,14 @@ const NotificationSettingsModal: React.FC<{ isOpen: boolean, onClose: () => void
     );
 };
 
+import { TrialResultsScreen } from '../TrialResultsScreen';
+
 export const SettingsTab: React.FC = () => {
     const { userData, theme, toggleTheme, unlockPro, fetchData } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [showNotifications, setShowNotifications] = useState(false);
+    const [showTrialResults, setShowTrialResults] = useState(false);
     const [copied, setCopied] = useState(false);
     const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
 
@@ -379,6 +382,15 @@ export const SettingsTab: React.FC = () => {
             </header>
 
             <div className="px-5">
+                {/* Test Button for Trial Results */}
+                <button 
+                    onClick={() => setShowTrialResults(true)}
+                    className="w-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform mb-6"
+                >
+                    <Star className="w-5 h-5" />
+                    Testar Tela de Fim de Teste
+                </button>
+
                 <SettingsGroup>
                     <div 
                         className="bg-white dark:bg-[#1C1C1E] p-4 flex items-center cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors" 
@@ -597,6 +609,10 @@ export const SettingsTab: React.FC = () => {
                 onConfirm={handleGenerateReport}
                 onCancel={() => setShowReportModal(false)}
             />
+
+            {showTrialResults && (
+                <TrialResultsScreen onClose={() => setShowTrialResults(false)} />
+            )}
 
             {editModal.isOpen && (
                 <EditAttributeModal

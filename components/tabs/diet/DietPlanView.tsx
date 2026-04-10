@@ -409,7 +409,7 @@ export const DietPlanView: React.FC = () => {
     <div className="space-y-8 pb-40 animate-fade-in">
       {/* Header Section */}
       <div className="px-1">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">Cardápio</h2>
             <button 
                 onClick={() => setIsQuizOpen(true)}
@@ -419,6 +419,20 @@ export const DietPlanView: React.FC = () => {
                 Regenerar
             </button>
         </div>
+
+        <div className="mb-6 bg-white dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/50 flex items-center gap-3 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">AS</span>
+            </div>
+            <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Cardápio validado por</p>
+                <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">Allan Stachuk</p>
+                    <span className="text-[10px] text-gray-400 font-medium">• CRN 13901</span>
+                </div>
+            </div>
+        </div>
+
         <DaySelector selectedDay={selectedDay} onSelect={setSelectedDay} />
       </div>
 

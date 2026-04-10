@@ -133,6 +133,40 @@ serve(async (req) => {
       }
       
       console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);
+    } else if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+      const status = subscription.status;
+
+      if (status !== 'active' && status !== 'trialing') {
+        console.log(`❌ Assinatura inativa (${status}) para cliente ${customerId}. Removendo PRO...`);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            is_pro: false, 
+            subscription_status: status
+          })
+          .eq('stripe_customer_id', customerId);
+        
+        if (profileError) {
+            console.error("❌ Erro ao atualizar banco:", profileError.message);
+        } else {
+            console.log(`✅ Status PRO removido para cliente ${customerId}.`);
+        }
+      } else if (status === 'active' || status === 'trialing') {
+        console.log(`✅ Assinatura ativa (${status}) para cliente ${customerId}. Mantendo PRO...`);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            is_pro: true, 
+            subscription_status: status
+          })
+          .eq('stripe_customer_id', customerId);
+          
+        if (profileError) {
+            console.error("❌ Erro ao atualizar banco:", profileError.message);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), { 

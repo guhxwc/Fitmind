@@ -143,9 +143,9 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             onClick={() => setSelectedPlan('annual')}
                         />
                         <PlanOption 
-                            title="Plano Mensal"
-                            price={formatPrice(monthlyPrice)}
-                            subtext="Cobrado mensalmente"
+                            title="Teste Grátis (14 dias)"
+                            price="R$ 0,00 hoje"
+                            subtext={`Depois ${formatPrice(monthlyPrice)}/mês`}
                             isSelected={selectedPlan === 'monthly'}
                             onClick={() => setSelectedPlan('monthly')}
                         />
@@ -160,6 +160,19 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             <FeatureItem title="Relatórios Avançados" desc="Análise profunda de tendências e correlações." />
                         </ul>
                     </div>
+
+                    <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">AS</span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Validado clinicamente por</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white">Allan Stachuk</p>
+                                <span className="text-[10px] text-gray-400 font-medium">• CRN 13901</span>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400 font-medium">
                         <ShieldCheckIcon className="w-4 h-4 text-green-500" />
@@ -173,7 +186,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2 relative overflow-hidden group"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
-                        Continuar
+                        {selectedPlan === 'monthly' ? 'Iniciar teste grátis de 14 dias' : 'Continuar'}
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
                 </div>

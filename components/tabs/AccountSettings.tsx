@@ -78,6 +78,8 @@ export const AccountSettings: React.FC = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
+    const [isCanceling, setIsCanceling] = useState(false);
+
     if (!userData || !session) return null;
 
     const handleOpenEdit = (title: string, key: string, value: any, type: 'text' | 'number' | 'date' | 'select' | 'password', options?: string[], unit?: string) => {
@@ -180,9 +182,40 @@ export const AccountSettings: React.FC = () => {
         }
     };
 
-    const handleCancelSubscription = () => {
-        setShowCancelConfirm(false);
-        addToast("Sua solicitação de cancelamento foi enviada ao suporte.", "success");
+    const handleCancelSubscription = async () => {
+        setIsCanceling(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('cancel-subscription');
+            
+            if (error || data?.error) {
+                console.log("Erro na função cancel-subscription. Redirecionando para o portal do Stripe...", error || data?.error);
+                
+                // Fallback: Redirecionar para o portal de pagamentos do Stripe
+                const { data: portalData, error: portalError } = await supabase.functions.invoke('create-portal-session', {
+                    body: { returnUrl: window.location.origin + '/#/settings/account' }
+                });
+
+                if (portalError) throw new Error(portalError.message);
+                if (portalData?.error) throw new Error(portalData.error);
+                
+                if (portalData?.url) {
+                    window.location.href = portalData.url;
+                    return;
+                }
+                
+                throw new Error(error?.message || data?.error || "Erro desconhecido");
+            }
+
+            addToast("Assinatura cancelada com sucesso.", "success");
+            setShowCancelConfirm(false);
+            // Reload page or fetch data to reflect changes
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Erro ao cancelar assinatura:", error);
+            addToast(error.message || "Erro ao cancelar assinatura.", "error");
+        } finally {
+            setIsCanceling(false);
+        }
     };
 
     const formatDate = (dateStr?: string) => {
@@ -320,10 +353,11 @@ export const AccountSettings: React.FC = () => {
                 isOpen={showCancelConfirm}
                 title="Cancelar Assinatura"
                 message="Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso aos recursos PRO no final do seu ciclo de faturamento atual."
-                confirmText="Sim, quero cancelar"
+                confirmText={isCanceling ? "Cancelando..." : "Sim, quero cancelar"}
                 cancelText="Voltar"
                 onConfirm={handleCancelSubscription}
                 onCancel={() => setShowCancelConfirm(false)}
+                isDestructive={true}
             />
 
             <ConfirmModal

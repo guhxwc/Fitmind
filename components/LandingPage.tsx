@@ -86,7 +86,7 @@ export const LandingPage: React.FC = () => {
                     </button>
                     <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
                         <ShieldCheckIcon className="w-5 h-5 text-green-500" />
-                        7 dias grátis • Cancele quando quiser
+                        14 dias grátis • Cancele quando quiser
                     </div>
                 </motion.div>
 
@@ -182,6 +182,20 @@ export const LandingPage: React.FC = () => {
                         <p className="text-sm text-gray-500 font-medium">Usuária de Ozempic + FitMind</p>
                     </div>
                 </motion.div>
+            </section>
+
+            {/* Nutritionist Section */}
+            <section className="py-24 px-6 bg-white dark:bg-[#0A0A0A] border-y border-gray-100 dark:border-gray-900">
+                <div className="max-w-3xl mx-auto text-center">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center mb-6 shadow-sm">
+                        <span className="text-2xl font-light text-gray-900 dark:text-white tracking-widest">AS</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Allan Stachuk</h2>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Nutricionista Oficial • CRN 13901</p>
+                    <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 font-medium leading-relaxed italic">
+                        "O FitMind não é apenas um aplicativo, é um método clínico traduzido para a tecnologia. Cada protocolo foi rigorosamente validado para garantir resultados reais e seguros durante o seu tratamento."
+                    </p>
+                </div>
             </section>
 
             {/* Footer */}

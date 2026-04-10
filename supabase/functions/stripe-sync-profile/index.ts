@@ -81,12 +81,14 @@ serve(async (req) => {
           console.log(`🔍 Buscando assinaturas ativas para cliente Stripe: ${profile.stripe_customer_id}`);
           const subscriptions = await stripe.subscriptions.list({
             customer: profile.stripe_customer_id,
-            status: 'active',
-            limit: 1,
+            status: 'all',
+            limit: 5,
           });
           
-          if (subscriptions.data.length > 0) {
-            console.log(`✅ Assinatura ativa encontrada para ${userId}`);
+          const activeSub = subscriptions.data.find(sub => sub.status === 'active' || sub.status === 'trialing');
+          
+          if (activeSub) {
+            console.log(`✅ Assinatura ativa/trial encontrada para ${userId}`);
             isPaid = true;
             targetUserId = userId;
             customerId = profile.stripe_customer_id;
@@ -96,7 +98,7 @@ serve(async (req) => {
     }
 
     if (isPaid && targetUserId) {
-      console.log(`✅ Pagamento confirmado para ${targetUserId}. Atualizando perfil...`);
+      console.log(`✅ Pagamento/Trial confirmado para ${targetUserId}. Atualizando perfil...`);
       
       const { error: updateError } = await supabase
         .from('profiles')
@@ -113,9 +115,19 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
+    } else if (userId) {
+      // Se verificou pelo userId e não encontrou nada ativo, remove o PRO
+      console.log(`❌ Nenhuma assinatura ativa encontrada para ${userId}. Removendo PRO...`);
+      await supabase
+        .from('profiles')
+        .update({ 
+          is_pro: false, 
+          subscription_status: 'inactive'
+        })
+        .eq('id', userId);
     }
 
-    return new Response(JSON.stringify({ success: true, isPro: false, message: "Pagamento não confirmado ainda." }), {
+    return new Response(JSON.stringify({ success: true, isPro: false, message: "Pagamento não confirmado ou assinatura expirada." }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

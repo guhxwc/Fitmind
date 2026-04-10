@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1STlzZQdX6ANfRVOkyXlfOvr',
+    monthly: 'price_1TJem6QdX6ANfRVO0hv2qjlx',
     annual: 'price_1STlzzQdX6ANfRVOKsrT29TQ'
 };
 
@@ -73,7 +73,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-8 text-left border border-gray-100 dark:border-gray-800">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Plano Selecionado</p>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind PRO' : 'Assinatura Mensal FitMind PRO'}
+                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind PRO' : 'Teste Grátis de 14 dias (FitMind PRO)'}
                         </p>
                     </div>
 

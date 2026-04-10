@@ -4,13 +4,13 @@
   "name": "FitMind Health",
   "icons": [
     {
-      "src": "https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=192&h=192&fit=contain&trim=10",
+      "src": "https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=192&h=192&fit=contain&trim=10&v=2",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=512&h=512&fit=contain&trim=10",
+      "src": "https://wsrv.nl/?url=jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_favicon.png&w=512&h=512&fit=contain&trim=10&v=2",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"

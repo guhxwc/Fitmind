@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -27,6 +26,8 @@ const ScrollToTop = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+      
+      // Target the #root element which is the scroll container in index.html
       const rootElement = document.getElementById('root');
       if (rootElement) {
         rootElement.scrollTop = 0;
@@ -48,6 +49,7 @@ const ScrollToTop = () => {
 
   return null;
 };
+
 
 // Redireciona /invite/:code para /?ref=:code (compatibilidade com links antigos)
 const InviteRedirect: React.FC = () => {
@@ -76,10 +78,12 @@ const AppContent: React.FC = () => {
   }, [userData, contextLoading]);
 
   useEffect(() => {
+    // Desativar a restauração automática de scroll do navegador
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
 
+    // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
     if (window.location.hash && window.location.hash.includes('access_token=')) {
       if (window.location.hash.includes('type=signup')) {
         addToast("Conta verificada e criada com sucesso!", "success");
@@ -106,6 +110,7 @@ const AppContent: React.FC = () => {
       if (_event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
       }
+      
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
@@ -122,6 +127,8 @@ const AppContent: React.FC = () => {
     const registerReferral = async () => {
       if (!session?.user?.id) return;
 
+      // Lê de ambos os storages (localStorage persiste entre tabs/redirects,
+      // sessionStorage é fallback para modo privado)
       const affiliateRef =
         localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
 
@@ -131,12 +138,15 @@ const AppContent: React.FC = () => {
       if (!affiliateRef) return;
 
       try {
+        // Usa função RPC server-side: valida código, bloqueia auto-indicação,
+        // lida com race conditions e retorna status claro
         const { data, error } = await supabase.rpc('register_referral', {
           p_affiliate_ref: affiliateRef
         });
 
         if (error) {
           console.error("❌ [Referral] Erro RPC:", error.message);
+          // Mantém no storage para retry automático no próximo login
           return;
         }
 
@@ -159,6 +169,7 @@ const AppContent: React.FC = () => {
             localStorage.removeItem('affiliate_ref');
             sessionStorage.removeItem('affiliate_ref');
           }
+          // Erros transientes: mantém no storage para retry
         }
       } catch (err) {
         console.error("💥 [Referral] Erro crítico:", err);
@@ -172,11 +183,14 @@ const AppContent: React.FC = () => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("🔍 Buscando perfil do usuário:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .maybeSingle();
+
       if (error) throw error;
       setProfileExists(!!data);
     } catch (err) {
@@ -252,8 +266,7 @@ const AppContent: React.FC = () => {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
-        <Route path="/invite/:code" element={<InviteRedirect />} />
-
+        
         <Route path="/*" element={
           session ? (
             profileExists === null ? (
@@ -264,9 +277,9 @@ const AppContent: React.FC = () => {
               (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (
-                <OnboardingFlow
-                  onComplete={handleOnboardingComplete}
-                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined}
+                <OnboardingFlow 
+                  onComplete={handleOnboardingComplete} 
+                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
                 />
               )
             ) : (
@@ -276,7 +289,7 @@ const AppContent: React.FC = () => {
             <Navigate to="/auth" />
           )
         } />
-
+        
         <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
       </Routes>
     </>
@@ -291,6 +304,7 @@ const App: React.FC = () => {
       </div>
     );
   }
+
   return <AppContent />;
 };
 

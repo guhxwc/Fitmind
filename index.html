@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
+    <!-- CAPTURA DO CÓDIGO DE INDICAÇÃO — deve ser o PRIMEIRO script, antes de tudo -->
+    <script>
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var ref = params.get('ref');
+          if (ref && ref.trim().length >= 4) {
+            var code = ref.trim().toUpperCase();
+            localStorage.setItem('affiliate_ref', code);
+            sessionStorage.setItem('affiliate_ref', code);
+            // Remove ?ref= da URL imediatamente para não confundir o React Router
+            params.delete('ref');
+            var newSearch = params.toString() ? '?' + params.toString() : '';
+            window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
+            console.log('[Referral] Código capturado e salvo:', code);
+          }
+        } catch(e) { /* silencioso */ }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -214,41 +233,7 @@
         background: radial-gradient(circle, rgba(255, 120, 0, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
       }
     </style>
-    <script>
-      // Captura o link de afiliado e salva com redundância (localStorage + sessionStorage)
-      (function() {
-        console.log('🌐 [Referral] URL Atual:', window.location.href);
-        const params = new URLSearchParams(window.location.search);
-        const ref = params.get('ref');
-        
-        if (ref) {
-          const cleanRef = ref.trim().toUpperCase();
-          localStorage.setItem('affiliate_ref', cleanRef);
-          sessionStorage.setItem('affiliate_ref', cleanRef); // Redundância para redirecionamentos
-          console.log('🎯 [Referral] NOVO CÓDIGO CAPTURADO:', cleanRef);
-        } else {
-          const local = localStorage.getItem('affiliate_ref');
-          const session = sessionStorage.getItem('affiliate_ref');
-          
-          if (local || session) {
-            const activeRef = local || session;
-            // Sincroniza ambos
-            if (!local) localStorage.setItem('affiliate_ref', activeRef);
-            if (!session) sessionStorage.setItem('affiliate_ref', activeRef);
-            console.log('📦 [Referral] Código recuperado do cache:', activeRef);
-          } else {
-            console.log('⚪ [Referral] Nenhum código encontrado no cache.');
-          }
-        }
 
-        // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
-        if (window.location.hash && window.location.hash.includes('access_token=')) {
-          setTimeout(() => {
-            window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          }, 500);
-        }
-      })();
-    </script>
     <script>
       // Auto-reload quando assets 404 (bundle desatualizado no cache do browser)
       window.addEventListener('error', function(e) {

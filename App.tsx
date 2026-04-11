@@ -117,11 +117,12 @@ const AppContent: React.FC = () => {
     const registerReferral = async () => {
       if (!session?.user?.id) return;
       
-      const affiliateRef = localStorage.getItem('affiliate_ref');
+      // Tenta recuperar de ambos os storages para garantir persistência após redirecionamentos
+      const affiliateRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
       
       // Log de depuração para cada mudança de sessão
       console.log("🔍 [Referral Check] Sessão ativa:", session.user.id);
-      console.log("🔍 [Referral Check] Código no localStorage:", affiliateRef);
+      console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
 
       if (!affiliateRef) {
         return;
@@ -142,8 +143,9 @@ const AppContent: React.FC = () => {
 
         if (existingRef) {
           console.log("ℹ️ [Referral] Usuário já possui uma indicação registrada no banco:", existingRef.affiliate_ref);
-          console.log("ℹ️ [Referral] Limpando localStorage para evitar re-processamento.");
+          console.log("ℹ️ [Referral] Limpando caches para evitar re-processamento.");
           localStorage.removeItem('affiliate_ref');
+          sessionStorage.removeItem('affiliate_ref');
           return;
         }
 
@@ -160,10 +162,11 @@ const AppContent: React.FC = () => {
 
         if (insertError) {
           console.error("❌ [Referral] Erro ao inserir indicação:", insertError.message);
-          // Não removemos do localStorage se deu erro, para tentar novamente depois
+          // Não removemos dos caches se deu erro, para tentar novamente depois
         } else {
           console.log("✅ [Referral] Indicação vinculada com sucesso!");
           localStorage.removeItem('affiliate_ref');
+          sessionStorage.removeItem('affiliate_ref');
         }
       } catch (err) {
         console.error("💥 [Referral] Erro crítico:", err);

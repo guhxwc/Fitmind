@@ -123,63 +123,75 @@ const AppContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const registerReferral = async () => {
-      if (!session?.user?.id) return;
+  // ─── REGISTRO DE INDICAÇÃO ─────────────────────────────────────────────────
+  // Função separada para poder ser chamada em dois momentos:
+  // 1. Quando a sessão muda (login normal)
+  // 2. Na montagem do app (usuário JÁ estava logado e abriu o link ?ref=)
+  const registerReferralIfNeeded = async (userId: string) => {
+    const affiliateRef =
+      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
 
-      // Lê de ambos os storages (localStorage persiste entre tabs/redirects,
-      // sessionStorage é fallback para modo privado)
-      const affiliateRef =
-        localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    console.log("🔍 [Referral Check] Sessão ativa:", userId);
+    console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
 
-      console.log("🔍 [Referral Check] Sessão ativa:", session.user.id);
-      console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
+    if (!affiliateRef) return;
 
-      if (!affiliateRef) return;
+    try {
+      const { data, error } = await supabase.rpc('register_referral', {
+        p_affiliate_ref: affiliateRef
+      });
 
-      try {
-        // Usa função RPC server-side: valida código, bloqueia auto-indicação,
-        // lida com race conditions e retorna status claro
-        const { data, error } = await supabase.rpc('register_referral', {
-          p_affiliate_ref: affiliateRef
-        });
-
-        if (error) {
-          console.error("❌ [Referral] Erro RPC:", error.message);
-          // Mantém no storage para retry automático no próximo login
-          return;
-        }
-
-        const result = data as { success: boolean; status?: string; error?: string; code?: string };
-        console.log("📋 [Referral] Resultado:", result);
-
-        if (result.success) {
-          // NÃO limpa o localStorage aqui.
-          // O PaymentPage ainda precisa do código para mandar ao checkout.
-          // A limpeza acontece no SuccessPage, após o pagamento confirmado.
-          if (result.status === 'registered') {
-            console.log("✅ [Referral] Indicação registrada com sucesso! Código:", result.code);
-          } else {
-            console.log("ℹ️ [Referral] Indicação já existia no banco.");
-          }
-        } else {
-          // Erros permanentes (código inválido ou auto-indicação): limpa
-          if (result.error === 'self_referral' || result.error === 'code_not_found') {
-            console.warn("⚠️ [Referral] Código inválido ou auto-indicação:", result.error);
-            localStorage.removeItem('affiliate_ref');
-            sessionStorage.removeItem('affiliate_ref');
-          }
-          // Erros transientes: mantém no storage para retry
-        }
-      } catch (err) {
-        console.error("💥 [Referral] Erro crítico:", err);
+      if (error) {
+        console.error("❌ [Referral] Erro RPC:", error.message);
+        return;
       }
-    };
 
-    if (session) {
-      registerReferral();
+      const result = data as { success: boolean; status?: string; error?: string; code?: string };
+      console.log("📋 [Referral] Resultado:", result);
+
+      if (result.success) {
+        // NÃO limpa o localStorage — PaymentPage ainda precisa do código
+        if (result.status === 'registered') {
+          console.log("✅ [Referral] Indicação registrada! Código:", result.code);
+        } else {
+          console.log("ℹ️ [Referral] Indicação já existia no banco.");
+        }
+      } else {
+        if (result.error === 'self_referral' || result.error === 'code_not_found') {
+          console.warn("⚠️ [Referral] Código inválido:", result.error);
+          localStorage.removeItem('affiliate_ref');
+          sessionStorage.removeItem('affiliate_ref');
+        }
+      }
+    } catch (err) {
+      console.error("💥 [Referral] Erro crítico:", err);
+    }
+  };
+
+  // Dispara quando a sessão MUDA (novo login)
+  useEffect(() => {
+    if (session?.user?.id) {
+      registerReferralIfNeeded(session.user.id);
     }
   }, [session]);
+
+  // Dispara na MONTAGEM do app — cobre o caso onde o usuário JÁ estava logado
+  // e abriu o link ?ref= sem precisar fazer login novamente
+  useEffect(() => {
+    const checkOnMount = async () => {
+      // Pequeno delay para o script do index.html ter tempo de salvar no localStorage
+      await new Promise(r => setTimeout(r, 300));
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user?.id) {
+        const hasRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+        if (hasRef) {
+          console.log('🔁 [Referral] Usuário já logado, verificando código na montagem...');
+          registerReferralIfNeeded(currentSession.user.id);
+        }
+      }
+    };
+    checkOnMount();
+  }, []); // só na montagem
 
   const fetchProfile = async (userId: string) => {
     try {

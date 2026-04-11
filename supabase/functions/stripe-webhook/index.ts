@@ -142,33 +142,53 @@ serve(async (req) => {
             .maybeSingle();
 
           if (referrer && !referrerError) {
-            console.log(`🎁 Concedendo 30 dias de PRO para o indicador: ${referrer.name}`);
-            
-            // Calcular nova data de expiração
-            let newExpiry = new Date();
-            const currentExpiry = referrer.pro_expires_at ? new Date(referrer.pro_expires_at) : null;
-            
-            // Se ele já for PRO e a data for futura, adicionamos a partir de lá. 
-            // Caso contrário, adicionamos a partir de hoje.
-            if (currentExpiry && currentExpiry > new Date()) {
-              newExpiry = currentExpiry;
-            }
-            
-            newExpiry.setDate(newExpiry.getDate() + 30);
+            // Contar quantas indicações CONCLUÍDAS esse indicador já tem
+            const { count: completedCount, error: countError } = await supabase
+              .from('referrals')
+              .select('*', { count: 'exact', head: true })
+              .eq('affiliate_ref', affiliateCode)
+              .eq('status', 'completed');
 
-            const { error: rewardError } = await supabase
-              .from('profiles')
-              .update({
-                is_pro: true,
-                pro_expires_at: newExpiry.toISOString(),
-                subscription_status: 'active'
-              })
-              .eq('id', referrer.id);
+            if (!countError && completedCount !== null) {
+              console.log(`📊 Total de indicações concluídas para ${affiliateCode}: ${completedCount}`);
+              
+              let daysToAdd = 0;
+              if (completedCount === 1) {
+                daysToAdd = 7; // 1ª indicação: +7 dias
+                console.log(`🎁 Recompensa Nível 1: +7 dias para ${referrer.name}`);
+              } else if (completedCount === 3) {
+                daysToAdd = 30; // 3ª indicação: +30 dias
+                console.log(`🎁 Recompensa Nível 3: +30 dias para ${referrer.name}`);
+              }
 
-            if (!rewardError) {
-              console.log(`✅ Benefício entregue! Nova expiração de ${referrer.name}: ${newExpiry.toLocaleDateString()}`);
-            } else {
-              console.error("❌ Erro ao entregar benefício:", rewardError.message);
+              if (daysToAdd > 0) {
+                // Calcular nova data de expiração
+                let newExpiry = new Date();
+                const currentExpiry = referrer.pro_expires_at ? new Date(referrer.pro_expires_at) : null;
+                
+                if (currentExpiry && currentExpiry > new Date()) {
+                  newExpiry = currentExpiry;
+                }
+                
+                newExpiry.setDate(newExpiry.getDate() + daysToAdd);
+
+                const { error: rewardError } = await supabase
+                  .from('profiles')
+                  .update({
+                    is_pro: true,
+                    pro_expires_at: newExpiry.toISOString(),
+                    subscription_status: 'active'
+                  })
+                  .eq('id', referrer.id);
+
+                if (!rewardError) {
+                  console.log(`✅ Benefício de ${daysToAdd} dias entregue! Nova expiração: ${newExpiry.toLocaleDateString()}`);
+                } else {
+                  console.error("❌ Erro ao entregar benefício:", rewardError.message);
+                }
+              } else {
+                console.log(`ℹ️ Nenhuma recompensa em dias para a indicação nº ${completedCount}.`);
+              }
             }
           }
         }

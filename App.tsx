@@ -144,14 +144,16 @@ const AppContent: React.FC = () => {
         console.log("📋 [Referral] Resultado:", result);
 
         if (result.success) {
-          localStorage.removeItem('affiliate_ref');
-          sessionStorage.removeItem('affiliate_ref');
+          // NÃO limpa o localStorage aqui.
+          // O PaymentPage ainda precisa do código para mandar ao checkout.
+          // A limpeza acontece no SuccessPage, após o pagamento confirmado.
           if (result.status === 'registered') {
-            console.log("✅ [Referral] Indicação registrada! Código:", result.code);
+            console.log("✅ [Referral] Indicação registrada com sucesso! Código:", result.code);
           } else {
             console.log("ℹ️ [Referral] Indicação já existia no banco.");
           }
         } else {
+          // Erros permanentes (código inválido ou auto-indicação): limpa
           if (result.error === 'self_referral' || result.error === 'code_not_found') {
             console.warn("⚠️ [Referral] Código inválido ou auto-indicação:", result.error);
             localStorage.removeItem('affiliate_ref');

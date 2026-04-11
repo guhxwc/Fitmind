@@ -294,27 +294,6 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    // Verifica se veio por indicação via localStorage
-    const affiliateRef = localStorage.getItem('affiliate_ref');
-    if (affiliateRef && authData.user) {
-      // Salva a indicação no banco
-      const { error: referralError } = await supabase
-        .from('referrals')
-        .insert({
-          user_id: authData.user.id,
-          affiliate_ref: affiliateRef,
-          created_at: new Date().toISOString(),
-          status: 'pending'
-        });
-      
-      if (referralError) {
-        console.error("Erro ao salvar indicação:", referralError);
-      } else {
-        // Limpa o storage para não duplicar futuramente
-        localStorage.removeItem('affiliate_ref');
-      }
-    }
-
     console.log("SignUp realizado com sucesso, aguardando confirmação.");
     setView('verify_email');
     setLoading(false);

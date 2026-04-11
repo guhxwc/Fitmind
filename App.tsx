@@ -118,36 +118,37 @@ const AppContent: React.FC = () => {
       if (!session?.user?.id) return;
       
       const affiliateRef = localStorage.getItem('affiliate_ref');
+      
+      // Log de depuração para cada mudança de sessão
+      console.log("🔍 [Referral Check] Sessão ativa:", session.user.id);
+      console.log("🔍 [Referral Check] Código no localStorage:", affiliateRef);
+
       if (!affiliateRef) {
-        console.log("ℹ️ Nenhum código de afiliado pendente no localStorage.");
         return;
       }
-
-      console.log("🚀 Tentando vincular indicação:", {
-        userId: session.user.id,
-        affiliateRef: affiliateRef
-      });
 
       try {
         // 1. Verifica se este usuário já foi indicado por alguém antes
         const { data: existingRef, error: checkError } = await supabase
           .from('referrals')
-          .select('id')
+          .select('id, affiliate_ref')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (checkError) {
-          console.error("❌ Erro ao verificar indicação existente:", checkError);
+          console.error("❌ [Referral] Erro ao verificar indicação existente:", checkError);
           return;
         }
 
         if (existingRef) {
-          console.log("ℹ️ Usuário já possui uma indicação registrada. Limpando localStorage.");
+          console.log("ℹ️ [Referral] Usuário já possui uma indicação registrada no banco:", existingRef.affiliate_ref);
+          console.log("ℹ️ [Referral] Limpando localStorage para evitar re-processamento.");
           localStorage.removeItem('affiliate_ref');
           return;
         }
 
         // 2. Registra a nova indicação
+        console.log("🚀 [Referral] Registrando nova indicação no banco...");
         const { error: insertError } = await supabase
           .from('referrals')
           .insert({
@@ -158,14 +159,14 @@ const AppContent: React.FC = () => {
           });
 
         if (insertError) {
-          console.error("❌ Erro ao inserir indicação no banco:", insertError);
-          // Se o erro for de RLS ou tabela inexistente, o log mostrará aqui
+          console.error("❌ [Referral] Erro ao inserir indicação:", insertError.message);
+          // Não removemos do localStorage se deu erro, para tentar novamente depois
         } else {
-          console.log("✅ Indicação vinculada com sucesso no banco!");
+          console.log("✅ [Referral] Indicação vinculada com sucesso!");
           localStorage.removeItem('affiliate_ref');
         }
       } catch (err) {
-        console.error("💥 Erro crítico na vinculação de indicação:", err);
+        console.error("💥 [Referral] Erro crítico:", err);
       }
     };
 

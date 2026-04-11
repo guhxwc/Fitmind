@@ -143,6 +143,26 @@ export const SuccessPage: React.FC = () => {
         localStorage.setItem('has_seen_onboarding', 'true');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('affiliate_ref');
+
+        // Converter indicação pendente para 'converted' se existir
+        try {
+            const { data: referral } = await supabase
+                .from('referrals')
+                .select('id, status')
+                .eq('user_id', session?.user.id)
+                .maybeSingle();
+
+            if (referral && referral.status === 'pending') {
+                await supabase
+                    .from('referrals')
+                    .update({ status: 'converted' })
+                    .eq('id', referral.id);
+                console.log('Indicação convertida para PRO!');
+            }
+        } catch (err) {
+            console.error('Erro ao converter indicação:', err);
+        }
+
         await fetchData();
         navigate('/', { replace: true });
     };

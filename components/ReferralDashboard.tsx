@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Copy, CheckCircle2, Gift, Sparkles, Trophy, ChevronLeft, Share } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from './AppContext';
+import { supabase } from '../supabaseClient';
 
 export const ReferralDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -12,9 +13,32 @@ export const ReferralDashboard: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Mock data for referrals (in a real app, fetch from Supabase/Firebase)
-  const [referralCount] = useState(1);
-  const referralLink = `https://fitmind.app/invite/${userData?.id?.substring(0, 8) || 'tester123'}`;
+  const [referralCount, setReferralCount] = useState(0);
+  const referralCode = userData?.id?.substring(0, 8).toUpperCase() || 'TESTER';
+  const referralLink = `https://fitmindhealth.com.br/?ref=${referralCode}`;
+
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      if (!userData?.id) return;
+      
+      try {
+        // Contamos apenas indicações que converteram para PRO (status = 'converted')
+        const { count, error } = await supabase
+          .from('referrals')
+          .select('*', { count: 'exact', head: true })
+          .eq('affiliate_ref', referralCode)
+          .eq('status', 'converted');
+          
+        if (!error && count !== null) {
+          setReferralCount(count);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar indicações:', err);
+      }
+    };
+
+    fetchReferrals();
+  }, [userData?.id, referralCode]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -188,7 +212,7 @@ export const ReferralDashboard: React.FC = () => {
         {/* Footer */}
         <div className="px-4 text-center">
           <p className="text-[13px] text-gray-400 leading-relaxed">
-            Recompensas ativadas automaticamente após o cadastro do convidado. Válido para novas contas.
+            Recompensas ativadas automaticamente após o convidado se tornar PRO. Válido para novas assinaturas.
           </p>
         </div>
       </main>

@@ -6,6 +6,7 @@ import { NOTIFICATIONS, AppNotification, NotificationContext } from '../lib/noti
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { WEEKDAYS } from '../constants';
+import Portal from './core/Portal';
 
 export const NotificationSystem: React.FC = () => {
     const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData } = useAppContext();
@@ -222,7 +223,7 @@ export const NotificationSystem: React.FC = () => {
                         initial={{ opacity: 0, y: 50, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-24 left-4 right-4 z-[110] flex justify-center pointer-events-none"
+                        className="fixed bottom-24 left-4 right-4 z-[9998] flex justify-center pointer-events-none"
                     >
                         <div className="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-2xl p-4 flex items-center gap-4 max-w-md w-full pointer-events-auto">
                             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
@@ -258,52 +259,68 @@ export const NotificationSystem: React.FC = () => {
             {/* MODALS */}
             <AnimatePresence>
                 {activeModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-5">
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
-                            onClick={() => handleAction(activeModal, 'dismiss')}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-sm bg-white dark:bg-[#1C1C1E] rounded-[32px] shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-8 text-center flex flex-col items-center">
-                                <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
-                                    <span className="text-3xl">✨</span>
-                                </div>
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
-                                    {renderText(activeModal.title)}
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
-                                    {renderText(activeModal.body)}
-                                </p>
+                    <Portal>
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-5">
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                                onClick={() => handleAction(activeModal, 'dismiss')}
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                                animate={{ 
+                                    opacity: 1, 
+                                    scale: 1, 
+                                    y: 0,
+                                    transition: {
+                                        type: "spring",
+                                        damping: 25,
+                                        stiffness: 300
+                                    }
+                                }}
+                                exit={{ 
+                                    opacity: 0, 
+                                    scale: 0.9, 
+                                    y: 20,
+                                    transition: { duration: 0.2 }
+                                }}
+                                className="relative w-full max-w-sm bg-white dark:bg-[#1C1C1E] rounded-[32px] shadow-2xl overflow-hidden"
+                            >
+                                <div className="p-8 text-center flex flex-col items-center">
+                                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
+                                        <span className="text-3xl">✨</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
+                                        {renderText(activeModal.title)}
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
+                                        {renderText(activeModal.body)}
+                                    </p>
 
-                                <div className="w-full flex flex-col gap-3">
-                                    {activeModal.primaryAction && (
-                                        <button 
-                                            onClick={() => handleAction(activeModal, activeModal.primaryAction!.action)}
-                                            className="w-full py-4 rounded-2xl bg-blue-500 text-white font-bold text-lg active:scale-95 transition-transform"
-                                        >
-                                            {activeModal.primaryAction.label}
-                                        </button>
-                                    )}
-                                    {activeModal.secondaryAction && (
-                                        <button 
-                                            onClick={() => handleAction(activeModal, activeModal.secondaryAction!.action)}
-                                            className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg active:scale-95 transition-transform"
-                                        >
-                                            {activeModal.secondaryAction.label}
-                                        </button>
-                                    )}
+                                    <div className="w-full flex flex-col gap-3">
+                                        {activeModal.primaryAction && (
+                                            <button 
+                                                onClick={() => handleAction(activeModal, activeModal.primaryAction!.action)}
+                                                className="w-full py-4 rounded-2xl bg-blue-500 text-white font-bold text-lg active:scale-95 transition-transform"
+                                            >
+                                                {activeModal.primaryAction.label}
+                                            </button>
+                                        )}
+                                        {activeModal.secondaryAction && (
+                                            <button 
+                                                onClick={() => handleAction(activeModal, activeModal.secondaryAction!.action)}
+                                                className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg active:scale-95 transition-transform"
+                                            >
+                                                {activeModal.secondaryAction.label}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    </div>
+                            </motion.div>
+                        </div>
+                    </Portal>
                 )}
             </AnimatePresence>
         </>

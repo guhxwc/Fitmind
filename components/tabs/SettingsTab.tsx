@@ -224,6 +224,7 @@ const NotificationSettingsModal: React.FC<{ isOpen: boolean, onClose: () => void
 };
 
 import { TrialResultsScreen } from '../TrialResultsScreen';
+import { TrialTestModal } from '../TrialTestModal';
 
 export const SettingsTab: React.FC = () => {
     const { userData, theme, toggleTheme, unlockPro, fetchData } = useAppContext();
@@ -231,6 +232,7 @@ export const SettingsTab: React.FC = () => {
     const { addToast } = useToast();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showTrialResults, setShowTrialResults] = useState(false);
+    const [showTrialTest, setShowTrialTest] = useState(false);
     const [copied, setCopied] = useState(false);
     const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
 
@@ -382,14 +384,23 @@ export const SettingsTab: React.FC = () => {
             </header>
 
             <div className="px-5">
-                {/* Test Button for Trial Results */}
-                <button 
-                    onClick={() => setShowTrialResults(true)}
-                    className="w-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform mb-6"
-                >
-                    <Star className="w-5 h-5" />
-                    Testar Tela de Fim de Teste
-                </button>
+                {/* Test Buttons */}
+                <div className="flex flex-col gap-3 mb-6">
+                    <button 
+                        onClick={() => setShowTrialResults(true)}
+                        className="w-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                    >
+                        <Star className="w-5 h-5" />
+                        <span className="text-sm">Testar Tela Fim do Teste</span>
+                    </button>
+                    <button 
+                        onClick={() => setShowTrialTest(true)}
+                        className="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
+                    >
+                        <Bell className="w-5 h-5" />
+                        <span className="text-sm">Testar Copy de Retenção</span>
+                    </button>
+                </div>
 
                 <SettingsGroup>
                     <div 
@@ -613,6 +624,11 @@ export const SettingsTab: React.FC = () => {
             {showTrialResults && (
                 <TrialResultsScreen onClose={() => setShowTrialResults(false)} />
             )}
+
+            <TrialTestModal 
+                isOpen={showTrialTest} 
+                onClose={() => setShowTrialTest(false)} 
+            />
 
             {editModal.isOpen && (
                 <EditAttributeModal

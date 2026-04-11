@@ -226,7 +226,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   },
 
   // ---------------------------------------------------------
-  // PRIORIDADE 6: REFERRAL (15-19)
+  // PRIORIDADE 6: REFERRAL & RENTENTION (15-19)
   // ---------------------------------------------------------
   {
     id: 'trial_day_5',
@@ -237,6 +237,16 @@ export const NOTIFICATIONS: AppNotification[] = [
     primaryAction: { label: 'Indicar amigo', action: 'share_referral' },
     secondaryAction: { label: 'Assinar agora', action: '/assinatura' },
     evaluateTrigger: (ctx) => !ctx.isSubscriber && ctx.daysSinceSignup === 5,
+  },
+  {
+    id: 'trial_countdown_last_day',
+    type: 'modal',
+    priority: 6,
+    title: 'Seu teste grátis termina hoje! ⏳',
+    body: 'Não perca o acesso à sua evolução. Sabia que você pode ganhar 1 mês de FitMind PRO inteiramente grátis? Basta indicar um amigo que também usa medicação GLP-1.',
+    primaryAction: { label: 'Ganhar 1 Mês Grátis', action: 'share_referral' },
+    secondaryAction: { label: 'Agora não, obrigado', action: 'dismiss' },
+    evaluateTrigger: (ctx) => !ctx.isSubscriber && ctx.daysSinceSignup === 6,
   },
   {
     id: 'trial_ended',

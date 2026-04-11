@@ -221,8 +221,8 @@
         const ref = params.get('ref');
         
         if (ref) {
-          localStorage.setItem('affiliate_ref', ref);
-          console.log('Afiliado salvo:', ref);
+          localStorage.setItem('affiliate_ref', ref.toUpperCase());
+          console.log('Afiliado salvo:', ref.toUpperCase());
         }
 
         // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante

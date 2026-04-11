@@ -155,7 +155,7 @@ export const SuccessPage: React.FC = () => {
             if (referral && referral.status === 'pending') {
                 await supabase
                     .from('referrals')
-                    .update({ status: 'converted' })
+                    .update({ status: 'completed' })
                     .eq('id', referral.id);
                 console.log('Indicação convertida para PRO!');
             }

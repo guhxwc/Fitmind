@@ -119,16 +119,35 @@ serve(async (req) => {
       // 3. Atualizar o status da indicação (referrals) para 'completed'
       const affiliateCode = session.metadata?.affiliate_code;
       if (affiliateCode) {
-        const { error: refUpdateError } = await supabase
+        console.log(`🔗 Processando conclusão de indicação para o código: ${affiliateCode}`);
+        
+        // Atualiza a indicação para 'completed'
+        const { data: updatedRefs, error: refUpdateError } = await supabase
           .from('referrals')
           .update({ status: 'completed' })
           .eq('user_id', userId)
-          .eq('affiliate_ref', affiliateCode);
+          .eq('affiliate_ref', affiliateCode)
+          .select();
           
         if (refUpdateError) {
           console.error("❌ Erro ao atualizar status da indicação:", refUpdateError.message);
-        } else {
+        } else if (updatedRefs && updatedRefs.length > 0) {
           console.log(`✅ Indicação atualizada para concluída (Afiliado: ${affiliateCode}, Usuário: ${userId})`);
+          
+          // Tentar encontrar o usuário que indicou para aplicar o benefício
+          // O código é o prefixo do ID do usuário (8 caracteres)
+          const { data: referrer, error: referrerError } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .filter('id', 'like', `${affiliateCode.toLowerCase()}%`)
+            .maybeSingle();
+
+          if (referrer && !referrerError) {
+            console.log(`🎁 Benefício concedido ao indicador: ${referrer.name} (${referrer.id})`);
+            // Aqui você pode adicionar lógica para estender a assinatura do indicador
+            // ou adicionar créditos. Por enquanto, a atualização do status 'completed'
+            // já faz com que o dashboard do indicador mostre o progresso da recompensa.
+          }
         }
       }
       

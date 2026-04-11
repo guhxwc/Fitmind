@@ -58,16 +58,19 @@ serve(async (req) => {
     let metadata: any = { supabase_user_id: userId };
 
     if (finalAffiliateCode) {
-      // Buscar o afiliado pelo código
+      // Sempre adiciona o código aos metadados para rastreamento, mesmo que não seja um afiliado "oficial"
+      metadata = { ...metadata, affiliate_code: finalAffiliateCode };
+
+      // Buscar o afiliado pelo código para ver se tem desconto/comissão oficial
       const { data: affiliate, error } = await supabase
         .from('affiliates')
         .select('id, discount_rate, code')
         .eq('code', finalAffiliateCode)
-        .single()
+        .maybeSingle();
 
       if (affiliate && !error) {
-        // Adicionar o código do afiliado aos metadados para rastreamento
-        metadata = { ...metadata, affiliate_code: affiliate.code, affiliate_id: affiliate.id };
+        // Se for um afiliado oficial, adiciona o ID dele também
+        metadata = { ...metadata, affiliate_id: affiliate.id };
 
         // Se o afiliado tiver uma taxa de desconto configurada (> 0), tentar aplicar o cupom
         if (affiliate.discount_rate > 0) {

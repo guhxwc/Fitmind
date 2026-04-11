@@ -22,12 +22,12 @@ export const ReferralDashboard: React.FC = () => {
       if (!userData?.id) return;
       
       try {
-        // Contamos apenas indicações que converteram para PRO (status = 'converted')
+        // Contamos apenas indicações que converteram para PRO (status = 'completed')
         const { count, error } = await supabase
           .from('referrals')
           .select('*', { count: 'exact', head: true })
           .eq('affiliate_ref', referralCode)
-          .eq('status', 'converted');
+          .eq('status', 'completed');
           
         if (!error && count !== null) {
           setReferralCount(count);

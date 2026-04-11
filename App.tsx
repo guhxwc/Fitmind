@@ -68,6 +68,30 @@ const AppContent: React.FC = () => {
   }, [userData, contextLoading]);
 
   useEffect(() => {
+    // ─── CAPTURA DO ?ref= ─────────────────────────────────────────────
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      let ref = params.get('ref');
+
+      // Fallback: hash do Supabase OAuth pode conter o ref
+      if (!ref && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        ref = hashParams.get('ref');
+      }
+
+      if (ref && ref.trim().length > 0) {
+        const code = ref.trim().toUpperCase();
+        localStorage.setItem('affiliate_ref', code);
+        sessionStorage.setItem('affiliate_ref', code);
+        console.log('✅ [Referral] Código capturado:', code);
+
+        params.delete('ref');
+        const newSearch = params.toString() ? '?' + params.toString() : '';
+        window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
+      }
+    })();
+    // ─────────────────────────────────────────────────────────────────
+
     // Desativar a restauração automática de scroll do navegador
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
@@ -129,42 +153,23 @@ const AppContent: React.FC = () => {
       }
 
       try {
-        // 1. Verifica se este usuário já foi indicado por alguém antes
-        const { data: existingRef, error: checkError } = await supabase
-          .from('referrals')
-          .select('id, affiliate_ref')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+        console.log("🚀 [Referral] Registrando indicação via RPC...");
+        const { data, error: rpcError } = await supabase.rpc('register_referral', {
+          p_affiliate_ref: affiliateRef
+        });
 
-        if (checkError) {
-          console.error("❌ [Referral] Erro ao verificar indicação existente:", checkError);
-          return;
-        }
-
-        if (existingRef) {
-          console.log("ℹ️ [Referral] Usuário já possui uma indicação registrada no banco:", existingRef.affiliate_ref);
-          console.log("ℹ️ [Referral] Limpando caches para evitar re-processamento.");
-          localStorage.removeItem('affiliate_ref');
-          sessionStorage.removeItem('affiliate_ref');
-          return;
-        }
-
-        // 2. Registra a nova indicação
-        console.log("🚀 [Referral] Registrando nova indicação no banco...");
-        const { error: insertError } = await supabase
-          .from('referrals')
-          .insert({
-            user_id: session.user.id,
-            affiliate_ref: affiliateRef.toUpperCase(),
-            status: 'pending',
-            created_at: new Date().toISOString()
-          });
-
-        if (insertError) {
-          console.error("❌ [Referral] Erro ao inserir indicação:", insertError.message);
-          // Não removemos dos caches se deu erro, para tentar novamente depois
+        if (rpcError) {
+          console.error("❌ [Referral] Erro no RPC:", rpcError.message);
+          // Se for erro de auto-indicação ou já existente, a função RPC deve tratar, 
+          // mas se retornar erro aqui, mantemos no storage para debug se necessário
+          // exceto se for um erro que indique que não deve tentar mais
+          if (rpcError.message.includes("already has a referral") || rpcError.message.includes("cannot refer yourself")) {
+            localStorage.removeItem('affiliate_ref');
+            sessionStorage.removeItem('affiliate_ref');
+          }
         } else {
-          console.log("✅ [Referral] Indicação vinculada com sucesso!");
+          console.log("✅ [Referral] Resultado do registro:", data);
+          // data deve ser true se o registro foi feito ou já existia de forma válida
           localStorage.removeItem('affiliate_ref');
           sessionStorage.removeItem('affiliate_ref');
         }

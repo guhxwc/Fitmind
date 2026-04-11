@@ -221,8 +221,14 @@
         const ref = params.get('ref');
         
         if (ref) {
-          localStorage.setItem('affiliate_ref', ref.toUpperCase());
-          console.log('Afiliado salvo:', ref.toUpperCase());
+          const cleanRef = ref.trim().toUpperCase();
+          localStorage.setItem('affiliate_ref', cleanRef);
+          console.log('🎯 CÓDIGO DE AFILIADO CAPTURADO:', cleanRef);
+        } else {
+          const existing = localStorage.getItem('affiliate_ref');
+          if (existing) {
+            console.log('📦 Código de afiliado já presente no cache:', existing);
+          }
         }
 
         // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante

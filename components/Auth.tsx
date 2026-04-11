@@ -210,13 +210,11 @@ export const Auth: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-
-    // Preserva o ?ref= no redirectTo para sobreviver ao OAuth do Google
-    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const currentRef =
+      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;
-
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

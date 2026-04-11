@@ -351,7 +351,7 @@ export const SettingsTab: React.FC = () => {
     };
 
     const referralCode = userData.id.substring(0, 8).toUpperCase();
-    const referralLink = `https://fitmindhealth.com.br/invite/${referralCode}`;
+    const referralLink = `https://fitmindhealth.com.br/?ref=${referralCode}`;
 
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();

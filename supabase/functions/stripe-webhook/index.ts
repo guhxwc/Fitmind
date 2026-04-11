@@ -116,7 +116,7 @@ serve(async (req) => {
         }
       }
       
-      // 3. Atualizar o status da indicação (referrals) para 'completed'
+      // 3. Atualizar o status da indicação (referrals) para 'completed' e bonificar o indicador
       const affiliateCode = session.metadata?.affiliate_code;
       if (affiliateCode) {
         console.log(`🔗 Processando conclusão de indicação para o código: ${affiliateCode}`);
@@ -134,19 +134,42 @@ serve(async (req) => {
         } else if (updatedRefs && updatedRefs.length > 0) {
           console.log(`✅ Indicação atualizada para concluída (Afiliado: ${affiliateCode}, Usuário: ${userId})`);
           
-          // Tentar encontrar o usuário que indicou para aplicar o benefício
-          // O código é o prefixo do ID do usuário (8 caracteres)
+          // Tentar encontrar o usuário que indicou para aplicar o benefício (O "Pai")
           const { data: referrer, error: referrerError } = await supabase
             .from('profiles')
-            .select('id, name')
+            .select('id, name, pro_expires_at, is_pro')
             .filter('id', 'like', `${affiliateCode.toLowerCase()}%`)
             .maybeSingle();
 
           if (referrer && !referrerError) {
-            console.log(`🎁 Benefício concedido ao indicador: ${referrer.name} (${referrer.id})`);
-            // Aqui você pode adicionar lógica para estender a assinatura do indicador
-            // ou adicionar créditos. Por enquanto, a atualização do status 'completed'
-            // já faz com que o dashboard do indicador mostre o progresso da recompensa.
+            console.log(`🎁 Concedendo 30 dias de PRO para o indicador: ${referrer.name}`);
+            
+            // Calcular nova data de expiração
+            let newExpiry = new Date();
+            const currentExpiry = referrer.pro_expires_at ? new Date(referrer.pro_expires_at) : null;
+            
+            // Se ele já for PRO e a data for futura, adicionamos a partir de lá. 
+            // Caso contrário, adicionamos a partir de hoje.
+            if (currentExpiry && currentExpiry > new Date()) {
+              newExpiry = currentExpiry;
+            }
+            
+            newExpiry.setDate(newExpiry.getDate() + 30);
+
+            const { error: rewardError } = await supabase
+              .from('profiles')
+              .update({
+                is_pro: true,
+                pro_expires_at: newExpiry.toISOString(),
+                subscription_status: 'active'
+              })
+              .eq('id', referrer.id);
+
+            if (!rewardError) {
+              console.log(`✅ Benefício entregue! Nova expiração de ${referrer.name}: ${newExpiry.toLocaleDateString()}`);
+            } else {
+              console.error("❌ Erro ao entregar benefício:", rewardError.message);
+            }
           }
         }
       }

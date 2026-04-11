@@ -113,51 +113,81 @@ const AppContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      console.log("Fetching profile for user:", userId);
+  useEffect(() => {
+    const registerReferral = async () => {
+      if (!session?.user?.id) return;
       
-      // Verifica se há um cupom de afiliado pendente no localStorage
       const affiliateRef = localStorage.getItem('affiliate_ref');
-      if (affiliateRef) {
-        // Verifica se já existe indicação
-        const { data: existingRef } = await supabase
-          .from('referrals')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if (!existingRef) {
-          const { error: referralError } = await supabase
-            .from('referrals')
-            .insert({
-              user_id: userId,
-              affiliate_ref: affiliateRef,
-              created_at: new Date().toISOString(),
-              status: 'pending'
-            });
-          
-          if (!referralError) {
-            console.log("Afiliado registrado no banco:", affiliateRef);
-            localStorage.removeItem('affiliate_ref');
-          }
-        } else {
-          // Se já existe, apenas limpa o localStorage
-          localStorage.removeItem('affiliate_ref');
-        }
+      if (!affiliateRef) {
+        console.log("ℹ️ Nenhum código de afiliado pendente no localStorage.");
+        return;
       }
 
+      console.log("🚀 Tentando vincular indicação:", {
+        userId: session.user.id,
+        affiliateRef: affiliateRef
+      });
+
+      try {
+        // 1. Verifica se este usuário já foi indicado por alguém antes
+        const { data: existingRef, error: checkError } = await supabase
+          .from('referrals')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error("❌ Erro ao verificar indicação existente:", checkError);
+          return;
+        }
+
+        if (existingRef) {
+          console.log("ℹ️ Usuário já possui uma indicação registrada. Limpando localStorage.");
+          localStorage.removeItem('affiliate_ref');
+          return;
+        }
+
+        // 2. Registra a nova indicação
+        const { error: insertError } = await supabase
+          .from('referrals')
+          .insert({
+            user_id: session.user.id,
+            affiliate_ref: affiliateRef.toUpperCase(),
+            status: 'pending',
+            created_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error("❌ Erro ao inserir indicação no banco:", insertError);
+          // Se o erro for de RLS ou tabela inexistente, o log mostrará aqui
+        } else {
+          console.log("✅ Indicação vinculada com sucesso no banco!");
+          localStorage.removeItem('affiliate_ref');
+        }
+      } catch (err) {
+        console.error("💥 Erro crítico na vinculação de indicação:", err);
+      }
+    };
+
+    if (session) {
+      registerReferral();
+    }
+  }, [session]);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      console.log("🔍 Buscando perfil do usuário:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .maybeSingle();
 
-      console.log("Profile data:", data, "Error:", error);
       if (error) throw error;
       setProfileExists(!!data);
     } catch (err) {
-      console.error("Error fetching profile:", err);
+      console.error("❌ Erro ao buscar perfil:", err);
     }
   };
 

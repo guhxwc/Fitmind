@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -27,6 +26,8 @@ const ScrollToTop = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+      
+      // Target the #root element which is the scroll container in index.html
       const rootElement = document.getElementById('root');
       if (rootElement) {
         rootElement.scrollTop = 0;
@@ -48,6 +49,7 @@ const ScrollToTop = () => {
 
   return null;
 };
+
 
 // Redireciona /invite/:code para /?ref=:code (compatibilidade com links antigos)
 const InviteRedirect: React.FC = () => {
@@ -76,10 +78,12 @@ const AppContent: React.FC = () => {
   }, [userData, contextLoading]);
 
   useEffect(() => {
+    // Desativar a restauração automática de scroll do navegador
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
 
+    // Limpa a URL caso o Supabase jogue o usuário de volta com o token gigante
     if (window.location.hash && window.location.hash.includes('access_token=')) {
       if (window.location.hash.includes('type=signup')) {
         addToast("Conta verificada e criada com sucesso!", "success");
@@ -106,6 +110,7 @@ const AppContent: React.FC = () => {
       if (_event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
       }
+      
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
@@ -118,65 +123,86 @@ const AppContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const registerReferral = async () => {
-      if (!session?.user?.id) return;
+  // ─── REGISTRO DE INDICAÇÃO ─────────────────────────────────────────────────
+  // Função separada para poder ser chamada em dois momentos:
+  // 1. Quando a sessão muda (login normal)
+  // 2. Na montagem do app (usuário JÁ estava logado e abriu o link ?ref=)
+  const registerReferralIfNeeded = async (userId: string) => {
+    const affiliateRef =
+      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
 
-      const affiliateRef =
-        localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    console.log("🔍 [Referral Check] Sessão ativa:", userId);
+    console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
 
-      console.log("🔍 [Referral Check] Sessão ativa:", session.user.id);
-      console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
+    if (!affiliateRef) return;
 
-      if (!affiliateRef) return;
+    try {
+      const { data, error } = await supabase.rpc('register_referral', {
+        p_affiliate_ref: affiliateRef
+      });
 
-      try {
-        const { data, error } = await supabase.rpc('register_referral', {
-          p_affiliate_ref: affiliateRef
-        });
-
-        if (error) {
-          console.error("❌ [Referral] Erro RPC:", error.message);
-          return;
-        }
-
-        const result = data as { success: boolean; status?: string; error?: string; code?: string };
-        console.log("📋 [Referral] Resultado:", result);
-
-        if (result.success) {
-          // NÃO limpa o localStorage aqui.
-          // O PaymentPage ainda precisa do código para mandar ao checkout.
-          // A limpeza acontece no SuccessPage, após o pagamento confirmado.
-          if (result.status === 'registered') {
-            console.log("✅ [Referral] Indicação registrada com sucesso! Código:", result.code);
-          } else {
-            console.log("ℹ️ [Referral] Indicação já existia no banco.");
-          }
-        } else {
-          // Erros permanentes (código inválido ou auto-indicação): limpa
-          if (result.error === 'self_referral' || result.error === 'code_not_found') {
-            console.warn("⚠️ [Referral] Código inválido ou auto-indicação:", result.error);
-            localStorage.removeItem('affiliate_ref');
-            sessionStorage.removeItem('affiliate_ref');
-          }
-        }
-      } catch (err) {
-        console.error("💥 [Referral] Erro crítico:", err);
+      if (error) {
+        console.error("❌ [Referral] Erro RPC:", error.message);
+        return;
       }
-    };
 
-    if (session) {
-      registerReferral();
+      const result = data as { success: boolean; status?: string; error?: string; code?: string };
+      console.log("📋 [Referral] Resultado:", result);
+
+      if (result.success) {
+        // NÃO limpa o localStorage — PaymentPage ainda precisa do código
+        if (result.status === 'registered') {
+          console.log("✅ [Referral] Indicação registrada! Código:", result.code);
+        } else {
+          console.log("ℹ️ [Referral] Indicação já existia no banco.");
+        }
+      } else {
+        if (result.error === 'self_referral' || result.error === 'code_not_found') {
+          console.warn("⚠️ [Referral] Código inválido:", result.error);
+          localStorage.removeItem('affiliate_ref');
+          sessionStorage.removeItem('affiliate_ref');
+        }
+      }
+    } catch (err) {
+      console.error("💥 [Referral] Erro crítico:", err);
+    }
+  };
+
+  // Dispara quando a sessão MUDA (novo login)
+  useEffect(() => {
+    if (session?.user?.id) {
+      registerReferralIfNeeded(session.user.id);
     }
   }, [session]);
 
+  // Dispara na MONTAGEM do app — cobre o caso onde o usuário JÁ estava logado
+  // e abriu o link ?ref= sem precisar fazer login novamente
+  useEffect(() => {
+    const checkOnMount = async () => {
+      // Pequeno delay para o script do index.html ter tempo de salvar no localStorage
+      await new Promise(r => setTimeout(r, 300));
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user?.id) {
+        const hasRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+        if (hasRef) {
+          console.log('🔁 [Referral] Usuário já logado, verificando código na montagem...');
+          registerReferralIfNeeded(currentSession.user.id);
+        }
+      }
+    };
+    checkOnMount();
+  }, []); // só na montagem
+
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("🔍 Buscando perfil do usuário:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', userId)
         .maybeSingle();
+
       if (error) throw error;
       setProfileExists(!!data);
     } catch (err) {
@@ -252,8 +278,7 @@ const AppContent: React.FC = () => {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
-        <Route path="/invite/:code" element={<InviteRedirect />} />
-
+        
         <Route path="/*" element={
           session ? (
             profileExists === null ? (
@@ -264,9 +289,9 @@ const AppContent: React.FC = () => {
               (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (
-                <OnboardingFlow
-                  onComplete={handleOnboardingComplete}
-                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined}
+                <OnboardingFlow 
+                  onComplete={handleOnboardingComplete} 
+                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
                 />
               )
             ) : (
@@ -276,7 +301,7 @@ const AppContent: React.FC = () => {
             <Navigate to="/auth" />
           )
         } />
-
+        
         <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
       </Routes>
     </>
@@ -291,6 +316,7 @@ const App: React.FC = () => {
       </div>
     );
   }
+
   return <AppContent />;
 };
 

@@ -150,13 +150,16 @@ export const SuccessPage: React.FC = () => {
                 .from('referrals')
                 .select('id, status')
                 .eq('user_id', session?.user.id)
+                .in('status', ['pending', 'accepted'])
                 .maybeSingle();
 
-            if (referral && referral.status === 'pending') {
+            if (referral) {
+                // O webhook já deve ter feito isso, mas garantimos via front como fallback
                 await supabase
                     .from('referrals')
                     .update({ status: 'completed' })
-                    .eq('id', referral.id);
+                    .eq('id', referral.id)
+                    .neq('status', 'completed'); // idempotente
                 console.log('Indicação convertida para PRO!');
             }
         } catch (err) {

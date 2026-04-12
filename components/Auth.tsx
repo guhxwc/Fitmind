@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
@@ -210,11 +209,14 @@ export const Auth: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    const currentRef =
-      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+
+    // Preserva o código de indicação no redirectTo para que sobreviva ao OAuth
+    // O Google redireciona de volta para esta URL, onde o App.tsx vai capturá-lo
+    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

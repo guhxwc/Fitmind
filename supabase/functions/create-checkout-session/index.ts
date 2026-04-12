@@ -100,7 +100,7 @@ serve(async (req) => {
     };
 
     // Aplicar 14 dias de teste grátis se for o plano mensal
-    if (priceId === 'price_1TJem6QdX6ANfRVO0hv2qjlx') {
+    if (priceId === 'price_1TLGPNQdX6ANfRVOQLX7PUUW') {
       sessionConfig.subscription_data = {
         trial_period_days: 14,
       };

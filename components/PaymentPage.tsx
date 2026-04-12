@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1TJem6QdX6ANfRVO0hv2qjlx',
+    monthly: 'price_1TLGPNQdX6ANfRVOQLX7PUUW',
     annual: 'price_1STlzzQdX6ANfRVOKsrT29TQ'
 };
 

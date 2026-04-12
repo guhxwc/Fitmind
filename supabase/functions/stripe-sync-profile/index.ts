@@ -29,76 +29,107 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { sessionId, userId } = await req.json();
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      console.error("❌ STRIPE_SECRET_KEY não configurada.");
+      throw new Error("Configuração do servidor incompleta (Stripe Key).");
+    }
+
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2023-10-16',
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+
+    const body = await req.json().catch(() => ({}));
+    const { sessionId, userId } = body;
     
+    console.log(`📥 Recebido Sync Request: sessionId=${sessionId}, userId=${userId}`);
+
     if (!sessionId && !userId) {
-      throw new Error("Session ID or User ID is required");
+      throw new Error("Session ID ou User ID é obrigatório no corpo da requisição.");
     }
 
     let targetUserId = userId;
     let isPaid = false;
     let customerId = null;
 
-    // 1. Se temos sessionId, verificamos no Stripe
-    if (sessionId) {
+    // 1. Se temos sessionId, verificamos no Stripe (Prioridade)
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
       console.log(`🔍 Verificando sessão Stripe: ${sessionId}`);
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      
-      if (session.payment_status === 'paid' || session.status === 'complete') {
-        isPaid = true;
-        targetUserId = session.client_reference_id || session.metadata?.supabase_user_id;
-        customerId = session.customer;
+      try {
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        
+        if (session.payment_status === 'paid' || session.status === 'complete') {
+          isPaid = true;
+          targetUserId = session.client_reference_id || session.metadata?.supabase_user_id || userId;
+          customerId = session.customer;
+          console.log(`✅ Sessão paga confirmada para usuário: ${targetUserId}`);
+        } else {
+          console.log(`ℹ️ Sessão encontrada mas status é: ${session.payment_status} / ${session.status}`);
+        }
+      } catch (stripeErr) {
+        console.error(`❌ Erro ao buscar sessão no Stripe (${sessionId}):`, stripeErr.message);
+        // Se falhou por ID inválido, continuamos para tentar pelo userId se disponível
       }
     } 
-    // 2. Se não temos sessionId mas temos userId, buscamos sessões recentes
-    else if (userId) {
-      console.log(`🔍 Buscando sessões recentes para usuário: ${userId}`);
-      // Busca sessões de checkout completas para este usuário
-      const sessions = await stripe.checkout.sessions.list({
-        limit: 5,
-      });
+    
+    // 2. Se não confirmou por sessionId, mas temos userId, buscamos por assinaturas do cliente
+    if (!isPaid && userId) {
+      console.log(`🔍 Buscando assinaturas ativas para usuário: ${userId}`);
       
-      // Filtra manualmente as sessões que pertencem a este usuário (Stripe list não filtra por client_reference_id diretamente na API de listagem simples)
-      const userSession = sessions.data.find(s => 
-        (s.client_reference_id === userId || s.metadata?.supabase_user_id === userId) && 
-        (s.payment_status === 'paid' || s.status === 'complete')
-      );
+      // Primeiro, pegamos o stripe_customer_id do perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id, email')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      let stripeCustomerId = profile?.stripe_customer_id;
+      let email = profile?.email;
 
-      if (userSession) {
-        console.log(`✅ Sessão encontrada para ${userId}: ${userSession.id}`);
-        isPaid = true;
-        targetUserId = userId;
-        customerId = userSession.customer;
-      } else {
-        // Tenta buscar por assinaturas ativas se o cliente já existir
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('stripe_customer_id')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (profile?.stripe_customer_id) {
-          console.log(`🔍 Buscando assinaturas ativas para cliente Stripe: ${profile.stripe_customer_id}`);
-          const subscriptions = await stripe.subscriptions.list({
-            customer: profile.stripe_customer_id,
-            status: 'all',
-            limit: 5,
-          });
-          
-          const activeSub = subscriptions.data.find(sub => sub.status === 'active' || sub.status === 'trialing');
-          
-          if (activeSub) {
-            console.log(`✅ Assinatura ativa/trial encontrada para ${userId}`);
-            isPaid = true;
-            targetUserId = userId;
-            customerId = profile.stripe_customer_id;
-          }
+      // Se não tem email no perfil, busca no Auth
+      if (!email) {
+        const { data: authData } = await supabase.auth.admin.getUserById(userId);
+        email = authData?.user?.email;
+      }
+
+      // Se não tem customer_id, tentamos buscar pelo email no Stripe
+      if (!stripeCustomerId && email) {
+        console.log(`🔍 Buscando cliente Stripe pelo email: ${email}`);
+        const customers = await stripe.customers.list({
+          email: email,
+          limit: 1
+        });
+        if (customers.data.length > 0) {
+          stripeCustomerId = customers.data[0].id;
         }
+      }
+
+      if (stripeCustomerId) {
+        console.log(`🔍 Verificando assinaturas para cliente Stripe: ${stripeCustomerId}`);
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: 'all',
+          limit: 10,
+        });
+        
+        const activeSub = subscriptions.data.find(sub => 
+          sub.status === 'active' || sub.status === 'trialing'
+        );
+        
+        if (activeSub) {
+          console.log(`✅ Assinatura ativa encontrada para ${userId}`);
+          isPaid = true;
+          targetUserId = userId;
+          customerId = stripeCustomerId;
+        }
+      } else {
+        console.log(`ℹ️ Usuário ${userId} não possui stripe_customer_id vinculado.`);
       }
     }
 
     if (isPaid && targetUserId) {
-      console.log(`✅ Pagamento/Trial confirmado para ${targetUserId}. Atualizando perfil...`);
+      console.log(`✅ Sincronizando PRO para ${targetUserId}...`);
       
       const { error: updateError } = await supabase
         .from('profiles')
@@ -115,26 +146,25 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
-    } else if (userId) {
-      // Se verificou pelo userId e não encontrou nada ativo, remove o PRO
-      console.log(`❌ Nenhuma assinatura ativa encontrada para ${userId}. Removendo PRO...`);
-      await supabase
-        .from('profiles')
-        .update({ 
-          is_pro: false, 
-          subscription_status: 'inactive'
-        })
-        .eq('id', userId);
     }
 
-    return new Response(JSON.stringify({ success: true, isPro: false, message: "Pagamento não confirmado ou assinatura expirada." }), {
+    // Se chegou aqui e não confirmou pagamento
+    return new Response(JSON.stringify({ 
+      success: true, 
+      isPro: false, 
+      message: "Nenhuma assinatura ativa encontrada." 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
-  } catch (err) {
-    console.error(`❌ Erro no Sync: ${err.message}`);
-    return new Response(JSON.stringify({ error: err.message, success: false }), { 
+  } catch (err: any) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`❌ Erro no Sync: ${errorMessage}`);
+    return new Response(JSON.stringify({ 
+      error: errorMessage, 
+      success: false 
+    }), { 
       status: 400, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });

@@ -480,7 +480,7 @@ export const SettingsTab: React.FC = () => {
                     />
                 </SettingsGroup>
 
-                <SettingsGroup title="Indique e Ganhe">
+                {/* <SettingsGroup title="Indique e Ganhe">
                     <div className="p-4 bg-white dark:bg-[#1C1C1E]">
                         <div 
                             onClick={() => navigate('/referrals')}
@@ -515,7 +515,7 @@ export const SettingsTab: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </SettingsGroup>
+                </SettingsGroup> */}
 
                 <SettingsGroup title="Preferências">
                     <SettingsItem 

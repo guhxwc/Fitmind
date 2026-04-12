@@ -60,7 +60,9 @@ serve(async (req) => {
         .update({ 
           is_pro: true, 
           subscription_status: 'active',
-          stripe_customer_id: customerId 
+          stripe_customer_id: customerId,
+          trial_duration: session.metadata?.trial_duration || null,
+          plan_duration_days: session.metadata?.plan_duration_days || null
         })
         .eq('id', userId);
       

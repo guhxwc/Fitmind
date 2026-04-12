@@ -24,7 +24,12 @@ export const SuccessPage: React.FC = () => {
     const activatePro = async () => {
         if (!session) return;
         const userId = session.user.id;
-        const sessionId = searchParams.get('session_id');
+        let sessionId = searchParams.get('session_id');
+        
+        // Sanitiza o sessionId caso o Stripe não tenha substituído o placeholder (comum em testes manuais)
+        if (sessionId === '{CHECKOUT_SESSION_ID}') {
+            sessionId = null;
+        }
         
         setIsPolling(true);
         setError(null);

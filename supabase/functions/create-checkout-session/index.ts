@@ -55,11 +55,7 @@ serve(async (req) => {
 
     // 1. Buscar se existe um cupom válido para esse código de afiliado
     let couponId = null;
-    let metadata: any = { 
-      supabase_user_id: userId,
-      trial_duration: priceId === 'price_1TJem6QdX6ANfRVO0hv2qjlx' ? '14' : '0',
-      plan_duration_days: priceId === 'price_1STlzzQdX6ANfRVOKsrT29TQ' ? '365' : '30'
-    };
+    let metadata: any = { supabase_user_id: userId };
 
     if (finalAffiliateCode) {
       // Sempre adiciona o código aos metadados para rastreamento, mesmo que não seja um afiliado "oficial"

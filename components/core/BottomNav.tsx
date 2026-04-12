@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useSearchParams } from 'react-router-dom';
 import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon, DietIcon } from './Icons';
 
 interface NavItemProps {
@@ -41,14 +41,17 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, id }) => {
 };
 
 export const BottomNav: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const ref = searchParams.get('ref');
+  
   // Added specific IDs for the tour
   const tabs = [
-    { to: '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
-    { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
-    { to: '/meals', label: 'Dieta', icon: <DietIcon />, id: 'nav-meals' },
-    { to: '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
-    { to: '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
-    { to: '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },
+    { to: ref ? `/?ref=${ref}` : '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
+    { to: ref ? `/applications?ref=${ref}` : '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
+    { to: ref ? `/meals?ref=${ref}` : '/meals', label: 'Dieta', icon: <DietIcon />, id: 'nav-meals' },
+    { to: ref ? `/workouts?ref=${ref}` : '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
+    { to: ref ? `/progress?ref=${ref}` : '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
+    { to: ref ? `/settings?ref=${ref}` : '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },
   ];
 
   return (

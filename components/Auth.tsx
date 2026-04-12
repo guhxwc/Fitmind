@@ -286,11 +286,16 @@ export const Auth: React.FC = () => {
       return;
     }
 
+    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const redirectUrl = currentRef
+      ? `${window.location.origin}/?ref=${currentRef}`
+      : window.location.origin;
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: redirectUrl,
       }
     });
 
@@ -311,12 +316,17 @@ export const Auth: React.FC = () => {
     setError(null);
     setMessage(null);
 
+    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const redirectUrl = currentRef
+      ? `${window.location.origin}/?ref=${currentRef}`
+      : window.location.origin;
+
     console.log("Tentando reenviar email para:", email);
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: redirectUrl,
       }
     });
 

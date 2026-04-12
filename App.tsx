@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { MainApp } from './components/MainApp';
 import { Auth } from './components/Auth';
@@ -68,6 +68,12 @@ const AppContent: React.FC = () => {
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const refParam = searchParams.get('ref');
+
+  // Helper para manter o ?ref= nas navegações internas
+  const getAuthPath = () => refParam ? `/auth?ref=${refParam}` : '/auth';
+  const getHomePath = () => refParam ? `/?ref=${refParam}` : '/';
 
   useEffect(() => {
     if (!contextLoading && userData) {
@@ -128,8 +134,9 @@ const AppContent: React.FC = () => {
   // 1. Quando a sessão muda (login normal)
   // 2. Na montagem do app (usuário JÁ estava logado e abriu o link ?ref=)
   const registerReferralIfNeeded = async (userId: string) => {
+    // Prioriza o código da URL, depois tenta o storage
     const affiliateRef =
-      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+      refParam || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
 
     console.log("🔍 [Referral Check] Sessão ativa:", userId);
     console.log("🔍 [Referral Check] Código encontrado:", affiliateRef || 'NENHUM');
@@ -251,11 +258,11 @@ const AppContent: React.FC = () => {
       await fetchData();
       setProfileExists(true);
       setUpsellDismissed(true);
-      navigate('/');
+      navigate(getHomePath());
     } catch (err) {
       console.error("Critical error during onboarding complete:", err);
       setProfileExists(true);
-      navigate('/');
+      navigate(getHomePath());
     }
   };
 
@@ -272,12 +279,12 @@ const AppContent: React.FC = () => {
       <ScrollToTop />
       <NotificationSystem />
       <Routes>
-        <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+        <Route path="/auth" element={!session ? <Auth /> : <Navigate to={getHomePath()} />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/success" element={<SuccessPage />} />
-        <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
+        <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to={getAuthPath()} />} />
         
         <Route path="/*" element={
           session ? (
@@ -298,11 +305,11 @@ const AppContent: React.FC = () => {
               <OnboardingFlow onComplete={handleOnboardingComplete} />
             )
           ) : (
-            <Navigate to="/auth" />
+            <Navigate to={getAuthPath()} />
           )
         } />
         
-        <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
+        <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to={getAuthPath()} />} />
       </Routes>
     </>
   );

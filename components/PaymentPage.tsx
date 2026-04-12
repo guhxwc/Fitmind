@@ -31,8 +31,10 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         // Redireciona diretamente para a Home (#/) após o pagamento
         const returnUrl = `${window.location.origin}/success`;
 
-        // PATCHED
-        const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;
+        // PATCHED: Prioriza o código da URL, depois tenta o storage
+        const params = new URLSearchParams(window.location.search);
+        const affiliateCode = params.get('ref') || localStorage.getItem('affiliate_ref') || undefined;
+        
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,

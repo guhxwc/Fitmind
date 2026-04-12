@@ -143,6 +143,15 @@ export const SuccessPage: React.FC = () => {
         localStorage.setItem('has_seen_onboarding', 'true');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('affiliate_ref');
+        sessionStorage.removeItem('affiliate_ref');
+
+        // Limpa o ?ref= da URL definitivamente
+        if (window.location.search.includes('ref=')) {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('ref');
+            const newSearch = params.toString() ? '?' + params.toString() : '';
+            window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
+        }
 
         // Converter indicação pendente para 'converted' se existir
         try {

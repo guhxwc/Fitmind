@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
@@ -209,17 +210,11 @@ export const Auth: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-
-    // Preserva o código de indicação no redirectTo para que sobreviva ao OAuth
-    // O Google redireciona de volta para esta URL, onde o App.tsx vai capturá-lo
-    const params = new URLSearchParams(window.location.search);
-    const urlRef = params.get('ref');
-    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
-    
+    const currentRef =
+      localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;
-
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -289,19 +284,11 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const urlRef = params.get('ref');
-    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
-    
-    const redirectUrl = currentRef
-      ? `${window.location.origin}/?ref=${currentRef}`
-      : window.location.origin;
-
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: window.location.origin,
       }
     });
 
@@ -322,20 +309,12 @@ export const Auth: React.FC = () => {
     setError(null);
     setMessage(null);
 
-    const params = new URLSearchParams(window.location.search);
-    const urlRef = params.get('ref');
-    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
-    
-    const redirectUrl = currentRef
-      ? `${window.location.origin}/?ref=${currentRef}`
-      : window.location.origin;
-
     console.log("Tentando reenviar email para:", email);
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: window.location.origin,
       }
     });
 

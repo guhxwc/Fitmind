@@ -143,15 +143,6 @@ export const SuccessPage: React.FC = () => {
         localStorage.setItem('has_seen_onboarding', 'true');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('affiliate_ref');
-        sessionStorage.removeItem('affiliate_ref');
-
-        // Limpa o ?ref= da URL definitivamente
-        if (window.location.search.includes('ref=')) {
-            const params = new URLSearchParams(window.location.search);
-            params.delete('ref');
-            const newSearch = params.toString() ? '?' + params.toString() : '';
-            window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
-        }
 
         // Converter indicação pendente para 'converted' se existir
         try {
@@ -159,16 +150,13 @@ export const SuccessPage: React.FC = () => {
                 .from('referrals')
                 .select('id, status')
                 .eq('user_id', session?.user.id)
-                .in('status', ['pending', 'accepted'])
                 .maybeSingle();
 
-            if (referral) {
-                // O webhook já deve ter feito isso, mas garantimos via front como fallback
+            if (referral && referral.status === 'pending') {
                 await supabase
                     .from('referrals')
                     .update({ status: 'completed' })
-                    .eq('id', referral.id)
-                    .neq('status', 'completed'); // idempotente
+                    .eq('id', referral.id);
                 console.log('Indicação convertida para PRO!');
             }
         } catch (err) {

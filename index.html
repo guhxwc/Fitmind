@@ -11,6 +11,10 @@
             var code = ref.trim().toUpperCase();
             localStorage.setItem('affiliate_ref', code);
             sessionStorage.setItem('affiliate_ref', code);
+            // Remove ?ref= da URL imediatamente para não confundir o React Router
+            params.delete('ref');
+            var newSearch = params.toString() ? '?' + params.toString() : '';
+            window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
             console.log('[Referral] Código capturado e salvo:', code);
           }
         } catch(e) { /* silencioso */ }

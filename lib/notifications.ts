@@ -228,7 +228,6 @@ export const NOTIFICATIONS: AppNotification[] = [
   // ---------------------------------------------------------
   // PRIORIDADE 6: REFERRAL & RENTENTION (15-19)
   // ---------------------------------------------------------
-  /* 
   {
     id: 'trial_day_5',
     type: 'modal',
@@ -269,7 +268,6 @@ export const NOTIFICATIONS: AppNotification[] = [
     secondaryAction: { label: 'Agora não', action: 'snooze_7d' },
     evaluateTrigger: (ctx) => ctx.isSubscriber && ctx.subscriberDays === 14,
   },
-  */
   {
     id: 'sub_30_days',
     type: 'modal',
@@ -277,10 +275,9 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: '1 mês de FitMind! 🎉',
     body: (ctx: NotificationContext) => `Você já tem ${ctx.subscriberDays} dias de acompanhamento. Que tal contar sua experiência?`,
     primaryAction: { label: 'Mandar feedback', action: 'whatsapp_feedback' },
-    // secondaryAction: { label: 'Indicar amigo', action: 'share_referral' },
+    secondaryAction: { label: 'Indicar amigo', action: 'share_referral' },
     evaluateTrigger: (ctx) => ctx.isSubscriber && ctx.subscriberDays === 30,
   },
-  /*
   {
     id: 'weight_lost_referral',
     type: 'modal',
@@ -291,7 +288,6 @@ export const NOTIFICATIONS: AppNotification[] = [
     secondaryAction: { label: 'Talvez depois', action: 'dismiss' },
     evaluateTrigger: (ctx) => ctx.weightDiff !== null && ctx.weightDiff < 0 && ctx.currentTime.getDay() === 5, // Example: trigger on Fridays if lost weight
   },
-  */
 
   // ---------------------------------------------------------
   // PRIORIDADE 7: UPSELL (23-25)

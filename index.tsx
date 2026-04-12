@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -6,11 +7,10 @@ import { ToastProvider } from './components/ToastProvider';
 import { AppContextProvider } from './components/AppContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-
-// ─── CAPTURA SÍNCRONA DO ?ref= ────────────────────────────────────────────────
+// ─── CAPTURA SÍNCRONA DO ?ref= ───────────────────────────────────────────────
 // Roda ANTES do React montar qualquer coisa.
 // Quando o usuário abre /?ref=CODIGO, o React Router ainda não renderizou nada,
-// então é seguro salvar aqui. Mantemos na URL para persistência entre redirecionamentos.
+// então é seguro salvar aqui e depois limpar a URL.
 ;(function captureReferralCode() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -19,11 +19,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
       const code = ref.trim().toUpperCase();
       localStorage.setItem('affiliate_ref', code);
       sessionStorage.setItem('affiliate_ref', code);
+      params.delete('ref');
+      const newSearch = params.toString() ? '?' + params.toString() : '';
+      window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
       console.log('[Referral] Código capturado e salvo:', code);
     }
   } catch(e) { /* não quebra o app */ }
 })();
-// ────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -45,7 +48,6 @@ root.render(
   </React.StrictMode>
 );
 
-// Register Service Worker for PWA capabilities and Notifications
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')

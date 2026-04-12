@@ -212,7 +212,10 @@ export const Auth: React.FC = () => {
 
     // Preserva o código de indicação no redirectTo para que sobreviva ao OAuth
     // O Google redireciona de volta para esta URL, onde o App.tsx vai capturá-lo
-    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get('ref');
+    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;
@@ -286,7 +289,10 @@ export const Auth: React.FC = () => {
       return;
     }
 
-    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get('ref');
+    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;
@@ -316,7 +322,10 @@ export const Auth: React.FC = () => {
     setError(null);
     setMessage(null);
 
-    const currentRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get('ref');
+    const currentRef = urlRef || localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
+    
     const redirectUrl = currentRef
       ? `${window.location.origin}/?ref=${currentRef}`
       : window.location.origin;

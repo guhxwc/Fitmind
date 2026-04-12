@@ -46,6 +46,7 @@ serve(async (req) => {
       // Tenta pegar o ID do usuário de dois lugares possíveis
       const userId = session.client_reference_id || session.metadata?.supabase_user_id;
       const customerId = session.customer
+      const subscriptionId = session.subscription;
 
       if (!userId) {
           console.error("❌ Erro: ID do usuário não encontrado na sessão.");
@@ -53,6 +54,17 @@ serve(async (req) => {
       }
 
       console.log(`✅ Processando PRO para usuário: ${userId}`);
+
+      // Buscar detalhes da assinatura para pegar a data de expiração
+      let expiresAt = null;
+      if (subscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
+          expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+        } catch (e) {
+          console.error("❌ Erro ao buscar assinatura no Stripe:", e.message);
+        }
+      }
 
       // 1. Atualizar o perfil do usuário para PRO
       const { error: profileError } = await supabase
@@ -62,7 +74,8 @@ serve(async (req) => {
           subscription_status: 'active',
           stripe_customer_id: customerId,
           trial_duration: session.metadata?.trial_duration || null,
-          plan_duration_days: session.metadata?.plan_duration_days || null
+          plan_duration_days: session.metadata?.plan_duration_days || null,
+          pro_expires_at: expiresAt
         })
         .eq('id', userId);
       

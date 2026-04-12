@@ -54,7 +54,7 @@ serve(async (req) => {
     let customerId = null;
 
     // 1. Se temos sessionId, verificamos no Stripe (Prioridade)
-    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined' && sessionId !== '{CHECKOUT_SESSION_ID}') {
+    if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
       console.log(`🔍 Verificando sessão Stripe: ${sessionId}`);
       try {
         const session = await stripe.checkout.sessions.retrieve(sessionId);

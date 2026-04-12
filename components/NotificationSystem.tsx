@@ -40,7 +40,7 @@ export const NotificationSystem: React.FC = () => {
     };
 
     const getPerNotificationCooldown = (notification: AppNotification) => {
-        if (notification.priority <= 1) return 0; // Onboarding: Always show if triggered
+        if (notification.priority <= 1) return 60 * 60 * 1000; // Onboarding: 1 hour cooldown
         if (notification.type === 'toast') return 30 * 1000; // Toasts: 30 seconds
         if (notification.priority <= 5) return 4 * 60 * 60 * 1000; // Routine: 4 hours
         return 24 * 60 * 60 * 1000; // Engagement: 24 hours

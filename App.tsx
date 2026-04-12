@@ -17,6 +17,10 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { ReferralDashboard } from './components/ReferralDashboard';
 import { useToast } from './components/ToastProvider';
 import { NotificationSystem } from './components/NotificationSystem';
+import { TrialResultsScreen } from './components/TrialResultsScreen';
+import { StepFinalPlan } from './components/onboarding/StepFinalPlan';
+
+import { SubscriptionPage } from './components/SubscriptionPage';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -73,6 +77,8 @@ const AppContent: React.FC = () => {
     if (!contextLoading && userData) {
       if (userData.isPro) {
         localStorage.removeItem('trigger_pro_tour');
+        localStorage.removeItem('trial_results_dismissed');
+        localStorage.removeItem('trial_final_plan_dismissed');
       }
     }
   }, [userData, contextLoading]);
@@ -289,10 +295,41 @@ const AppContent: React.FC = () => {
               (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (
-                <OnboardingFlow 
-                  onComplete={handleOnboardingComplete} 
-                  initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
-                />
+                ['canceled', 'past_due', 'unpaid'].includes(userData?.subscriptionStatus || '') ? (
+                  !localStorage.getItem('trial_results_dismissed') ? (
+                    <TrialResultsScreen onClose={() => {
+                      localStorage.setItem('trial_results_dismissed', 'true');
+                      window.location.reload();
+                    }} />
+                  ) : !localStorage.getItem('trial_final_plan_dismissed') ? (
+                    <StepFinalPlan 
+                      data={userData ? (({ id, ...rest }) => rest)(userData) : DEFAULT_USER_DATA}
+                      buttonLabel="Renovar Assinatura"
+                      onNext={() => {
+                        localStorage.setItem('trial_final_plan_dismissed', 'true');
+                        window.location.reload();
+                      }}
+                      onBack={() => {
+                        localStorage.removeItem('trial_results_dismissed');
+                        window.location.reload();
+                      }}
+                    />
+                  ) : (
+                    <SubscriptionPage 
+                      onClose={() => setUpsellDismissed(true)} 
+                      onSubscribe={() => {
+                        setUpsellDismissed(true);
+                        window.location.reload();
+                      }}
+                      customUserData={userData ? (({ id, ...rest }) => rest)(userData) : undefined}
+                    />
+                  )
+                ) : (
+                  <OnboardingFlow 
+                    onComplete={handleOnboardingComplete} 
+                    initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
+                  />
+                )
               )
             ) : (
               <OnboardingFlow onComplete={handleOnboardingComplete} />

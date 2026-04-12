@@ -20,9 +20,10 @@ interface StepFinalPlanProps {
   onNext: () => void;
   onBack: () => void;
   data: Omit<UserData, 'id'>;
+  buttonLabel?: string;
 }
 
-export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, data }) => {
+export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, data, buttonLabel = "Começar Jornada" }) => {
   const currentWeight = data.weight;
   const startWeight = data.startWeight || currentWeight; 
   const targetWeight = data.targetWeight;
@@ -274,7 +275,7 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, da
               </div>
 
               <div className="pb-8">
-                  <OnboardingFooter onContinue={onNext} label="Começar Jornada" />
+                  <OnboardingFooter onContinue={onNext} label={buttonLabel} />
               </div>
           </div>
       </div>

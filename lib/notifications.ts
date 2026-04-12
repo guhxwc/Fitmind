@@ -78,8 +78,8 @@ export const NOTIFICATIONS: AppNotification[] = [
     title: 'Tudo pronto!',
     body: 'Sua primeira missão: registre seu peso agora e tire uma foto da sua próxima refeição. A IA faz o resto.',
     primaryAction: { label: 'Registrar peso', action: 'weight' },
-    secondaryAction: { label: 'Explorar o app', action: 'dismiss' },
-    evaluateTrigger: (ctx) => ctx.hasCompletedOnboarding && ctx.weightHistory.length === 0,
+    secondaryAction: { label: 'Explorar o app', action: 'never_again' },
+    evaluateTrigger: (ctx) => ctx.hasCompletedOnboarding && ctx.weightHistory.length === 0 && ctx.currentPath === '/',
   },
   {
     id: 'day2_no_records',

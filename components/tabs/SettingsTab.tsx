@@ -484,19 +484,19 @@ export const SettingsTab: React.FC = () => {
                     <div className="p-4 bg-white dark:bg-[#1C1C1E]">
                         <div 
                             onClick={() => navigate('/referrals')}
-                            className="bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100 dark:border-purple-900/20 cursor-pointer active:scale-[0.98] transition-all"
+                            className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20 cursor-pointer active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
                                         <Gift className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Indique e Ganhe</h3>
-                                        <p className="text-xs font-medium text-purple-600 dark:text-purple-400">Ganhe até 1 mês grátis</p>
+                                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Ganhe até 1 mês grátis</p>
                                     </div>
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-purple-400" />
+                                <ChevronRight className="w-5 h-5 text-blue-400" />
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                                 Convide amigos para o FitMind e desbloqueie meses de acesso PRO gratuitamente.

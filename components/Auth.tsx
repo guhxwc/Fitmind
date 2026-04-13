@@ -192,8 +192,19 @@ export const Auth: React.FC = () => {
   const [token, setToken] = useState(Array(6).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token' | 'verify_email'>('landing');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   useEffect(() => {
     if (view === 'enter_token') {
@@ -316,6 +327,10 @@ export const Auth: React.FC = () => {
 
     if (error) {
       console.error("Erro ao reenviar email:", error);
+      const match = error.message.match(/after (\d+) seconds/);
+      if (match) {
+        setResendCountdown(parseInt(match[1], 10));
+      }
       setError(translateAuthError(error.message));
     } else {
       console.log("Email de reenvio disparado com sucesso.");
@@ -535,7 +550,7 @@ export const Auth: React.FC = () => {
                 <p className="text-sm text-gray-500 dark:text-gray-400">Não recebeu o email ou o link expirou?</p>
                 <button 
                   onClick={handleResendEmail}
-                  disabled={loading}
+                  disabled={loading || resendCountdown > 0}
                   className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
@@ -543,6 +558,8 @@ export const Auth: React.FC = () => {
                       <div className="w-4 h-4 border-2 border-gray-400 border-t-gray-900 dark:border-gray-600 dark:border-t-white rounded-full animate-spin"></div>
                       Enviando...
                     </>
+                  ) : resendCountdown > 0 ? (
+                    `Reenviar em ${resendCountdown}s`
                   ) : 'Reenviar link de confirmação'}
                 </button>
                 {message && view === 'verify_email' && (

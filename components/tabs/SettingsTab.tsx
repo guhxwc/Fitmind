@@ -7,6 +7,7 @@ import { DEFAULT_USER_DATA } from '../../constants';
 import { ConfirmModal } from '../ConfirmModal';
 import { TimePicker } from '../core/TimePicker';
 import { EditAttributeModal } from '../core/EditAttributeModal';
+import { ReportGeneratorModal } from '../ReportGeneratorModal';
 import Portal from '../core/Portal';
 import { 
   Pill, Target, Utensils, Activity, FileText, 
@@ -319,14 +320,6 @@ export const SettingsTab: React.FC = () => {
         navigate('/auth');
     };
 
-    const handleGenerateReport = () => {
-        setShowReportModal(false);
-        addToast("Gerando relatório...", "info");
-        setTimeout(() => {
-            addToast("Relatório enviado para o seu e-mail com sucesso!", "success");
-        }, 2000);
-    };
-
     const handleLanguage = () => {
         addToast("No momento, apenas o idioma Português (BR) está disponível.", "info");
     };
@@ -556,14 +549,9 @@ export const SettingsTab: React.FC = () => {
                 onClose={() => setShowNotifications(false)} 
             />
 
-            <ConfirmModal
+            <ReportGeneratorModal
                 isOpen={showReportModal}
-                title="Gerar Relatório"
-                message="Deseja gerar um relatório completo do seu tratamento e enviar para o seu e-mail cadastrado?"
-                confirmText="Gerar Relatório"
-                cancelText="Cancelar"
-                onConfirm={handleGenerateReport}
-                onCancel={() => setShowReportModal(false)}
+                onClose={() => setShowReportModal(false)}
             />
 
             {showTrialResults && (

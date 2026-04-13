@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { useAppContext } from '../AppContext';
 import { FileTextIcon } from '../core/Icons';
+import { supabase } from '../supabaseClient';
 import type { WeightEntry, ApplicationEntry, DailyNote, SideEffectEntry } from '../../types';
 
 interface ReportsViewProps {
@@ -35,52 +34,27 @@ export const ReportsView: React.FC<ReportsViewProps> = () => {
             const last7DaysEffects: SideEffectEntry[] = sideEffects.filter(e => isWithinLast7Days(e.date));
             const last7DaysNotes: DailyNote[] = dailyNotes.filter(e => isWithinLast7Days(e.date));
 
-            const dataSummary = `
-                - Variação de Peso: ${JSON.stringify(last7DaysWeight.map(e => ({ date: e.date, weight: e.weight })))}
-                - Aplicações de Medicamento: ${JSON.stringify(last7DaysApps.map(e => ({ date: e.date, medication: e.medication, dose: e.dose })))}
-                - Efeitos Colaterais Registrados: ${JSON.stringify(last7DaysEffects.map(e => ({ date: e.date, effects: e.effects, notes: e.notes })))}
-                - Anotações Diárias: ${JSON.stringify(last7DaysNotes.map(e => ({ date: e.date, content: e.content })))}
-            `;
-
             if (last7DaysWeight.length === 0 && last7DaysApps.length === 0 && last7DaysEffects.length === 0 && last7DaysNotes.length === 0) {
-                 setError("Não há dados suficientes na última semana para gerar um relatório. Continue registrando seu progresso!");
-                 setIsLoading(false);
-                 return;
+                setError("Não há dados suficientes na última semana para gerar um relatório. Continue registrando seu progresso!");
+                setIsLoading(false);
+                return;
             }
 
-            const prompt = `
-                Você é um assistente de saúde especialista em analisar dados para usuários do medicamento GLP-1.
-                Analise os dados da última semana de um usuário e gere um relatório conciso, motivacional e útil em markdown.
-
-                Dados do usuário:
-                - Nome: ${userData.name}
-                - Peso atual: ${userData.weight}kg
-                - Meta de peso: ${userData.targetWeight}kg
-                - Medicamento: ${userData.medication.name}
-
-                Dados da última semana:
-                ${dataSummary}
-
-                Siga estas instruções para o relatório:
-                1.  **Título:** Comece com "### Relatório Semanal da IA".
-                2.  **Análise Geral:** Faça um breve parágrafo resumindo a semana.
-                3.  **Pontos Positivos:** Destaque 1 ou 2 coisas que o usuário fez bem (ex: consistência no registro, progresso no peso). Use o formato "- **Ponto Positivo:** [descrição]".
-                4.  **Insights e Correlações:** Encontre 1 correlação interessante nos dados. Por exemplo, se o usuário relatou 'Fadiga' 1-2 dias após uma aplicação, aponte isso. Se o peso caiu após dias com anotações sobre 'caminhada', mencione. Use o formato "- **Insight da IA:** [descrição]".
-                5.  **Sugestão para a Próxima Semana:** Dê uma sugestão prática e simples baseada na análise. Use o formato "- **Sugestão:** [descrição]".
-                6.  **Tom:** Seja encorajador, positivo e evite linguagem médica complexa. Aja como um coach de saúde.
-                7.  **Formato:** Use markdown para negrito (**texto**) e listas.
-            `;
             
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: prompt,
-                config: {
-                    thinkingConfig: { thinkingBudget: 2000 }
+            const { data, error: fnError } = await supabase.functions.invoke('generate-report', {
+                body: {
+                    userData,
+                    weightHistory: last7DaysWeight,
+                    applicationHistory: last7DaysApps,
+                    sideEffects: last7DaysEffects,
+                    dailyNotes: last7DaysNotes,
                 }
             });
 
-            setReport(response.text || '');
+            if (fnError) throw new Error(fnError.message);
+            if (data?.error) throw new Error(data.message || data.error);
+
+            setReport(data.report || '');
 
         } catch (e) {
             console.error("Error generating report:", e);

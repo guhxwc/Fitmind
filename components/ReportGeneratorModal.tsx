@@ -4,10 +4,48 @@ import { Download } from 'lucide-react';
 import { useAppContext } from './AppContext';
 import Portal from './core/Portal';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import { useToast } from './ToastProvider';
 import { format, subMonths, isAfter, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useToast } from './ToastProvider';
+
+// Helper: desenha tabela simples sem jspdf-autotable
+function drawTable(doc: jsPDF, startY: number, headers: string[], rows: string[][]): number {
+  const colWidth = (doc.internal.pageSize.width - 28) / headers.length;
+  const rowHeight = 10;
+  const primaryColor: [number, number, number] = [79, 70, 229];
+  let y = startY;
+
+  // Header
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  headers.forEach((h, i) => {
+    doc.rect(14 + i * colWidth, y, colWidth, rowHeight, 'F');
+    doc.text(h, 14 + i * colWidth + colWidth / 2, y + 7, { align: 'center' });
+  });
+  y += rowHeight;
+
+  // Rows
+  doc.setTextColor(50, 50, 50);
+  doc.setFont('helvetica', 'normal');
+  rows.forEach((row, ri) => {
+    if (ri % 2 === 0) {
+      doc.setFillColor(245, 245, 250);
+      doc.rect(14, y, colWidth * headers.length, rowHeight, 'F');
+    }
+    row.forEach((cell, ci) => {
+      doc.text(String(cell), 14 + ci * colWidth + colWidth / 2, y + 7, { align: 'center' });
+    });
+    y += rowHeight;
+  });
+
+  // Border
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(14, startY, colWidth * headers.length, rowHeight * (rows.length + 1), 'S');
+
+  return y + 5;
+}
 
 interface ReportGeneratorModalProps {
     isOpen: boolean;
@@ -89,17 +127,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
                 [`${initialWeight} kg`, `${currentWeight} kg`, `${goalWeight} kg`, `${weightLost > 0 ? weightLost.toFixed(1) : 0} kg`]
             ];
 
-            (doc as any).autoTable({
-                startY: 90,
-                head: [progressData[0]],
-                body: [progressData[1]],
-                theme: 'grid',
-                headStyles: { fillColor: primaryColor, textColor: 255 },
-                styles: { halign: 'center' }
-            });
-
-            // Daily Averages and Consistency
-            const finalY = (doc as any).lastAutoTable.finalY || 110;
+            let finalY = drawTable(doc, 90, progressData[0], [progressData[1]]);
             
             doc.setFontSize(14);
             doc.setTextColor(0, 0, 0);
@@ -110,18 +138,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
                 [`${userData?.goals?.protein || 0} g`, `${userData?.goals?.water || 0} L`, `${userData?.streak || 0} dias seguidos`]
             ];
 
-            (doc as any).autoTable({
-                startY: finalY + 20,
-                head: [goalsData[0]],
-                body: [goalsData[1]],
-                theme: 'grid',
-                headStyles: { fillColor: [16, 185, 129], textColor: 255 }, // Emerald 500
-                styles: { halign: 'center' }
-            });
+            finalY = drawTable(doc, finalY + 20, goalsData[0], [goalsData[1]]);
 
             // Weight History Table
             if (filteredWeight.length > 0) {
-                const historyY = (doc as any).lastAutoTable.finalY || 150;
+                const historyY = finalY;
                 doc.setFontSize(14);
                 doc.setTextColor(0, 0, 0);
                 doc.text('Histórico de Peso (Período Selecionado)', 14, historyY + 15);
@@ -131,13 +152,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
                     `${w.weight} kg`
                 ]);
 
-                (doc as any).autoTable({
-                    startY: historyY + 20,
-                    head: [['Data', 'Peso']],
-                    body: historyBody,
-                    theme: 'striped',
-                    headStyles: { fillColor: primaryColor, textColor: 255 }
-                });
+                drawTable(doc, historyY + 15, ['Data', 'Peso'], historyBody);
             }
 
             // Footer

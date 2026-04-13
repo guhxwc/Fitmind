@@ -193,19 +193,13 @@ export const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token' | 'verify_email'>('landing');
-  const [emailSentAutomatically, setEmailSentAutomatically] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (view === 'enter_token') {
       inputRefs.current[0]?.focus();
     }
-    
-    if (view === 'verify_email' && !emailSentAutomatically) {
-      handleResendEmail();
-      setEmailSentAutomatically(true);
-    }
-  }, [view, emailSentAutomatically]);
+  }, [view]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -437,10 +431,17 @@ export const Auth: React.FC = () => {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="mt-1 block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className={`mt-1 block w-full px-3 py-3 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                        confirmPassword && password !== confirmPassword 
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                          : 'border-gray-300 dark:border-gray-600 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white'
+                      }`}
                       placeholder="••••••••"
                       required
                     />
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="mt-1 text-xs text-red-500">As senhas não coincidem.</p>
+                    )}
                   </div>
                 )}
                 
@@ -556,7 +557,7 @@ export const Auth: React.FC = () => {
               </div>
 
               <button 
-                onClick={() => { setView('signup'); setEmailSentAutomatically(false); setError(null); setMessage(null); }} 
+                onClick={() => { setView('signup'); setError(null); setMessage(null); }} 
                 className="w-full py-2 px-4 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-sm"
               >
                 Usar outro email

@@ -609,6 +609,7 @@ export const ProgressTab: React.FC = () => {
 
       {showProModal && (
           <ProFeatureModal 
+              title="Análise de Fotos"
               onClose={() => setShowProModal(false)}
               onUnlock={() => { setShowProModal(false); setShowSubPage(true); }}
           />

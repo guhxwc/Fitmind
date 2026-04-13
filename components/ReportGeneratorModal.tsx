@@ -41,9 +41,9 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
             const filteredWeight = weightHistory.filter(w => isAfter(new Date(w.date), startDate));
             
             // Basic data
-            const initialWeight = userData?.initialWeight || 0;
+            const initialWeight = userData?.startWeight || 0;
             const currentWeight = userData?.weight || 0;
-            const goalWeight = userData?.goals?.weight || 0;
+            const goalWeight = userData?.targetWeight || 0;
             const weightLost = initialWeight - currentWeight;
 
             // Colors

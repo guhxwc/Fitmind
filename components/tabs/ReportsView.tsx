@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { FileTextIcon } from '../core/Icons';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import type { WeightEntry, ApplicationEntry, DailyNote, SideEffectEntry } from '../../types';
 
 interface ReportsViewProps {

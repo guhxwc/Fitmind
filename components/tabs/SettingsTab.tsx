@@ -384,17 +384,6 @@ export const SettingsTab: React.FC = () => {
             </header>
 
             <div className="px-5">
-                {/* Test Buttons */}
-                <div className="flex flex-col gap-3 mb-6">
-                    <button 
-                        onClick={() => setShowTrialResults(true)}
-                        className="w-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
-                    >
-                        <Star className="w-5 h-5" />
-                        <span className="text-sm">Testar Tela Fim do Teste</span>
-                    </button>
-                </div>
-
                 <SettingsGroup>
                     <div 
                         className="bg-white dark:bg-[#1C1C1E] p-4 flex items-center cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors" 

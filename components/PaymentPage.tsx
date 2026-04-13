@@ -6,7 +6,7 @@ import { useToast } from './ToastProvider';
 
 const STRIPE_PRICE_IDS = {
     monthly: 'price_1TLGPNQdX6ANfRVOQLX7PUUW',
-    annual: 'price_1STlzzQdX6ANfRVOKsrT29TQ'
+    annual: 'price_1TLaEjQdX6ANfRVODeRwS05F'
 };
 
 interface PaymentPageProps {

@@ -7,6 +7,8 @@ import { CameraIcon, TrashIcon, ScaleIcon, CheckCircleIcon, WavesIcon, UserCircl
 import { StreakBadge } from '../core/StreakBadge';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
+import { ProFeatureModal } from '../ProFeatureModal';
+import { SubscriptionPage } from '../SubscriptionPage';
 import Portal from '../core/Portal';
 import { RegisterWeightModal } from '../RegisterWeightModal';
 import { ConfirmModal } from '../ConfirmModal';
@@ -320,6 +322,8 @@ export const ProgressTab: React.FC = () => {
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<ProgressPhoto | null>(null);
   const [viewingSymptom, setViewingSymptom] = useState<string | null>(null);
+  const [showProModal, setShowProModal] = useState(false);
+  const [showSubPage, setShowSubPage] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   if (!userData) return null;
@@ -464,7 +468,13 @@ export const ProgressTab: React.FC = () => {
                   />
                   <div 
                     id="tour-log-weight"
-                    onClick={() => setIsWeightModalOpen(true)}
+                    onClick={() => {
+                        if (!userData?.isPro) {
+                            setShowProModal(true);
+                            return;
+                        }
+                        setIsWeightModalOpen(true);
+                    }}
                     className="p-4 rounded-[24px] border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-all active:scale-95"
                   >
                       <div className="w-10 h-10 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center mb-2 shadow-lg">
@@ -596,6 +606,23 @@ export const ProgressTab: React.FC = () => {
           onCancel={() => setPhotoToDelete(null)}
           isDestructive={true}
       />
+
+      {showProModal && (
+          <ProFeatureModal 
+              onClose={() => setShowProModal(false)}
+              onUnlock={() => { setShowProModal(false); setShowSubPage(true); }}
+          />
+      )}
+      {showSubPage && (
+          <SubscriptionPage 
+              onClose={() => setShowSubPage(false)}
+              onSubscribe={() => { 
+                  // Assuming unlockPro is available via context or not needed here if reload happens
+                  setShowSubPage(false); 
+                  window.location.reload();
+              }}
+          />
+      )}
     </div>
   );
 };

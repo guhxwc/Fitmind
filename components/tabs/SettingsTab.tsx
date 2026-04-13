@@ -393,13 +393,6 @@ export const SettingsTab: React.FC = () => {
                         <Star className="w-5 h-5" />
                         <span className="text-sm">Testar Tela Fim do Teste</span>
                     </button>
-                    <button 
-                        onClick={() => setShowTrialTest(true)}
-                        className="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-transform"
-                    >
-                        <Bell className="w-5 h-5" />
-                        <span className="text-sm">Testar Copy de Retenção</span>
-                    </button>
                 </div>
 
                 <SettingsGroup>
@@ -478,43 +471,6 @@ export const SettingsTab: React.FC = () => {
                         onClick={() => navigate('/settings/account')} 
                         isLast
                     />
-                </SettingsGroup>
-
-                <SettingsGroup title="Indique e Ganhe">
-                    <div className="p-4 bg-white dark:bg-[#1C1C1E]">
-                        <div 
-                            onClick={() => navigate('/referrals')}
-                            className="bg-purple-50 dark:bg-purple-900/10 rounded-2xl p-4 border border-purple-100 dark:border-purple-900/20 cursor-pointer active:scale-[0.98] transition-all"
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20">
-                                        <Gift className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Indique e Ganhe</h3>
-                                        <p className="text-xs font-medium text-purple-600 dark:text-purple-400">Ganhe até 1 mês grátis</p>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-purple-400" />
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                Convide amigos para o FitMind e desbloqueie meses de acesso PRO gratuitamente.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="pl-4 bg-white dark:bg-[#1C1C1E]">
-                        <div className="flex items-center w-full py-3 pr-4 border-t border-gray-100 dark:border-gray-800">
-                            <div className="mr-3 flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                <Wallet className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                            </div>
-                            <div className="flex-grow text-left">
-                                <div className="text-[12px] text-gray-500 dark:text-gray-400">Saldo disponível</div>
-                                <div className="text-[16px] font-bold text-gray-900 dark:text-white">R$ 0,00</div>
-                            </div>
-                        </div>
-                    </div>
                 </SettingsGroup>
 
                 <SettingsGroup title="Preferências">

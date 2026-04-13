@@ -215,10 +215,20 @@ export const SummaryTab: React.FC = () => {
   const totalProteinFromMeals = meals.reduce((sum, meal) => sum + meal.protein, 0);
   const totalProtein = totalProteinFromMeals + quickAddProtein;
 
-  const handleAddProtein = () => setQuickAddProtein(p => p + 5);
+  const handleAddProtein = () => {
+      if (!userData.isPro && quickAddProtein >= 5) {
+          setShowProModal(true);
+          return;
+      }
+      setQuickAddProtein(p => p + 5);
+  };
   const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 5));
   
   const openAddMeal = (type: string) => {
+      if (!userData.isPro) {
+          setShowProModal(true);
+          return;
+      }
       setInitialMealType(type);
       setIsMealModalOpen(true);
   };
@@ -441,7 +451,13 @@ export const SummaryTab: React.FC = () => {
                         <MiniControlButton onClick={() => setCurrentWater(w => Math.max(0, parseFloat((w - 0.2).toFixed(1))))} disabled={currentWater <= 0}>
                             <MinusIcon className="w-5 h-5" />
                         </MiniControlButton>
-                        <MiniControlButton onClick={() => setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)))}>
+                        <MiniControlButton onClick={() => {
+                            if (!userData.isPro && currentWater >= 0.2) {
+                                setShowProModal(true);
+                                return;
+                            }
+                            setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)));
+                        }}>
                             <PlusIcon className="w-5 h-5" />
                         </MiniControlButton>
                     </div>
@@ -451,7 +467,13 @@ export const SummaryTab: React.FC = () => {
 
           {/* Weight Control */}
           <div className="col-span-2">
-              <WeightCard onOpenModal={() => setIsWeightModalOpen(true)} />
+              <WeightCard onOpenModal={() => {
+                  if (!userData.isPro) {
+                      setShowProModal(true);
+                      return;
+                  }
+                  setIsWeightModalOpen(true);
+              }} />
           </div>
       </div>
       
@@ -548,7 +570,13 @@ export const SummaryTab: React.FC = () => {
               id="tour-side-effects-btn"
               icon={<WavesIcon className="w-5 h-5" />} 
               label="Registrar Efeito Colateral" 
-              onClick={() => setIsSideEffectModalOpen(true)}
+              onClick={() => {
+                  if (!userData.isPro) {
+                      setShowProModal(true);
+                      return;
+                  }
+                  setIsSideEffectModalOpen(true);
+              }}
               colorClass="text-black dark:text-white" 
           />
           <QuickActionRow 

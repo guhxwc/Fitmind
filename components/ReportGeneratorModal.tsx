@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { XMarkIcon } from './core/Icons';
 import { Download } from 'lucide-react';
 import { useAppContext } from './AppContext';
+import Portal from './core/Portal';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format, subMonths, isAfter, subYears } from 'date-fns';
@@ -165,75 +166,77 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-            <div 
-                className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-3xl p-6 shadow-2xl transform transition-transform duration-300 translate-y-0"
-                style={{ animation: 'slideUp 0.3s ease-out forwards' }}
-            >
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Gerar Relatório</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Selecione o período desejado</p>
+        <Portal>
+            <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm transition-opacity">
+                <div 
+                    className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-3xl p-6 shadow-2xl transform transition-transform duration-300 translate-y-0"
+                    style={{ animation: 'slideUp 0.3s ease-out forwards' }}
+                >
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Gerar Relatório</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gere um relatório em PDF com seu histórico de tratamento.</p>
+                        </div>
+                        <button 
+                            onClick={onClose}
+                            className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        <XMarkIcon className="w-5 h-5" />
-                    </button>
-                </div>
 
-                <div className="space-y-3">
-                    <button 
-                        onClick={() => generatePDF('1_month')}
-                        disabled={isGenerating}
-                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
-                    >
-                        <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Último mês</span>
-                        <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                    </button>
+                    <div className="space-y-3">
+                        <button 
+                            onClick={() => generatePDF('1_month')}
+                            disabled={isGenerating}
+                            className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
+                        >
+                            <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Último mês</span>
+                            <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                        </button>
+                        
+                        <button 
+                            onClick={() => generatePDF('3_months')}
+                            disabled={isGenerating}
+                            className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
+                        >
+                            <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Últimos 3 meses</span>
+                            <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                        </button>
+
+                        <button 
+                            onClick={() => generatePDF('6_months')}
+                            disabled={isGenerating}
+                            className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
+                        >
+                            <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Últimos 6 meses</span>
+                            <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                        </button>
+
+                        <button 
+                            onClick={() => generatePDF('1_year')}
+                            disabled={isGenerating}
+                            className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
+                        >
+                            <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Último ano</span>
+                            <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
+                        </button>
+                    </div>
                     
-                    <button 
-                        onClick={() => generatePDF('3_months')}
-                        disabled={isGenerating}
-                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
-                    >
-                        <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Últimos 3 meses</span>
-                        <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                    </button>
-
-                    <button 
-                        onClick={() => generatePDF('6_months')}
-                        disabled={isGenerating}
-                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
-                    >
-                        <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Últimos 6 meses</span>
-                        <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                    </button>
-
-                    <button 
-                        onClick={() => generatePDF('1_year')}
-                        disabled={isGenerating}
-                        className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group disabled:opacity-50"
-                    >
-                        <span className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">Último ano</span>
-                        <Download className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                    </button>
+                    {isGenerating && (
+                        <p className="text-center text-sm text-indigo-600 dark:text-indigo-400 mt-4 animate-pulse">
+                            Gerando relatório...
+                        </p>
+                    )}
+                    
+                    <style>{`
+                        @keyframes slideUp {
+                            from { transform: translateY(100%); }
+                            to { transform: translateY(0); }
+                        }
+                    `}</style>
                 </div>
-                
-                {isGenerating && (
-                    <p className="text-center text-sm text-indigo-600 dark:text-indigo-400 mt-4 animate-pulse">
-                        Gerando relatório...
-                    </p>
-                )}
-                
-                <style>{`
-                    @keyframes slideUp {
-                        from { transform: translateY(100%); }
-                        to { transform: translateY(0); }
-                    }
-                `}</style>
             </div>
-        </div>
+        </Portal>
     );
 };

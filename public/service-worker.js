@@ -79,8 +79,8 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body,
-    icon: 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/android-chrome-192x192.png',
-    badge: 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/favicon-32x32.png',
+    icon: '/android-chrome-192x192.png',
+    badge: '/favicon-32x32.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/', // URL de destino

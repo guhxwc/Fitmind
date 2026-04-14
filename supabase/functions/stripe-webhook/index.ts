@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
@@ -43,7 +42,6 @@ serve(async (req) => {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
-      // Tenta pegar o ID do usuário de dois lugares possíveis
       const userId = session.client_reference_id || session.metadata?.supabase_user_id;
       const customerId = session.customer
 
@@ -69,14 +67,13 @@ serve(async (req) => {
           throw profileError;
       }
 
-      // 2. Processar comissão de afiliado se houver
+      // 2. Processar comissão de afiliado OFICIAL se houver
       const affiliateId = session.metadata?.affiliate_id;
-      const amountTotal = session.amount_total; // Valor em centavos
+      const amountTotal = session.amount_total; // em centavos
 
       if (affiliateId && amountTotal) {
-        console.log(`💰 Processando comissão para afiliado: ${affiliateId}`);
+        console.log(`💰 Processando comissão para afiliado oficial: ${affiliateId}`);
         
-        // Buscar dados do afiliado
         const { data: affiliate, error: affError } = await supabase
           .from('affiliates')
           .select('commission_rate, balance, conversions')
@@ -84,9 +81,9 @@ serve(async (req) => {
           .single();
 
         if (affiliate && !affError) {
-          const commissionAmount = (amountTotal / 100) * (affiliate.commission_rate / 100);
+          // commission_rate no banco é 0.30 (30%), amountTotal está em centavos
+          const commissionAmount = (amountTotal / 100) * Number(affiliate.commission_rate);
           
-          // Registrar a transação de comissão
           const { error: transError } = await supabase
             .from('affiliate_transactions')
             .insert({
@@ -98,12 +95,11 @@ serve(async (req) => {
             });
 
           if (!transError) {
-            // Atualizar saldo e conversões do afiliado
             await supabase
               .from('affiliates')
               .update({
-                balance: affiliate.balance + commissionAmount,
-                conversions: affiliate.conversions + 1
+                balance: Number(affiliate.balance) + commissionAmount,
+                conversions: Number(affiliate.conversions) + 1
               })
               .eq('id', affiliateId);
             
@@ -116,7 +112,7 @@ serve(async (req) => {
         }
       }
       
-      // 3. Atualizar o status da indicação (referrals) para 'completed' e bonificar o indicador
+      // 3. Atualizar status da indicação (referrals) para 'completed' e bonificar o indicador P2P
       const affiliateCode = session.metadata?.affiliate_code;
       if (affiliateCode) {
         console.log(`🔗 Processando conclusão de indicação para o código: ${affiliateCode}`);
@@ -132,16 +128,21 @@ serve(async (req) => {
         if (refUpdateError) {
           console.error("❌ Erro ao atualizar status da indicação:", refUpdateError.message);
         } else if (updatedRefs && updatedRefs.length > 0) {
-          console.log(`✅ Indicação atualizada para concluída (Afiliado: ${affiliateCode}, Usuário: ${userId})`);
+          console.log(`✅ Indicação atualizada para 'completed' (Código: ${affiliateCode}, Usuário: ${userId})`);
           
-          // Tentar encontrar o usuário que indicou para aplicar o benefício (O "Pai")
-          const { data: referrer, error: referrerError } = await supabase
-            .from('profiles')
-            .select('id, name, pro_expires_at, is_pro')
-            .filter('id', 'like', `${affiliateCode.toLowerCase()}%`)
-            .maybeSingle();
+          // ─────────────────────────────────────────────────────────────────
+          // BUG CORRIGIDO: Antes usava .filter('id', 'like', ...) que nunca
+          // dava match. Agora usa a função SQL get_referrer_by_code que busca
+          // corretamente pelo prefixo do UUID (indicação P2P).
+          // ─────────────────────────────────────────────────────────────────
+          const { data: referrerRows, error: referrerError } = await supabase
+            .rpc('get_referrer_by_code', { p_code: affiliateCode });
+
+          const referrer = referrerRows && referrerRows.length > 0 ? referrerRows[0] : null;
 
           if (referrer && !referrerError) {
+            console.log(`👤 Indicador encontrado: ${referrer.name} (${referrer.id})`);
+
             // Contar quantas indicações CONCLUÍDAS esse indicador já tem
             const { count: completedCount, error: countError } = await supabase
               .from('referrals')
@@ -153,12 +154,18 @@ serve(async (req) => {
               console.log(`📊 Total de indicações concluídas para ${affiliateCode}: ${completedCount}`);
               
               let daysToAdd = 0;
+              let rewardDesc = '';
+
               if (completedCount === 1) {
-                daysToAdd = 7; // 1ª indicação: +7 dias
-                console.log(`🎁 Recompensa Nível 1: +7 dias para ${referrer.name}`);
+                daysToAdd = 7;
+                rewardDesc = 'Nível Bronze: +7 dias grátis';
+              } else if (completedCount === 2) {
+                // Nível Prata: 30% de desconto (desconto na próxima renovação — apenas notificação aqui)
+                console.log(`🥈 Recompensa Nível Prata (2 indicações): desconto 30% para ${referrer.name}`);
+                // O desconto será aplicado no próximo ciclo via cupom Stripe — não é dias
               } else if (completedCount === 3) {
-                daysToAdd = 30; // 3ª indicação: +30 dias
-                console.log(`🎁 Recompensa Nível 3: +30 dias para ${referrer.name}`);
+                daysToAdd = 30;
+                rewardDesc = 'Nível Ouro: +30 dias grátis';
               }
 
               if (daysToAdd > 0) {
@@ -166,6 +173,7 @@ serve(async (req) => {
                 let newExpiry = new Date();
                 const currentExpiry = referrer.pro_expires_at ? new Date(referrer.pro_expires_at) : null;
                 
+                // Extende a partir da data atual ou da expiração existente (o que for maior)
                 if (currentExpiry && currentExpiry > new Date()) {
                   newExpiry = currentExpiry;
                 }
@@ -182,19 +190,21 @@ serve(async (req) => {
                   .eq('id', referrer.id);
 
                 if (!rewardError) {
-                  console.log(`✅ Benefício de ${daysToAdd} dias entregue! Nova expiração: ${newExpiry.toLocaleDateString()}`);
+                  console.log(`🎁 ${rewardDesc} entregue para ${referrer.name}! Nova expiração: ${newExpiry.toLocaleDateString('pt-BR')}`);
                 } else {
                   console.error("❌ Erro ao entregar benefício:", rewardError.message);
                 }
-              } else {
-                console.log(`ℹ️ Nenhuma recompensa em dias para a indicação nº ${completedCount}.`);
               }
             }
+          } else {
+            // Código é de afiliado oficial (não P2P) — sem recompensa de dias, já processou comissão acima
+            console.log(`ℹ️ Código ${affiliateCode} é de afiliado oficial — sem recompensa P2P.`);
           }
         }
       }
       
       console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);
+
     } else if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
       const subscription = event.data.object;
       const customerId = subscription.customer;

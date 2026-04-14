@@ -11,9 +11,208 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="shortcut icon" href="/favicon.ico">
+
+    <!--
+      FITMIND — Captura do parâmetro ?ref= de afiliados e indicações P2P.
+      Este script DEVE rodar antes do React montar para garantir que o código
+      esteja no localStorage quando o App.tsx chamar registerReferralIfNeeded().
+    -->
+    <script>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var ref = params.get('ref');
+          if (ref && ref.trim().length > 0) {
+            var code = ref.trim().toUpperCase();
+            localStorage.setItem('affiliate_ref', code);
+            sessionStorage.setItem('affiliate_ref', code);
+            console.log('[FitMind] Código de indicação capturado:', code);
+            // Remove o ?ref= da URL para não vazar o código quando o usuário
+            // copiar/compartilhar a URL após já estar logado
+            try {
+              window.history.replaceState(null, '', window.location.pathname);
+            } catch (_) {}
+          }
+        } catch (e) {
+          console.warn('[FitMind] Erro ao capturar ?ref=', e);
+        }
+      })();
+    </script>
+
+    <!-- Mantendo Tailwind e Estilos Customizados para o funcionamento do App -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+            },
+            colors: {
+              ios: {
+                bg: '#F2F2F7',
+                card: '#FFFFFF',
+                blue: '#007AFF',
+                green: '#34C759',
+                orange: '#FF9500',
+                red: '#FF3B30',
+                gray: '#8E8E93',
+                separator: '#C6C6C8',
+                dark: {
+                  bg: '#000000',
+                  card: '#1C1C1E',
+                  separator: '#38383A',
+                }
+              }
+            },
+            boxShadow: {
+              'soft': '0 4px 20px rgba(0, 0, 0, 0.03)',
+              'glow': '0 0 20px rgba(0, 122, 255, 0.25)',
+              'inner-light': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+            },
+            backdropBlur: {
+              'xs': '2px',
+            }
+          }
+        }
+      }
+      
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        position: fixed;
+      }
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        background-color: #F2F2F7;
+        overscroll-behavior-y: none;
+      }
+      
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .dark body {
+        background-color: #000000;
+      }
+      
+      .transition-all-smooth {
+        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+      
+      @keyframes toastSlideDown {
+        from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-toast-in {
+        animation: toastSlideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .animate-slide-up {
+        animation: slideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+      }
+
+      @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.9); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      .animate-pop-in {
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      input, textarea, button, select, a {
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
+      }
+      
+      .glass {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .dark .glass {
+        background: rgba(28, 28, 30, 0.75);
+      }
+
+      .flame-container {
+        filter: drop-shadow(0 15px 25px rgba(255, 92, 0, 0.4));
+      }
+
+      .flame-outer {
+        transform-origin: 12px 22px;
+        animation: flameWiggleOuter 2.5s ease-in-out infinite alternate;
+      }
+
+      .flame-inner {
+        transform-origin: 12px 20px;
+        animation: flameWiggleInner 2s ease-in-out infinite alternate-reverse;
+      }
+
+      .flame-core {
+        transform-origin: 12px 18.5px;
+        animation: flamePulseCore 1.5s ease-in-out infinite alternate;
+      }
+
+      @keyframes flameWiggleOuter {
+        0% { transform: scale(1, 1) skewX(-2deg); }
+        50% { transform: scale(0.97, 1.03) skewX(2deg); }
+        100% { transform: scale(1.02, 0.98) skewX(-1deg); }
+      }
+
+      @keyframes flameWiggleInner {
+        0% { transform: scale(1, 1) skewX(3deg); }
+        50% { transform: scale(1.05, 0.95) skewX(-2deg); }
+        100% { transform: scale(0.95, 1.05) skewX(1deg); }
+      }
+
+      @keyframes flamePulseCore {
+        0% { transform: scale(1, 1); }
+        100% { transform: scale(0.85, 1.15) translateY(-0.5px); }
+      }
+
+      .bg-glow {
+        background: radial-gradient(circle, rgba(255, 120, 0, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+      }
+    </style>
 </head>
-<body>
+<body class="antialiased selection:bg-blue-500 selection:text-white">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

@@ -32,7 +32,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         const returnUrl = `${window.location.origin}/success`;
 
         // PATCHED
-        const affiliateCode = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref') || undefined;
+        const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,

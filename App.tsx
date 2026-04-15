@@ -250,9 +250,13 @@ const AppContent: React.FC = () => {
     };
 
     try {
-      const { error } = await supabase.from('profiles').upsert(profileData);
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' });
       if (error) {
         console.error("Error saving profile:", error);
+      } else {
+        console.log("✅ Profile salvo com sucesso no onboarding.");
       }
       await fetchData();
       setProfileExists(true);

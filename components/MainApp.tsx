@@ -13,6 +13,7 @@ import { LifestyleGoals } from './tabs/LifestyleGoals';
 import { WeightGoals } from './tabs/WeightGoals';
 import { PersonalData } from './tabs/PersonalData';
 import { ApplicationTab } from './tabs/ApplicationTab';
+import { ConsultationTab } from './tabs/ConsultationTab';
 import { BottomNav } from './core/BottomNav';
 import { HelpTab } from './tabs/HelpTab';
 import { PrivacySettings } from './tabs/PrivacySettings';
@@ -26,9 +27,11 @@ import { useToast } from './ToastProvider';
 import { NotificationManager } from './NotificationManager';
 import { CelebrationManager } from './CelebrationManager';
 import { WeightMilestoneModal } from './WeightMilestoneModal';
+import { DietView } from './consultation/DietView';
+import { NutriPanel } from './nutri/NutriPanel';
 
 export const MainApp: React.FC = () => {
-  const { userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
+  const { isNutritionist, userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, isNutriPanelOpen, setIsNutriPanelOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useToast();
@@ -291,6 +294,8 @@ export const MainApp: React.FC = () => {
           <Route path="/" element={<SummaryTab />} />
           <Route path="/applications" element={<ApplicationTab />} />
           <Route path="/meals" element={<MealsTab />} />
+          <Route path="/consultation" element={<ConsultationTab />} />
+          <Route path="/dieta" element={<DietView />} />
           <Route path="/workouts" element={<WorkoutsTab />} />
           <Route path="/progress" element={<ProgressTab />} />
           <Route path="/settings" element={<SettingsTab />} />
@@ -333,6 +338,8 @@ export const MainApp: React.FC = () => {
             onSave={handleSaveSideEffects} 
           />
       )}
+      
+      {isNutriPanelOpen && <NutriPanel onClose={() => setIsNutriPanelOpen(false)} />}
       
       <input 
         type="file" 

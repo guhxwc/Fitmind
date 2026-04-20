@@ -228,12 +228,13 @@ import { TrialResultsScreen } from '../TrialResultsScreen';
 import { TrialTestModal } from '../TrialTestModal';
 
 export const SettingsTab: React.FC = () => {
-    const { userData, theme, toggleTheme, unlockPro, fetchData } = useAppContext();
+    const { userData, theme, toggleTheme, unlockPro, fetchData, isNutritionist, setIsNutriPanelOpen } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showTrialResults, setShowTrialResults] = useState(false);
     const [showTrialTest, setShowTrialTest] = useState(false);
+    const [showUpsellPreview, setShowUpsellPreview] = useState(false);
     const [copied, setCopied] = useState(false);
     const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
 
@@ -303,6 +304,10 @@ export const SettingsTab: React.FC = () => {
             const { calculateGoals } = useAppContext();
             const newGoals = calculateGoals(currentWeight, currentActivity, currentHeight, currentAge, currentGender);
             updateData.goals = newGoals;
+        }
+
+        if ('pro_expires_at' in updateData) {
+            delete updateData.pro_expires_at;
         }
 
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
@@ -499,6 +504,11 @@ export const SettingsTab: React.FC = () => {
                 </SettingsGroup>
 
                 <SettingsGroup title="Suporte">
+                    <SettingsItem 
+                        icon={<Star className="w-5 h-5 text-purple-500" />}
+                        label="Consultoria VIP 1x1" 
+                        onClick={() => navigate('/consultoria?ref=settings')} 
+                    />
                     <SettingsItem 
                         icon={<Star className="w-5 h-5 text-yellow-500" />}
                         label="Avalie o App" 

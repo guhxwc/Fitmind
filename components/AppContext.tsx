@@ -53,12 +53,15 @@ interface AppContextType {
   setIsWeightModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isSideEffectModalOpen: boolean;
   setIsSideEffectModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isNutriPanelOpen: boolean;
+  setIsNutriPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
   initialMealType: string;
   setInitialMealType: React.Dispatch<React.SetStateAction<string>>;
   initialMode: string;
   setInitialMode: React.Dispatch<React.SetStateAction<string>>;
   weightMilestoneData: { oldWeight: number; newWeight: number } | null;
   setWeightMilestoneData: React.Dispatch<React.SetStateAction<{ oldWeight: number; newWeight: number } | null>>;
+  isNutritionist: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -86,9 +89,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
+  const [isNutriPanelOpen, setIsNutriPanelOpen] = useState(false);
   const [initialMealType, setInitialMealType] = useState('');
   const [initialMode, setInitialMode] = useState('');
   const [weightMilestoneData, setWeightMilestoneData] = useState<{ oldWeight: number; newWeight: number } | null>(null);
+  const [isNutritionist, setIsNutritionist] = useState(false);
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
@@ -222,7 +227,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           applicationHistoryRes,
           dailyRecordRes,
           dailyNotesRes,
-          sideEffectsRes
+          sideEffectsRes,
+          customGoalsRes,
+          isNutritionistRes
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
@@ -232,11 +239,26 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             supabase.from('applications').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('daily_records').select('*').eq('user_id', userId).eq('date', selectedDateStr).limit(1).maybeSingle(),
             supabase.from('daily_notes').select('*').eq('user_id', userId).order('date', { ascending: false }),
-            supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false })
+            supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false }),
+            supabase.from('custom_goals').select('*').eq('user_id', userId).maybeSingle(),
+            supabase.rpc('is_nutritionist')
         ]);
 
         if (profileRes.data) {
           const fetchedUserData = formatProfileToUserData(profileRes.data);
+          
+          // Apply custom goals if they exist
+          if (customGoalsRes?.data) {
+             fetchedUserData.goals = {
+                ...fetchedUserData.goals,
+                calories: customGoalsRes.data.calories ?? fetchedUserData.goals.calories,
+                protein: customGoalsRes.data.protein_g ?? fetchedUserData.goals.protein,
+                water: customGoalsRes.data.water_ml ? (customGoalsRes.data.water_ml / 1000) : fetchedUserData.goals.water,
+                carbs: customGoalsRes.data.carbs_g ?? fetchedUserData.goals.carbs,
+                fats: customGoalsRes.data.fat_g ?? fetchedUserData.goals.fats
+             };
+          }
+
           setUserData(prev => {
             if (!prev) return fetchedUserData;
             
@@ -263,6 +285,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setApplicationHistory(applicationHistoryRes.data || []);
         setDailyNotes(dailyNotesRes.data || []);
         setSideEffects(sideEffectsRes.data || []);
+        
+        // Força permissão para os e-mails de teste do Gustavo e Allan caso o RPC falhe ou não tenha sido atualizado
+        const userEmail = session?.user?.email?.toLowerCase();
+        const isNutriFallback = userEmail === 'gustavo.500fyz@gmail.com' || userEmail === 'gustavo.5000futrica@gmail.com' || userEmail === 'allanstachuk@gmail.com';
+        
+        setIsNutritionist(!!isNutritionistRes.data || isNutriFallback);
         
         if (dailyRecordRes.data) {
             dailyRecordIdRef.current = dailyRecordRes.data.id;
@@ -536,12 +564,15 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsWeightModalOpen,
       isSideEffectModalOpen,
       setIsSideEffectModalOpen,
+      isNutriPanelOpen,
+      setIsNutriPanelOpen,
       initialMealType,
       setInitialMealType,
       initialMode,
       setInitialMode,
       weightMilestoneData,
-      setWeightMilestoneData
+      setWeightMilestoneData,
+      isNutritionist
     }}>
       {children}
     </AppContext.Provider>
@@ -596,6 +627,8 @@ export const useAppContext = () => {
         setIsWeightModalOpen: () => {},
         isSideEffectModalOpen: false,
         setIsSideEffectModalOpen: () => {},
+        isNutriPanelOpen: false,
+        setIsNutriPanelOpen: () => {},
         initialMealType: '',
         setInitialMealType: () => {},
         initialMode: '',

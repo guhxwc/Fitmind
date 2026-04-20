@@ -129,6 +129,9 @@ export const AccountSettings: React.FC = () => {
             updateData.goals = newGoals;
         }
 
+        if ('pro_expires_at' in updateData) {
+            delete updateData.pro_expires_at;
+        }
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
         
         if (error) {

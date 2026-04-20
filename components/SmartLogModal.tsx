@@ -215,6 +215,9 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
               updatePayload.last_weight_goal_update = currentWeight;
           }
           
+          if ('pro_expires_at' in updatePayload) {
+              delete updatePayload.pro_expires_at;
+          }
           await supabase.from('profiles').update(updatePayload).eq('id', userData.id);
           
           if (userData.isPro && result.weight_kg !== prevWeight) {

@@ -14,6 +14,7 @@ import { SideEffectModal } from './SideEffectModal';
 import { RegisterWeightModal } from '../RegisterWeightModal';
 import { DatePickerModal } from '../core/DatePickerModal';
 import type { Meal, SideEffect, SideEffectEntry } from '../../types';
+import { UserCircleIcon, ChatBubbleIcon } from '../core/Icons';
 
 const DonutCard: React.FC<{ 
     icon: React.ReactNode; 
@@ -200,7 +201,7 @@ const DailyRecordItem: React.FC<{
 );
 
 export const SummaryTab: React.FC = () => {
-  const { userData, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType } = useAppContext();
+  const { userData, session, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType } = useAppContext();
   const navigate = useNavigate();
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -209,6 +210,20 @@ export const SummaryTab: React.FC = () => {
   // Pro Features Logic
   const [showProModal, setShowProModal] = useState(false);
   const [showSubPage, setShowSubPage] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+     if (!session?.user?.id) return;
+     const fetchUnread = async () => {
+        const { count } = await supabase
+           .from('nutritionist_messages')
+           .select('id', { count: 'exact', head: true })
+           .eq('user_id', session.user.id)
+           .eq('is_read', false);
+        setUnreadMessages(count || 0);
+     };
+     fetchUnread();
+  }, [session?.user?.id]);
 
   if (!userData) return null;
   
@@ -387,6 +402,21 @@ export const SummaryTab: React.FC = () => {
             </Link>
         </div>
       </header>
+
+      {unreadMessages > 0 && (
+          <div onClick={() => navigate('/consultation')} className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+             <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
+                     <ChatBubbleIcon className="w-5 h-5 text-white" />
+                 </div>
+                 <div>
+                     <h4 className="font-bold text-gray-900 dark:text-white text-sm">Nova mensagem</h4>
+                     <p className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-0.5">O Dr. Allan enviou {unreadMessages === 1 ? 'uma mensagem' : `${unreadMessages} mensagens`}.</p>
+                 </div>
+             </div>
+             <ChevronRightIcon className="w-5 h-5 text-blue-500" />
+          </div>
+      )}
 
       {/* Bento Grid */}
       <div className="grid grid-cols-2 gap-4">

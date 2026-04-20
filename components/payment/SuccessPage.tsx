@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 import { CheckCircleIcon, ChevronRightIcon, SparklesIcon } from '../core/Icons';
+import { ConsultationUpsell } from './ConsultationUpsell';
 
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ export const SuccessPage: React.FC = () => {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Assinatura PRO ativada com sucesso!');
-                        setTimeout(() => finish(), 2000);
+                        setTimeout(() => navigate('/', { replace: true }), 2000);
                         return;
                     }
                 } catch (syncErr) {
@@ -64,7 +65,7 @@ export const SuccessPage: React.FC = () => {
                 setIsConfirmed(true);
                 setIsPolling(false);
                 setStatusMsg('Status PRO confirmado!');
-                setTimeout(() => finish(), 2000);
+                setTimeout(() => navigate('/', { replace: true }), 2000);
                 return;
             }
 
@@ -117,7 +118,7 @@ export const SuccessPage: React.FC = () => {
                     setIsConfirmed(true);
                     setIsPolling(false);
                     setStatusMsg('Assinatura confirmada com sucesso!');
-                    setTimeout(() => finish(), 2000);
+                    setTimeout(() => navigate('/', { replace: true }), 2000);
                     return;
                 }
                 

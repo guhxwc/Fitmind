@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon, DietIcon } from './Icons';
+import { MessageCircle } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
@@ -27,7 +28,9 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, id }) => {
           <>
             {/* Icon Container */}
             <div className="relative">
-                {React.cloneElement(icon as React.ReactElement<any>, { 
+                {React.isValidElement(icon) && icon.type === MessageCircle 
+                  ? React.cloneElement(icon as React.ReactElement<any>, { className: "w-6 h-6", strokeWidth: isActive ? 2.5 : 2 })
+                  : React.cloneElement(icon as React.ReactElement<any>, { 
                     strokeWidth: isActive ? 2.5 : 2,
                     className: "w-6 h-6"
                 })}
@@ -46,6 +49,7 @@ export const BottomNav: React.FC = () => {
     { to: '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
     { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
     { to: '/meals', label: 'Dieta', icon: <DietIcon />, id: 'nav-meals' },
+    { to: '/consultation', label: 'Consulta', icon: <MessageCircle />, id: 'nav-consultation' },
     { to: '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
     { to: '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
     { to: '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },

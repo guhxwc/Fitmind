@@ -8,7 +8,7 @@ import { supabase } from '../../supabaseClient';
 
 export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const navigate = useNavigate();
-  const { userData, session } = useAppContext();
+  const { userData, session, setConsultationStatus } = useAppContext();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -75,6 +75,8 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                      additional_info: JSON.stringify(formData)
                  }]);
                  await supabase.from('consultations').update({ status: 'anamnese_done' }).eq('id', consultation.id);
+                 setConsultationStatus('anamnese_done');
+                 if (onSuccess) onSuccess();
              }
          }
          localStorage.setItem('fitmind_anamnese', JSON.stringify(formData));
@@ -389,7 +391,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                         localStorage.setItem('fitmind_consultation_waiting', 'true');
                         window.open('https://wa.me/5543999142672?text=Ol%C3%A1%2C%20conclu%C3%AD%20minha%20anamnese%20no%20FitMind%20e%20gostaria%20de%20marcar%20minha%20consulta%20premium.', '_blank');
                         setShowSuccessModal(false);
-                        navigate('/consultoria-premium', { replace: true });
+                        navigate('/consultation', { replace: true });
                       }}
                       className="w-full bg-gradient-to-r from-[#25D366] to-[#1DA851] text-white font-bold border-none py-[16px] rounded-[20px] flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_4px_16px_rgba(37,211,102,0.3)] text-[15px]"
                    >
@@ -399,7 +401,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                       onClick={() => {
                         localStorage.setItem('fitmind_consultation_waiting', 'true');
                         setShowSuccessModal(false);
-                        navigate('/consultoria-premium', { replace: true });
+                        navigate('/consultation', { replace: true });
                       }}
                       className="w-full bg-gray-100 dark:bg-[#2C2C2E] text-gray-900 dark:text-white font-bold py-[16px] rounded-[20px] flex items-center justify-center active:scale-95 transition-transform text-[15px]"
                    >

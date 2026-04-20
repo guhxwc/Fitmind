@@ -3,6 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon, DietIcon } from './Icons';
 import { MessageCircle } from 'lucide-react';
+import { useAppContext } from '../AppContext';
 
 interface NavItemProps {
   to: string;
@@ -44,16 +45,23 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, id }) => {
 };
 
 export const BottomNav: React.FC = () => {
+  const { consultationStatus } = useAppContext();
+
   // Added specific IDs for the tour
-  const tabs = [
+  const baseTabs = [
     { to: '/', label: 'Resumo', icon: <HomeIcon />, id: 'nav-home' },
     { to: '/applications', label: 'Doses', icon: <CalendarCheckIcon />, id: 'nav-applications' },
     { to: '/meals', label: 'Dieta', icon: <DietIcon />, id: 'nav-meals' },
-    { to: '/consultation', label: 'Consulta', icon: <MessageCircle />, id: 'nav-consultation' },
     { to: '/workouts', label: 'Treinos', icon: <FlameIcon />, id: 'nav-workouts' },
     { to: '/progress', label: 'Corpo', icon: <BarChartIcon />, id: 'nav-progress' },
     { to: '/settings', label: 'Ajustes', icon: <SettingsIcon />, id: 'nav-settings' },
   ];
+
+  const tabs = [...baseTabs];
+  
+  if (consultationStatus === 'anamnese_done' || consultationStatus === 'active') {
+      tabs.splice(3, 0, { to: '/consultation', label: 'Consulta', icon: <MessageCircle />, id: 'nav-consultation' });
+  }
 
   return (
     <>

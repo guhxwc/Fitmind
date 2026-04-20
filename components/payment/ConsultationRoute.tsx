@@ -25,7 +25,7 @@ export const ConsultationRoute: React.FC<{ initialStep?: number }> = ({ initialS
         setStep(2);
     };
 
-    const handlePlanSelected = (planId: string) => {
+    const handlePlanSelected = async (planId: string) => {
         // Construct custom message based on plan
         const planMap: Record<string, string> = {
             'mensal': 'Mensal',
@@ -41,9 +41,22 @@ export const ConsultationRoute: React.FC<{ initialStep?: number }> = ({ initialS
         // Garante que o modal de boas-vindas apareça após uma nova confirmação
         localStorage.removeItem('fitmind_consultation_intro');
         
-        // Redireciona para o painel de consultoria VIP e simula uma ativação de sucesso instantânea
+        try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
+            if (session?.user?.id) {
+                await supabase.rpc('register_consultation', {
+                    p_user_id: session.user.id,
+                    p_nutritionist_id: '6178130c-e47a-4534-a794-9b80b823766b'
+                });
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        // Redireciona para o processo de anamnese (aba de consultoria)
         setTimeout(() => {
-            navigate('/consultoria-premium', { replace: true });
+            navigate('/consultation', { replace: true });
         }, 100);
     };
 

@@ -55,6 +55,8 @@ interface AppContextType {
   setIsSideEffectModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isNutriPanelOpen: boolean;
   setIsNutriPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  consultationStatus: string | null;
+  setConsultationStatus: React.Dispatch<React.SetStateAction<string | null>>;
   initialMealType: string;
   setInitialMealType: React.Dispatch<React.SetStateAction<string>>;
   initialMode: string;
@@ -90,6 +92,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [isSideEffectModalOpen, setIsSideEffectModalOpen] = useState(false);
   const [isNutriPanelOpen, setIsNutriPanelOpen] = useState(false);
+  const [consultationStatus, setConsultationStatus] = useState<string | null>(null);
   const [initialMealType, setInitialMealType] = useState('');
   const [initialMode, setInitialMode] = useState('');
   const [weightMilestoneData, setWeightMilestoneData] = useState<{ oldWeight: number; newWeight: number } | null>(null);
@@ -291,6 +294,15 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const isNutriFallback = userEmail === 'gustavo.500fyz@gmail.com' || userEmail === 'gustavo.5000futrica@gmail.com' || userEmail === 'allanstachuk@gmail.com';
         
         setIsNutritionist(!!isNutritionistRes.data || isNutriFallback);
+
+        if (session?.user?.id) {
+            const { data: cData } = await supabase.from('consultations').select('status').eq('user_id', session.user.id).maybeSingle();
+            if (cData) {
+                setConsultationStatus(cData.status);
+            } else {
+                setConsultationStatus(null);
+            }
+        }
         
         if (dailyRecordRes.data) {
             dailyRecordIdRef.current = dailyRecordRes.data.id;
@@ -566,6 +578,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsSideEffectModalOpen,
       isNutriPanelOpen,
       setIsNutriPanelOpen,
+      consultationStatus,
+      setConsultationStatus,
       initialMealType,
       setInitialMealType,
       initialMode,
@@ -629,6 +643,8 @@ export const useAppContext = () => {
         setIsSideEffectModalOpen: () => {},
         isNutriPanelOpen: false,
         setIsNutriPanelOpen: () => {},
+        consultationStatus: null,
+        setConsultationStatus: () => {},
         initialMealType: '',
         setInitialMealType: () => {},
         initialMode: '',

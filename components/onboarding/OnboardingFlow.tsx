@@ -170,22 +170,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   };
 
   const handleFinalStepNext = () => {
+      handleComplete();
       setShowSubscription(true);
   };
 
   const handleSubscriptionClose = () => {
       setShowSubscription(false);
-      handleComplete();
   };
 
   const handleSubscriptionSuccess = (plan: 'annual' | 'monthly') => {
       // O status PRO será atualizado pelo webhook.
-      // Aqui apenas finalizamos o onboarding.
-      const finalData = { 
-          ...userData
-      };
-      localStorage.removeItem('onboarding_step');
-      onComplete(finalData);
+      // Aqui apenas fechamos a subscrição se necessário.
+      setShowSubscription(false);
   };
   
   // Total questions/interactive steps (excluding Analyzing and FinalPlan)

@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 import { CheckCircleIcon, ChevronRightIcon, SparklesIcon } from '../core/Icons';
-import { ConsultationUpsell } from './ConsultationUpsell';
 
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
@@ -90,7 +89,7 @@ export const SuccessPage: React.FC = () => {
                     glp_status: parsed.glpStatus || null,
                     application_frequency: parsed.applicationFrequency || null,
                     pace: parsed.pace || null,
-                    motivation: parsed.motivation || [],
+                    motivation: Array.isArray(parsed.motivation) ? parsed.motivation : (parsed.motivation ? [parsed.motivation] : []),
                     main_side_effect: parsed.mainSideEffect || null,
                     medication: parsed.medication || null,
                     notifications: parsed.notifications || null,

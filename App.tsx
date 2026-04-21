@@ -238,11 +238,11 @@ const AppContent: React.FC = () => {
       glp_status: userData.glpStatus,
       application_frequency: userData.applicationFrequency,
       pace: userData.pace,
-      motivation: userData.motivation,
+      motivation: Array.isArray(userData.motivation) ? userData.motivation : (userData.motivation ? [userData.motivation] : []),
       main_side_effect: userData.mainSideEffect || null,
-      medication: userData.medication,
-      notifications: userData.notifications,
-      goals: userData.goals,
+      medication: userData.medication || null,
+      notifications: userData.notifications || null,
+      goals: userData.goals || null,
       streak: userData.streak || 0,
       last_activity_date: userData.lastActivityDate || new Date().toISOString(),
       journey_duration: userData.journeyDuration || null,
@@ -259,6 +259,7 @@ const AppContent: React.FC = () => {
         .upsert(profileData, { onConflict: 'id' });
       if (error) {
         console.error("Error saving profile:", error);
+        return; // Early return to prevent navigation on error
       } else {
         console.log("✅ Profile salvo com sucesso no onboarding.");
       }
@@ -268,8 +269,7 @@ const AppContent: React.FC = () => {
       navigate('/');
     } catch (err) {
       console.error("Critical error during onboarding complete:", err);
-      setProfileExists(true);
-      navigate('/');
+      return; // Early return to prevent navigation on error
     }
   };
 

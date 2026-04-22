@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, Check, Sparkles } from 'lucide-react';
+import { ChevronLeft, Check, Sparkles, ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 
@@ -70,6 +70,7 @@ const plans = [
 export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSelected, onBack }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('trimestral');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCheckoutRedirect, setShowCheckoutRedirect] = useState(false);
   const { session } = useAppContext();
 
   useEffect(() => {
@@ -83,7 +84,11 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
     }
   }, []);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
+    setShowCheckoutRedirect(true);
+  };
+
+  const handleFinalCheckout = async () => {
     setIsLoading(true);
     const plan = plans.find(p => p.id === selectedPlan);
     if (!plan) return;
@@ -99,7 +104,7 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
             }
         });
 
-        console.log('Response data:', data);  // vai mostrar { error: "mensagem exata" } ou a URL
+        console.log('Response data:', data);
         console.log('Response error:', error);
 
         if (error) throw error;
@@ -112,7 +117,7 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
         }
     } catch (error) {
         console.error('Erro ao iniciar checkout:', error);
-        alert('Erro ao processar sua assinatura. Tente novamente.');
+        alert('Erro ao processar sua consulta. Tente novamente.');
         setIsLoading(false);
     }
   };
@@ -126,6 +131,55 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } }
   };
+
+  if (showCheckoutRedirect) {
+    const plan = plans.find(p => p.id === selectedPlan);
+    return (
+        <div className="fixed inset-0 bg-gray-50 dark:bg-black z-[80] overflow-y-auto animate-fade-in font-sans">
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-white dark:bg-[#1C1C1E] rounded-[32px] shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                    <div className="p-8 text-center">
+                        <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <ShieldCheck className="w-10 h-10 text-blue-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Checkout Seguro</h2>
+                        <p className="text-gray-500 mb-8 font-medium">Você será redirecionado para a Stripe para concluir seu pagamento com total segurança.</p>
+
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-8 text-left border border-gray-100 dark:border-gray-800">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Serviço Selecionado</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                Consultoria Especializada - Plano {plan?.title}
+                            </p>
+                            <p className="text-sm font-semibold text-[#2972F5] mt-1">
+                                {plan?.pricePrefix} {plan?.price} {plan?.total}
+                            </p>
+                        </div>
+
+                        <button 
+                            onClick={handleFinalCheckout}
+                            disabled={isLoading}
+                            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70"
+                        >
+                            {isLoading ? (
+                                <><Loader2 className="w-5 h-5 animate-spin" /> Processando...</>
+                            ) : (
+                                <><Lock className="w-5 h-5" /> Ir para Pagamento</>
+                            )}
+                        </button>
+                        
+                        <button 
+                            onClick={() => setShowCheckoutRedirect(false)} 
+                            disabled={isLoading} 
+                            className="mt-6 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors"
+                        >
+                            Cancelar e voltar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <motion.div 

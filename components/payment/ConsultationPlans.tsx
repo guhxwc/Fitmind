@@ -94,13 +94,15 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
     if (!plan) return;
 
     try {
+        const returnUrl = `${window.location.origin}/success`;
         const { data, error } = await supabase.functions.invoke('create-checkout-session', {
             body: { 
                 priceId: plan.priceId,
                 productId: plan.productId,
                 planType: plan.id,
                 userId: session?.user?.id,
-                is_consultation: true
+                is_consultation: true,
+                returnUrl: returnUrl
             }
         });
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { XMarkIcon, HeartIcon, PlusIcon, EditIcon, CheckCircleIcon } from '../core/Icons';
 
+import { PatientDashboard } from './PatientDashboard';
+
 export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState<'pacientes' | 'indicados'>('pacientes');
     const [patients, setPatients] = useState<any[]>([]);
@@ -52,148 +54,197 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
 
     if (selectedPatient) {
-        return <PatientDetail patient={selectedPatient} onBack={() => setSelectedPatient(null)} onUpdate={fetchPatients} />;
+        return <PatientDashboard patient={selectedPatient} onBack={() => setSelectedPatient(null)} />;
     }
 
     return (
-        <div className="fixed inset-0 bg-[#F2F2F7] dark:bg-[#000000] z-[100] flex overflow-hidden">
+        <div className="fixed inset-0 bg-[#F4F7FE] dark:bg-[#0B0C10] z-[100] flex overflow-hidden font-sans">
             
             {/* Overlay for mobile sidebar */}
             {isSidebarOpen && (
-                <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/40 z-[101] md:hidden backdrop-blur-[2px]" />
+                <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/40 z-[101] md:hidden backdrop-blur-sm" />
             )}
 
             {/* Left Sidebar Menu */}
-            <aside className={`fixed md:relative inset-y-0 left-0 w-[260px] bg-white dark:bg-[#1C1C1E] border-r border-gray-200 dark:border-[#2C2C2E] flex flex-col z-[102] transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-                 <div className="p-6">
-                    <div className="flex items-center justify-between mb-8">
-                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Flavicon/fitmind_logo%20(1).png" alt="Fitmind Logo" className="h-6 object-contain" />
-                        <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-400">
-                            <XMarkIcon className="w-5 h-5" />
+            <aside className={`fixed md:relative inset-y-0 left-0 w-[280px] bg-white dark:bg-[#1C1C21] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex flex-col z-[102] transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[4px_0_24px_rgba(0,0,0,0.02)]`}>
+                 <div className="p-8 pb-4 flex flex-col items-center">
+                    <div className="w-full flex justify-between items-center mb-8 px-2">
+                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/fitmind_horizontal_o.png" alt="Fitmind Logo" className="h-16 md:h-20 w-auto object-contain" />
+                        <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 -mr-2 text-gray-400">
+                            <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
                     
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-100 dark:border-gray-800 flex bg-gray-50 dark:bg-gray-900 shrink-0">
-                            <img 
-                                src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" 
-                                alt="Dr. Allan" 
-                                className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal" 
-                            />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h2 className="font-bold text-[15px] text-gray-900 dark:text-white leading-tight truncate">Allan Stachuk</h2>
-                            <p className="text-[12px] text-gray-500 font-medium">Painel Nutricionista</p>
-                        </div>
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-white dark:border-[#2C2C35] shadow-lg mb-4 bg-gray-50 dark:bg-gray-900 shrink-0">
+                        <img 
+                            src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" 
+                            alt="Dr. Allan" 
+                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.15] translate-y-2.5 translate-x-1" 
+                        />
                     </div>
-
-                    <nav className="space-y-2">
-                        <button 
-                            onClick={() => { setActiveTab('pacientes'); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[12px] text-[14px] font-semibold transition-colors ${activeTab === 'pacientes' ? 'bg-[#007AFF] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2C2C2E]'}`}
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                            Meus Pacientes
-                        </button>
-                        <button 
-                            onClick={() => { setActiveTab('indicados'); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[12px] text-[14px] font-semibold transition-colors ${activeTab === 'indicados' ? 'bg-[#007AFF] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2C2C2E]'}`}
-                        >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                            Indicações (Affiliate)
-                        </button>
-                    </nav>
+                    <div className="text-center w-full">
+                        <h2 className="font-bold text-[20px] text-[#2B3674] dark:text-white leading-tight">Allan Stachuk</h2>
+                        <p className="text-[14px] text-[#A3AED0] dark:text-gray-400 font-medium mt-1">Nutricionista Fitmind</p>
+                    </div>
                  </div>
 
-                 <div className="mt-auto p-6 border-t border-gray-100 dark:border-[#2C2C2E]">
-                     <button onClick={onClose} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-[12px] font-semibold text-[14px] hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors">
+                 <nav className="flex-1 px-6 mt-6 space-y-3">
+                    <button 
+                        onClick={() => { setActiveTab('pacientes'); setIsSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[15px] font-bold transition-all duration-200 ${
+                            activeTab === 'pacientes' 
+                            ? 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.25)]' 
+                            : 'text-[#A3AED0] hover:bg-[#F4F7FE] dark:text-gray-500 dark:hover:bg-[#2C2C35]'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        Pacientes
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('indicados'); setIsSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[15px] font-bold transition-all duration-200 ${
+                            activeTab === 'indicados' 
+                            ? 'bg-[#007AFF] text-white shadow-[0_8px_20px_rgba(0,122,255,0.25)]' 
+                            : 'text-[#A3AED0] hover:bg-[#F4F7FE] dark:text-gray-500 dark:hover:bg-[#2C2C35]'
+                        }`}
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                        Indicações
+                    </button>
+                 </nav>
+
+                 <div className="p-6">
+                     <button onClick={onClose} className="w-full flex items-center justify-center gap-2 px-5 py-4 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-2xl font-bold text-[15px] hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors">
                          Sair do Painel
                      </button>
                  </div>
             </aside>
 
             {/* Right Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 bg-[#F2F2F7] dark:bg-[#000000]">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header */}
-                <header className="md:hidden pt-safe-top bg-white dark:bg-[#1C1C1E] border-b border-gray-200 dark:border-[#2C2C2E] px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+                <header className="md:hidden pt-safe-top bg-white dark:bg-[#1C1C21] shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-10">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-[#007AFF] active:scale-95 transition-transform">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
-                        <h1 className="font-bold text-[18px] text-gray-900 dark:text-white tracking-tight">{activeTab === 'pacientes' ? 'Meus Pacientes' : 'Indicações'}</h1>
+                        <h1 className="font-bold text-[18px] text-[#2B3674] dark:text-white tracking-tight">{activeTab === 'pacientes' ? 'Dashboard' : 'Indicações'}</h1>
                     </div>
                 </header>
 
-                {/* Desktop Header */}
-                <header className="hidden md:flex pt-safe-top bg-[#F2F2F7] dark:bg-[#000000] px-6 py-6 pb-2 items-center justify-between">
-                    <h1 className="font-bold text-2xl text-gray-900 dark:text-white tracking-tight">{activeTab === 'pacientes' ? 'Meus Pacientes' : 'Minhas Indicações'}</h1>
-                </header>
+                <main className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-10">
+                    
+                    {/* Welcome Banner */}
+                    <div className="bg-[#007AFF] rounded-[24px] p-8 md:p-10 mb-8 relative overflow-hidden shadow-[0_10px_30px_rgba(0,122,255,0.2)]">
+                        <div className="relative z-10 md:w-2/3">
+                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Bem-vindo, Allan!</h1>
+                            <p className="text-[#E2E8F0] text-[15px] md:text-[16px] leading-relaxed max-w-lg mb-6">
+                                Acompanhe o progresso dos seus pacientes, veja novas indicações e gerencie consultas médicas de forma fácil.
+                            </p>
+                        </div>
+                        <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-10 translate-y-10">
+                            <svg width="300" height="300" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                    </div>
 
-                <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 pb-12">
                 {loading ? (
-                    <div className="flex justify-center p-8"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent flex items-center justify-center animate-spin rounded-full"></div></div>
+                    <div className="flex justify-center p-12"><div className="w-10 h-10 border-4 border-[#007AFF] border-t-transparent flex items-center justify-center animate-spin rounded-full"></div></div>
                 ) : activeTab === 'pacientes' ? (
-                    <div className="space-y-4 pt-2">
-                        {patients.length === 0 && <p className="text-center text-gray-500 mt-10 text-[15px]">Nenhum paciente encontrado.</p>}
+                    <div className="bg-white dark:bg-[#1C1C21] rounded-[30px] p-6 md:p-8 shadow-[0_18px_40px_rgba(112,144,176,0.08)]">
+                         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                             <div>
+                                 <h2 className="text-[22px] font-bold text-[#2B3674] dark:text-white">Lista de Pacientes</h2>
+                                 <p className="text-[14px] text-[#A3AED0] dark:text-gray-500 font-medium mt-1">Acompanhe seus clientes ativos e inativos</p>
+                             </div>
+                             <div className="bg-[#F4F7FE] dark:bg-[#2C2C35] rounded-full px-5 py-2 inline-flex items-center gap-2">
+                                 <span className="w-2.5 h-2.5 rounded-full bg-[#007AFF]"></span>
+                                 <span className="text-[14px] font-bold text-[#2B3674] dark:text-white">Total: {patients.length}</span>
+                             </div>
+                         </div>
+
+                        {patients.length === 0 && <div className="text-center py-12"><p className="text-[#A3AED0] text-[16px] font-medium">Nenhum paciente encontrado.</p></div>}
+                        
+                        <div className="space-y-4">
                         {patients.map(p => {
                             const daysLeft = getDaysLeft(p.next_review_at);
                             
                             return (
-                                <div key={p.id} onClick={() => setSelectedPatient(p)} className="group bg-white dark:bg-[#1C1C1E] rounded-[24px] p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-[#2C2C2E] active:scale-[0.98] transition-transform cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4 w-full">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 text-[#007AFF] rounded-full flex items-center justify-center font-bold text-[18px] border border-blue-200/50 dark:border-blue-700/30 shrink-0">
+                                <div key={p.id} onClick={() => setSelectedPatient(p)} className="group bg-white dark:bg-[#111116] rounded-2xl p-4 md:p-5 border border-[#E2E8F0] dark:border-white/5 hover:border-[#007AFF]/30 dark:hover:border-[#007AFF]/50 hover:shadow-[0_8px_30px_rgba(0,122,255,0.06)] transition-all duration-300 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5">
+                                    <div className="flex items-center gap-5 w-full">
+                                        <div className="w-14 h-14 bg-[#F4F7FE] dark:bg-[#007AFF]/10 text-[#007AFF] rounded-full flex items-center justify-center font-bold text-[20px] shrink-0 transition-transform group-hover:scale-105">
                                             {p.profiles?.name?.charAt(0).toUpperCase() || '?'}
                                         </div>
                                         <div className="flex flex-col flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <h3 className="font-bold text-gray-900 dark:text-white text-[17px] tracking-tight truncate max-w-[150px] sm:max-w-none">{p.profiles?.name || 'Paciente'}</h3>
-                                                <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${p.status === 'active' ? 'bg-[#E3F5E1] text-[#246A28] dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                                                    {p.status === 'active' ? 'ATIVO' : 'PENDENTE'}
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                <h3 className="font-bold text-[#2B3674] dark:text-white text-[18px] tracking-tight">{p.profiles?.name || 'Paciente'}</h3>
+                                                <span className={`shrink-0 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${p.status === 'active' ? 'bg-[#05CD99]/10 text-[#05CD99]' : 'bg-[#FFCE20]/10 text-[#FFB547]'}`}>
+                                                    {p.status === 'active' ? 'Ativo' : 'Pendente'}
                                                 </span>
-                                                {p.anamneses && p.anamneses.length > 0 ? (
-                                                    <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide bg-blue-100 text-[#007AFF] dark:bg-blue-900/30 dark:text-[#0A84FF] flex items-center gap-1">
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                                        ANAMNESE
-                                                    </span>
-                                                ) : (
-                                                    <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                                                        S/ ANAMNESE
-                                                    </span>
-                                                )}
                                             </div>
-                                            <div className="flex items-center gap-2.5 mt-1.5 text-[13px] text-gray-500 font-medium flex-wrap">
-                                                <span className="flex items-center gap-1"><span className="text-gray-400 hidden sm:inline">Peso:</span> <strong className="text-gray-700 dark:text-gray-300">{p.profiles?.weight || '--'}kg</strong></span>
-                                                <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                <span className="flex items-center gap-1"><span className="text-gray-400 hidden sm:inline">Meta:</span> <strong className="text-gray-700 dark:text-gray-300">{p.profiles?.target_weight || '--'}kg</strong></span>
-                                                <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                <span className="flex items-center gap-1">
-                                                    <span className="text-gray-400 hidden sm:inline">Reajuste:</span> 
-                                                    <strong className={daysLeft !== null && daysLeft <= 0 ? 'text-red-500' : 'text-[#007AFF] dark:text-[#0A84FF]'}>{daysLeft !== null ? (daysLeft > 0 ? `em ${daysLeft}d` : 'Atrasado') : '--'}</strong>
+                                            <div className="flex items-center gap-3 mt-2 text-[14px] text-[#A3AED0] dark:text-gray-500 font-medium flex-wrap">
+                                                <span>Peso: {p.profiles?.weight || '--'}kg</span>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#E2E8F0] dark:bg-gray-700"></span>
+                                                <span>Meta: {p.profiles?.target_weight || '--'}kg</span>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#E2E8F0] dark:bg-gray-700"></span>
+                                                <span className="flex items-center gap-1.5">
+                                                    Reajuste:{' '}
+                                                    <strong className={daysLeft !== null && daysLeft <= 0 ? 'text-[#EE5D50]' : 'text-[#007AFF]'}>
+                                                        {daysLeft !== null ? (daysLeft > 0 ? `Em ${daysLeft} dias` : 'Atrasado') : '--'}
+                                                    </strong>
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 dark:bg-[#2C2C2E] text-gray-400 group-hover:bg-[#007AFF]/10 group-hover:text-[#007AFF] transition-colors shrink-0">
-                                        <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                                    <div className="flex items-center gap-3 mt-3 md:mt-0 w-full md:w-auto justify-end">
+                                        {p.anamneses && p.anamneses.length > 0 ? (
+                                            <span className="shrink-0 text-[12px] font-bold px-3 py-1.5 rounded-lg bg-[#007AFF]/5 text-[#007AFF] border border-[#007AFF]/10 flex items-center gap-1.5">
+                                                <CheckCircleIcon className="w-4 h-4" /> Anamnese
+                                            </span>
+                                        ) : (
+                                            <span className="shrink-0 text-[12px] font-bold px-3 py-1.5 rounded-lg bg-[#F4F7FE] text-[#A3AED0] dark:bg-[#2C2C35]">
+                                                S/ Anamnese
+                                            </span>
+                                        )}
+                                        <button className="hidden md:flex ml-4 bg-[#007AFF] text-white px-5 py-2.5 rounded-xl font-bold text-[14px] hover:bg-[#0056b3] transition-colors shadow-md">
+                                            Detalhes
+                                        </button>
                                     </div>
                                 </div>
                             );
                         })}
+                        </div>
                     </div>
                 ) : (
-                    <div className="space-y-3 pt-2">
-                        {referrals.length === 0 && <p className="text-center text-gray-500 mt-10 text-[15px]">Nenhum indicado encontrado.</p>}
+                    <div className="bg-white dark:bg-[#1C1C21] rounded-[30px] p-6 md:p-8 shadow-[0_18px_40px_rgba(112,144,176,0.08)]">
+                         <div className="flex items-center justify-between mb-8">
+                             <div>
+                                 <h2 className="text-[22px] font-bold text-[#2B3674] dark:text-white">Minhas Indicações</h2>
+                                 <p className="text-[14px] text-[#A3AED0] dark:text-gray-500 font-medium mt-1">Acompanhe seus afiliados</p>
+                             </div>
+                         </div>
+                        
+                        {referrals.length === 0 && <div className="text-center py-12"><p className="text-[#A3AED0] text-[16px] font-medium">Nenhuma indicação encontrada.</p></div>}
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {referrals.map(r => (
-                            <div key={r.id} className="bg-white dark:bg-[#1C1C1E] p-4 rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-white/5 flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-semibold text-[16px] text-gray-900 dark:text-white tracking-tight">{r.profiles?.name || 'Venda Externa / Pixel'}</h3>
-                                    <p className="text-[13px] text-gray-500 mt-0.5">Data: {new Date(r.created_at).toLocaleDateString('pt-BR')} • {r.status}</p>
+                            <div key={r.id} className="bg-white dark:bg-[#111116] p-5 rounded-2xl border border-[#E2E8F0] dark:border-white/5 flex items-center justify-between hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-4">
+                                     <div className="w-12 h-12 bg-[#F4F7FE] dark:bg-[#007AFF]/10 text-[#007AFF] rounded-full flex items-center justify-center font-bold text-[18px]">
+                                        {r.profiles?.name?.charAt(0).toUpperCase() || 'V'}
+                                     </div>
+                                    <div>
+                                        <h3 className="font-bold text-[16px] text-[#2B3674] dark:text-white">{r.profiles?.name || 'Venda Externa / Pixel'}</h3>
+                                        <p className="text-[13px] text-[#A3AED0] dark:text-gray-500 mt-1">{new Date(r.created_at).toLocaleDateString('pt-BR')} • {r.status}</p>
+                                    </div>
                                 </div>
-                                <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-md ${r.profiles?.subscription_status && r.profiles?.subscription_status !== 'free' ? 'bg-[#E5F0FF] text-[#007AFF] dark:bg-[#007AFF]/20 dark:text-[#0A84FF]' : 'bg-[#F2F2F7] text-gray-600 dark:bg-[#2C2C2E] dark:text-gray-300'}`}>
+                                <span className={`text-[12px] font-bold px-3 py-1.5 rounded-lg ${r.profiles?.subscription_status && r.profiles?.subscription_status !== 'free' ? 'bg-[#007AFF]/10 text-[#007AFF]' : 'bg-[#F4F7FE] text-[#A3AED0] dark:bg-[#2C2C35] dark:text-gray-400'}`}>
                                     {r.profiles?.subscription_status && r.profiles?.subscription_status !== 'free' ? 'PRO' : 'Pendente'}
                                 </span>
                             </div>
                         ))}
+                        </div>
                     </div>
                 )}
                 </main>
@@ -246,34 +297,34 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
     const todayRecord = dailyRecords.length > 0 && dailyRecords[0].date === new Date().toISOString().split('T')[0] ? dailyRecords[0] : null;
 
     return (
-        <div className="fixed inset-0 bg-[#F2F2F7] dark:bg-[#000000] z-[110] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-[#F4F7FE] dark:bg-[#0B0C10] z-[110] flex flex-col overflow-hidden font-sans">
              {/* Header Prêmium */}
-             <header className="pt-safe-top bg-[#F2F2F7] dark:bg-[#000000] border-b border-gray-200 dark:border-[#1C1C1E] px-4 pb-3 pt-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-200 dark:hover:bg-[#1C1C1E] rounded-full active:scale-95 transition-transform flex items-center justify-center">
-                        <svg className="w-6 h-6 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <header className="pt-safe-top bg-white dark:bg-[#1C1C21] shadow-sm px-6 pb-4 pt-5 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 -ml-2 text-[#007AFF] hover:bg-[#F4F7FE] dark:hover:bg-[#2C2C35] rounded-full active:scale-95 transition-all flex items-center justify-center">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 bg-gray-200 dark:bg-[#2C2C2E] rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 font-bold text-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#F4F7FE] dark:bg-[#007AFF]/10 text-[#007AFF] rounded-full flex items-center justify-center font-bold text-[16px]">
                             {patient.profiles?.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div className="flex flex-col">
-                             <h1 className="font-semibold text-[16px] text-gray-900 dark:text-white leading-tight">{patient.profiles?.name}</h1>
-                             <span className="text-[12px] text-gray-500 font-medium">Conta {patient.profiles?.subscription_status !== 'free' ? 'PRO' : 'Grátis'}</span>
+                             <h1 className="font-bold text-[18px] text-[#2B3674] dark:text-white leading-tight tracking-tight">{patient.profiles?.name}</h1>
+                             <span className="text-[13px] text-[#A3AED0] dark:text-gray-400 font-medium">Conta {patient.profiles?.subscription_status !== 'free' ? 'PRO' : 'Grátis'}</span>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-4 py-5 hide-scrollbar">
+            <main className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-8 hide-scrollbar">
                 
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Left Panel: Anamnese (Full Card) */}
                     <div className="w-full lg:w-[45%]">
-                        <h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-3 ml-2">Ficha Clínica (Anamnese)</h2>
-                        <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] shadow-[0_4px_16px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-[#2C2C2E] overflow-hidden">
+                        <h2 className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-500 uppercase tracking-widest mb-4 ml-2">Ficha Clínica (Anamnese)</h2>
+                        <div className="bg-white dark:bg-[#1C1C21] rounded-[30px] p-2 shadow-[0_18px_40px_rgba(112,144,176,0.08)]">
                             {patient.anamneses?.[0] ? (
                                 (() => {
                                     const anamnesis = patient.anamneses[0];
@@ -301,9 +352,9 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
                                                 const valueMsg = Array.isArray(v) ? v.join(', ') : String(v);
                                                 const isLast = index === entries.length - 1;
                                                 return (
-                                                    <div key={k} className={`p-4 ${!isLast ? 'border-b border-gray-100 dark:border-[#2C2C2E]' : ''}`}>
-                                                        <h4 className="text-[12px] font-medium text-gray-400 mb-0.5">{label}</h4>
-                                                        <p className="text-[15px] font-semibold text-gray-900 dark:text-white leading-snug">{valueMsg}</p>
+                                                    <div key={k} className={`px-6 py-4 ${!isLast ? 'border-b border-[#F4F7FE] dark:border-[#2C2C35]' : ''}`}>
+                                                        <h4 className="text-[13px] font-medium text-[#A3AED0] dark:text-gray-400 mb-1">{label}</h4>
+                                                        <p className="text-[16px] font-bold text-[#2B3674] dark:text-white leading-snug">{valueMsg}</p>
                                                     </div>
                                                 )
                                             })}
@@ -312,70 +363,70 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
                                 })()
                             ) : (
                                 <div className="p-10 flex flex-col items-center justify-center text-center">
-                                    <div className="w-12 h-12 bg-gray-100 dark:bg-[#2C2C2E] rounded-full flex items-center justify-center mb-3">
-                                        <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <div className="w-14 h-14 bg-[#F4F7FE] dark:bg-[#007AFF]/10 rounded-full flex items-center justify-center mb-4">
+                                        <svg className="w-7 h-7 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                     </div>
-                                    <p className="font-semibold text-gray-900 dark:text-white">Sem Ficha</p>
-                                    <p className="text-sm text-gray-500 mt-1">O paciente ainda não preencheu a anamnese.</p>
+                                    <p className="font-bold text-[18px] text-[#2B3674] dark:text-white">Ficha Pendente</p>
+                                    <p className="text-[15px] text-[#A3AED0] dark:text-gray-500 mt-2">O paciente ainda não preencheu a anamnese pelo aplicativo.</p>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Middle Column: Actions */}
-                    <div className="w-full lg:w-[25%] space-y-4">
-                        <h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-3 ml-2">Ações Rápidas</h2>
+                    <div className="w-full lg:w-[25%] space-y-5">
+                        <h2 className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-500 uppercase tracking-widest mb-4 ml-2">Ações Rápidas</h2>
                         
-                        <button onClick={() => setEditingType('dieta')} className="w-full bg-[#10B981] hover:bg-[#059669] p-6 rounded-[24px] shadow-lg flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform text-white border border-green-600/20">
-                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <button onClick={() => setEditingType('dieta')} className="w-full bg-[#05CD99] hover:bg-[#04B688] p-8 rounded-[30px] shadow-[0_18px_40px_rgba(5,205,153,0.2)] flex flex-col items-center justify-center gap-4 active:scale-95 transition-all text-white border border-[#05CD99]/20 group">
+                            <svg className="w-12 h-12 transform group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <h3 className="font-bold text-[18px]">Criar Dieta</h3>
+                            <h3 className="font-bold text-[20px] tracking-tight">Criar Dieta</h3>
                         </button>
                         
-                        <button onClick={() => setEditingType('metas')} className="w-full bg-white dark:bg-[#1C1C1E] p-5 rounded-[24px] shadow-sm border border-gray-100 dark:border-[#2C2C2E] flex items-center justify-center gap-3 active:scale-95 transition-transform text-center">
-                            <span className="font-bold text-[16px] text-gray-900 dark:text-white">Editar Metas APP</span>
+                        <button onClick={() => setEditingType('metas')} className="w-full bg-white dark:bg-[#1C1C21] p-6 rounded-[30px] shadow-[0_18px_40px_rgba(112,144,176,0.08)] flex items-center justify-center gap-3 active:scale-95 transition-transform text-center hover:bg-[#F4F7FE] dark:hover:bg-[#2C2C35]">
+                            <span className="font-bold text-[16px] text-[#2B3674] dark:text-white">Editar Metas APP</span>
                         </button>
 
-                        <button onClick={() => setEditingType('mensagens')} className="w-full bg-white dark:bg-[#1C1C1E] p-5 rounded-[24px] shadow-sm border border-gray-100 dark:border-[#2C2C2E] flex items-center justify-center gap-3 active:scale-95 transition-transform text-center">
-                            <span className="font-bold text-[16px] text-gray-900 dark:text-white">Chat Direto</span>
+                        <button onClick={() => setEditingType('mensagens')} className="w-full bg-white dark:bg-[#1C1C21] p-6 rounded-[30px] shadow-[0_18px_40px_rgba(112,144,176,0.08)] flex items-center justify-center gap-3 active:scale-95 transition-transform text-center hover:bg-[#F4F7FE] dark:hover:bg-[#2C2C35]">
+                            <span className="font-bold text-[16px] text-[#2B3674] dark:text-white">Chat Direto</span>
                         </button>
                     </div>
 
                     {/* Right Column: Tracker & Chart */}
-                    <div className="w-full lg:w-[30%] space-y-6">
+                    <div className="w-full lg:w-[30%] space-y-8">
                         {/* Tracker Único */}
                         <div>
-                            <h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-3 ml-2">Progresso do Dia</h2>
-                            <div className="bg-white dark:bg-[#1C1C1E] p-5 rounded-[24px] shadow-sm border border-gray-100 dark:border-[#2C2C2E] flex flex-col space-y-5">
+                            <h2 className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-500 uppercase tracking-widest mb-4 ml-2">Progresso do Dia</h2>
+                            <div className="bg-white dark:bg-[#1C1C21] p-6 md:p-8 rounded-[30px] shadow-[0_18px_40px_rgba(112,144,176,0.08)] flex flex-col space-y-6">
                                 {/* Proteina */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <span className="text-[13px] font-bold text-gray-600 dark:text-gray-300">Proteína Ext.</span>
-                                        <span className="text-[13px] font-bold text-gray-900 dark:text-white">{todayRecord?.quick_add_protein_grams || 0}/{patientGoals?.protein_g || 150}g</span>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-400">Proteína</span>
+                                        <span className="text-[14px] font-bold text-[#2B3674] dark:text-white">{todayRecord?.quick_add_protein_grams || 0}/{patientGoals?.protein_g || 150}g</span>
                                     </div>
-                                    <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, Math.max(0, ((todayRecord?.quick_add_protein_grams || 0) / (patientGoals?.protein_g || 150)) * 100))}%` }}></div>
+                                    <div className="w-full h-3 bg-[#F4F7FE] dark:bg-[#2C2C35] rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#FFCE20] rounded-full" style={{ width: `${Math.min(100, Math.max(0, ((todayRecord?.quick_add_protein_grams || 0) / (patientGoals?.protein_g || 150)) * 100))}%` }}></div>
                                     </div>
                                 </div>
                                 {/* Agua */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <span className="text-[13px] font-bold text-gray-600 dark:text-gray-300">Água</span>
-                                        <span className="text-[13px] font-bold text-gray-900 dark:text-white">{todayRecord?.water_liters || 0}/{((patientGoals?.water_ml || 3000)/1000).toFixed(1)}L</span>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-400">Água</span>
+                                        <span className="text-[14px] font-bold text-[#2B3674] dark:text-white">{todayRecord?.water_liters || 0}/{((patientGoals?.water_ml || 3000)/1000).toFixed(1)}L</span>
                                     </div>
-                                    <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500" style={{ width: `${Math.min(100, Math.max(0, ((todayRecord?.water_liters || 0) / ((patientGoals?.water_ml || 3000)/1000)) * 100))}%` }}></div>
+                                    <div className="w-full h-3 bg-[#F4F7FE] dark:bg-[#2C2C35] rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#39B8FF] rounded-full" style={{ width: `${Math.min(100, Math.max(0, ((todayRecord?.water_liters || 0) / ((patientGoals?.water_ml || 3000)/1000)) * 100))}%` }}></div>
                                     </div>
                                 </div>
                                 {/* Medicamento */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <span className="text-[13px] font-bold text-gray-600 dark:text-gray-300">Remédio</span>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-400">Medicação de Hoje</span>
                                     </div>
-                                    <div className="w-full bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                                        <span className="text-[14px] font-bold text-gray-900 dark:text-white line-clamp-1">{sideEffects.length > 0 ? sideEffects[0].medication_taken || 'Nenhum registrado' : 'Nenhum'}</span>
-                                        {sideEffects.length > 0 && sideEffects[0].medication_dose && <span className="text-[12px] font-medium text-gray-500 mt-1 block">{sideEffects[0].medication_dose} (Hoje)</span>}
+                                    <div className="w-full bg-[#F4F7FE] dark:bg-[#111116] p-4 rounded-2xl border border-[#E2E8F0] dark:border-[#2C2C35]">
+                                        <span className="text-[15px] font-bold text-[#2B3674] dark:text-white line-clamp-1">{sideEffects.length > 0 ? sideEffects[0].medication_taken || 'Nenhum registro' : 'Nenhum'}</span>
+                                        {sideEffects.length > 0 && sideEffects[0].medication_dose && <span className="text-[13px] font-medium text-[#A3AED0] dark:text-gray-500 mt-1 block">Dose: {sideEffects[0].medication_dose}</span>}
                                     </div>
                                 </div>
                             </div>
@@ -383,19 +434,19 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
 
                         {/* Chart */}
                         <div>
-                             <div className="flex items-center justify-between mb-3 mx-2">
-                                <h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest m-0">Variação de Peso</h2>
-                                <div className="flex bg-[#E3E3E8] dark:bg-[#2C2C2E] p-0.5 rounded-lg max-w-[200px]">
+                             <div className="flex items-center justify-between mb-4 mx-2">
+                                <h2 className="text-[14px] font-bold text-[#A3AED0] dark:text-gray-500 uppercase tracking-widest m-0">Variação de Peso</h2>
+                                <div className="flex bg-[#F4F7FE] dark:bg-[#2C2C35] p-1 rounded-xl">
                                      {['7', '30', '60', 'all'].map(t => (
-                                         <button key={t} onClick={() => setTimeframe(t as any)} className={`px-2 py-0.5 text-[10px] font-semibold rounded-md transition-all ${timeframe === t ? 'bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-sm' : 'text-gray-500'}`}>
+                                         <button key={t} onClick={() => setTimeframe(t as any)} className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${timeframe === t ? 'bg-white dark:bg-[#1C1C21] text-[#007AFF] dark:text-white shadow-sm' : 'text-[#A3AED0] dark:text-gray-400 hover:text-[#2B3674]'}`}>
                                              {t === 'all' ? 'Tudo' : `${t}D`}
                                          </button>
                                      ))}
                                  </div>
                              </div>
-                             <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-[24px] shadow-sm border border-gray-100 dark:border-[#2C2C2E]">
+                             <div className="bg-white dark:bg-[#1C1C21] pt-6 pb-4 px-4 rounded-[30px] shadow-[0_18px_40px_rgba(112,144,176,0.08)]">
                                   {chartData.length > 1 ? (
-                                      <div className="w-full h-[180px]">
+                                      <div className="w-full h-[200px]">
                                           <ResponsiveContainer width="100%" height="100%">
                                               <AreaChart data={chartData}>
                                                   <defs>

@@ -59,22 +59,33 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
          if (session?.user?.id) {
              const { data: consultation } = await supabase.from('consultations').select('id').eq('user_id', session.user.id).single();
              if (consultation) {
-                 await supabase.from('anamneses').upsert([{
+                 const { error: anamnesisError } = await supabase.from('anamneses').upsert({
                      user_id: session.user.id,
                      consultation_id: consultation.id,
-                     goal: formData.objective,
-                     current_weight: formData.weight,
-                     target_weight: null, // Pode ser preenchido se tiver
-                     height: formData.height,
-                     activity_level: formData.activityLevel,
-                     wake_up_time: formData.sleep, // using mapped
-                     sleep_time: formData.sleep, // using mapped
-                     main_difficulties: formData.stress, // mapped
+                     goal: formData.objective || '',
+                     current_weight: parseFloat(formData.weight) || 0,
+                     target_weight: null,
+                     height: parseFloat(formData.height) || 0,
+                     activity_level: formData.activityLevel || '',
+                     wake_up_time: formData.sleep || '',
+                     sleep_time: formData.sleep || '',
+                     main_difficulties: formData.stress || '',
                      previous_diets: '',
                      food_restrictions: formData.allergies ? [formData.allergies] : [],
                      additional_info: JSON.stringify(formData)
-                 }]);
-                 await supabase.from('consultations').update({ status: 'anamnese_done' }).eq('id', consultation.id);
+                 }, { onConflict: 'user_id' });
+                 
+                 if (anamnesisError) {
+                     console.error("Error saving anamnesis:", anamnesisError);
+                     alert("Erro ao salvar anamnese no banco (Tabela 'anamneses'):\n" + anamnesisError.message + "\n\nDetalhes: " + anamnesisError.details);
+                     return; // Stop here if failed
+                 }
+
+                 const { error: consultationError } = await supabase.from('consultations').update({ status: 'anamnese_done' }).eq('id', consultation.id);
+                 if (consultationError) {
+                     console.error("Error updating consultation:", consultationError);
+                     alert("Erro ao atualizar status da consulta (Tabela 'consultations'):\n" + consultationError.message);
+                 }
                  setConsultationStatus('anamnese_done');
                  if (onSuccess) onSuccess();
              }

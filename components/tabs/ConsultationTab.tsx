@@ -4,10 +4,12 @@ import { useAppContext } from '../AppContext';
 import { ConsultationDashboard } from '../consultation/ConsultationDashboard';
 import { AnamnesisForm } from '../consultation/AnamnesisForm';
 import { WelcomeConsultation } from '../consultation/WelcomeConsultation';
+import { ConsultationPlans } from '../payment/ConsultationPlans';
 
 export const ConsultationTab: React.FC = () => {
     const { session } = useAppContext();
     const [loading, setLoading] = useState(true);
+    const [showPlans, setShowPlans] = useState(false);
     const [consultationStatus, setConsultationStatus] = useState<string | null>(null);
 
     const fetchConsultation = async () => {
@@ -66,7 +68,18 @@ export const ConsultationTab: React.FC = () => {
     }
 
     if (!consultationStatus) {
-        return <WelcomeConsultation onStart={handleCreateConsultation} />;
+        if (showPlans) {
+            return (
+                <ConsultationPlans 
+                    onPlanSelected={(planId) => {
+                        console.log('Plano selecionado:', planId);
+                        // O redirecionamento agora acontece dentro do componente ConsultationPlans
+                    }} 
+                    onBack={() => setShowPlans(false)} 
+                />
+            );
+        }
+        return <WelcomeConsultation onStart={() => setShowPlans(true)} />;
     }
 
     if (consultationStatus === 'pending') {

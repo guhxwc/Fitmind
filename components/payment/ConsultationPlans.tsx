@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, Check, Sparkles } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
+import { useAppContext } from '../AppContext';
 
 interface ConsultationPlansProps {
   onPlanSelected: (planId: string) => void;
@@ -16,6 +18,8 @@ const plans = [
     total: 'Por mês',
     highlight: '',
     savings: '',
+    priceId: 'price_1TP5QDQdX6ANfRVOyGh6llu7',
+    productId: 'prod_UNr8Fb9r6Gz1rz',
     benefits: [
       'Avaliação inicial completa',
       'Plano alimentar personalizado',
@@ -32,6 +36,8 @@ const plans = [
     total: 'Total: R$ 561,00',
     highlight: 'MAIS ESCOLHIDO',
     savings: '',
+    priceId: 'price_1TP5V2QdX6ANfRVOGjPnYBf9',
+    productId: 'prod_UNrDfpi3C3OTUe',
     benefits: [
       'Tudo do plano mensal',
       '3 meses de acompanhamento contínuo',
@@ -48,6 +54,8 @@ const plans = [
     total: 'Total: R$ 981,00',
     highlight: 'MAIOR ECONOMIA',
     savings: 'Você economiza R$ 201,00 comparado ao plano mensal.',
+    priceId: 'price_1TP5q4QdX6ANfRVOzzrn5Iwt',
+    productId: 'prod_UNrZlDZNB5MDGQ',
     benefits: [
       'Tudo do plano trimestral',
       '6 meses de acompanhamento premium',
@@ -62,6 +70,7 @@ const plans = [
 export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSelected, onBack }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('trimestral');
   const [isLoading, setIsLoading] = useState(false);
+  const { session } = useAppContext();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -74,11 +83,38 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
     }
   }, []);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-        onPlanSelected(selectedPlan);
-    }, 800);
+    const plan = plans.find(p => p.id === selectedPlan);
+    if (!plan) return;
+
+    try {
+        const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+            body: { 
+                priceId: plan.priceId,
+                productId: plan.productId,
+                planType: plan.id,
+                userId: session?.user?.id,
+                is_consultation: true
+            }
+        });
+
+        console.log('Response data:', data);  // vai mostrar { error: "mensagem exata" } ou a URL
+        console.log('Response error:', error);
+
+        if (error) throw error;
+        if (data?.url) {
+            window.location.href = data.url;
+        } else if (data?.error) {
+            throw new Error(data.error);
+        } else {
+            throw new Error('Nenhuma URL de checkout retornada');
+        }
+    } catch (error) {
+        console.error('Erro ao iniciar checkout:', error);
+        alert('Erro ao processar sua assinatura. Tente novamente.');
+        setIsLoading(false);
+    }
   };
 
   const containerVariants = {

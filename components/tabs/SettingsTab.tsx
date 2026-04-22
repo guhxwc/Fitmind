@@ -14,7 +14,7 @@ import {
   Scale, Ruler, Cake, User, Wallet, Gift, Bell, 
   Globe, Star, Lightbulb, Mail, CreditCard, 
   Shield, FileSignature, LogOut, Trash2, 
-  ChevronRight, Moon, Share2, Copy, X
+  ChevronRight, Moon, Share2, Copy, X, Users
 } from 'lucide-react';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
@@ -397,6 +397,17 @@ export const SettingsTab: React.FC = () => {
                         <ChevronRight className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                     </div>
                 </SettingsGroup>
+
+                {isNutritionist && (
+                    <SettingsGroup title="Painel do Profissional">
+                        <SettingsItem 
+                            icon={<Users className="w-5 h-5 text-blue-500" />}
+                            label="Acessar Painel do Nutri" 
+                            onClick={() => setIsNutriPanelOpen(true)} 
+                            isLast
+                        />
+                    </SettingsGroup>
+                )}
 
                 <SettingsGroup title="Tratamento e metas">
                     <SettingsItem 

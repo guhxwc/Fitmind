@@ -398,9 +398,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addToast("Verificando status da assinatura...", "info");
         
         // Tenta sincronizar via Edge Function
-        // Nota: Aqui não temos o sessionId, então a função vai tentar buscar por userId
-        // (Precisamos atualizar a Edge Function para suportar busca por userId se sessionId estiver ausente)
-        const { data, error } = await supabase.functions.invoke('stripe-sync-profile', {
+        const { data, error } = await supabase.functions.invoke('stripe-webhook-sync-profile', {
             body: { userId: session.user.id }
         });
 

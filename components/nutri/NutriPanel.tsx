@@ -15,10 +15,10 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const fetchPatients = async () => {
         setLoading(true);
         try {
-            // Buscar o nutritionist_id do usuário logado
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user?.id) { setLoading(false); return; }
 
+            // Buscar o nutritionist_id do usuário logado
             const { data: nutri } = await supabase
                 .from('nutritionists')
                 .select('id')
@@ -27,6 +27,14 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
             if (!nutri) { setLoading(false); return; }
 
+            // Admin (Gustavo) vê os pacientes do Allan
+            // Qualquer outro nutricionista vê os seus próprios
+            const ALLAN_NUTRITIONIST_ID = '6178130c-e47a-4534-a794-9b80b823766b';
+            const GUSTAVO_USER_ID = 'f41871e7-f6e6-45e7-848a-740f703c1daf';
+            const targetNutritionistId = session.user.id === GUSTAVO_USER_ID
+                ? ALLAN_NUTRITIONIST_ID
+                : nutri.id;
+
             const { data, error } = await supabase
                 .from('consultations')
                 .select(`
@@ -34,7 +42,7 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     profiles:user_id (id, name, weight, target_weight, age, gender, medication),
                     anamneses(*)
                 `)
-                .eq('nutritionist_id', nutri.id)
+                .eq('nutritionist_id', targetNutritionistId)
                 .order('created_at', { ascending: false });
 
             if (!error && data) {

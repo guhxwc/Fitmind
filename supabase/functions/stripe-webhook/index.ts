@@ -52,9 +52,33 @@ serve(async (req) => {
           return new Response("User ID not found", { status: 400 });
       }
 
-      console.log(`✅ Processando PRO para usuário: ${userId}`);
+      console.log(`✅ Processando pagamento para usuário: ${userId}`);
+
+      // Se for consulta, apenas registrar (ou também aprovar o PRO se for combo)
+      const isConsultation = session.metadata?.is_consultation === 'true';
+
+      if (isConsultation) {
+          console.log(`✅ Registrando consultoria para usuário: ${userId}`);
+          // Registrando status inicial da consultoria
+          const { error: consultError } = await supabase
+            .from('consultations')
+            .upsert({ 
+                user_id: userId,
+                nutritionist_id: '6178130c-e47a-4534-a794-9b80b823766b', // Default nutricionista
+                status: 'pending',
+                updated_at: new Date().toISOString()
+            });
+            
+          if (consultError) {
+              console.error("❌ Erro ao registrar consultoria no banco:", consultError.message);
+          }
+      }
 
       // 1. Atualizar o perfil do usuário para PRO
+      // Se for apenas consultoria, será que ele vira PRO também?
+      // O requisito diz que tem combo. Na dúvida, como o stripe success trata tudo como assinatura,
+      // manterei atualizando o PRO para não quebrar fluxos anteriores, pois a consultoria VIP do Dr. Allan
+      // normalmente contempla os mesmos benefícios de app PRO.
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 

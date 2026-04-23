@@ -141,6 +141,24 @@ serve(async (req) => {
         .eq('id', targetUserId);
 
       if (updateError) throw updateError;
+      
+      let _sessionObj = null;
+      if (sessionId && sessionId !== 'null' && sessionId !== 'undefined') {
+          try {
+             _sessionObj = await stripe.checkout.sessions.retrieve(sessionId);
+          } catch(e){}
+      }
+      if (_sessionObj && _sessionObj.metadata?.is_consultation === 'true') {
+          console.log(`✅ Sincronizando Consultoria pendente para ${targetUserId}...`);
+          try {
+              await supabase.from('consultations').upsert({
+                  user_id: targetUserId,
+                  nutritionist_id: '6178130c-e47a-4534-a794-9b80b823766b',
+                  status: 'pending',
+                  updated_at: new Date().toISOString()
+              });
+          } catch (e) {}
+      }
 
       return new Response(JSON.stringify({ success: true, isPro: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

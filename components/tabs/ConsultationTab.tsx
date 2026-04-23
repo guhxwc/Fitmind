@@ -82,10 +82,9 @@ export const ConsultationTab: React.FC = () => {
         return <WelcomeConsultation onStart={() => setShowPlans(true)} />;
     }
 
-    if (consultationStatus === 'pending') {
-        return <AnamnesisForm onSuccess={fetchConsultation} />;
+    if (consultationStatus === 'pending' || consultationStatus === 'anamnese_done' || consultationStatus === 'active') {
+        return <ConsultationDashboard status={consultationStatus} onReload={fetchConsultation} />;
     }
 
-    // anamnese_done or active
     return <ConsultationDashboard status={consultationStatus} onReload={fetchConsultation} />;
 };

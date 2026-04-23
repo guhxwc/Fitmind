@@ -29,7 +29,7 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    const { priceId, email, userId, returnUrl, affiliateCode } = await req.json();
+    const { priceId, email, userId, returnUrl, affiliateCode, is_consultation } = await req.json();
     
     if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
 
@@ -56,6 +56,10 @@ serve(async (req) => {
     // 1. Buscar se existe um cupom válido para esse código de afiliado
     let couponId = null;
     let metadata: any = { supabase_user_id: userId };
+    
+    if (is_consultation) {
+        metadata = { ...metadata, is_consultation: 'true' };
+    }
 
     if (finalAffiliateCode) {
       // Sempre adiciona o código aos metadados para rastreamento, mesmo que não seja um afiliado "oficial"

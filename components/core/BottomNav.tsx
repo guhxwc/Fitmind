@@ -59,7 +59,7 @@ export const BottomNav: React.FC = () => {
 
   const tabs = [...baseTabs];
   
-  if (consultationStatus === 'anamnese_done' || consultationStatus === 'active') {
+  if (consultationStatus === 'pending' || consultationStatus === 'anamnese_done' || consultationStatus === 'active') {
       tabs.splice(3, 0, { to: '/consultation', label: 'Consulta', icon: <MessageCircle />, id: 'nav-consultation' });
   }
 

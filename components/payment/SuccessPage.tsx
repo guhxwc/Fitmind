@@ -42,7 +42,9 @@ export const SuccessPage: React.FC = () => {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Assinatura PRO ativada com sucesso!');
-                        setTimeout(() => navigate('/', { replace: true }), 2000);
+                        setTimeout(() => {
+                            finish();
+                        }, 2000);
                         return;
                     }
                 } catch (syncErr) {
@@ -64,7 +66,9 @@ export const SuccessPage: React.FC = () => {
                 setIsConfirmed(true);
                 setIsPolling(false);
                 setStatusMsg('Status PRO confirmado!');
-                setTimeout(() => navigate('/', { replace: true }), 2000);
+                setTimeout(() => {
+                    finish();
+                }, 2000);
                 return;
             }
 
@@ -117,7 +121,9 @@ export const SuccessPage: React.FC = () => {
                     setIsConfirmed(true);
                     setIsPolling(false);
                     setStatusMsg('Assinatura confirmada com sucesso!');
-                    setTimeout(() => navigate('/', { replace: true }), 2000);
+                    setTimeout(() => {
+                        finish();
+                    }, 2000);
                     return;
                 }
                 
@@ -138,11 +144,26 @@ export const SuccessPage: React.FC = () => {
         }
     };
 
+    const isConsultation = searchParams.get('type') === 'consultation';
+    const titleSuccess = isConsultation ? 'Bem-vindo à Consultoria VIP! 🎉' : 'Bem-vindo ao PRO! 🎉';
+    const statusMsgSuccess = isConsultation ? 'Sua consultoria foi assinada com sucesso!' : 'Assinatura confirmada com sucesso!';
+    
+    // Na finish function:
     const finish = async () => {
         localStorage.setItem('trigger_pro_tour', 'true');
         localStorage.setItem('has_seen_onboarding', 'true');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('affiliate_ref');
+
+        // Fallback na criação da consultoria se for desse tipo
+        if (isConsultation) {
+            await supabase.from('consultations').upsert({
+                user_id: session?.user.id,
+                nutritionist_id: '6178130c-e47a-4534-a794-9b80b823766b',
+                status: 'pending', // Apenas re-escreve como pending se não existir, ou atualiza o updated_at.
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' }).catch(console.error); // Add onConflict if possible or just rely on natural upsert
+        }
 
         // Converter indicação pendente para 'converted' se existir
         try {
@@ -167,7 +188,11 @@ export const SuccessPage: React.FC = () => {
         }
 
         await fetchData();
-        navigate('/', { replace: true });
+        if (isConsultation) {
+            navigate('/consultation', { replace: true });
+        } else {
+            navigate('/', { replace: true });
+        }
     };
 
     return (
@@ -190,11 +215,11 @@ export const SuccessPage: React.FC = () => {
             </div>
 
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
-                {isConfirmed ? 'Bem-vindo ao PRO! 🎉' : 'Quase lá...'}
+                {isConfirmed ? titleSuccess : 'Quase lá...'}
             </h1>
             
             <p className={`text-sm font-medium mb-6 ${isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                {statusMsg}
+                {isConfirmed ? statusMsgSuccess : statusMsg}
             </p>
 
             {error && (
@@ -219,7 +244,7 @@ export const SuccessPage: React.FC = () => {
                         onClick={finish}
                         className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                     >
-                        Ir para o Início <ChevronRightIcon className="w-4 h-4" />
+                        {isConsultation ? 'Ir para A Consultoria' : 'Ir para o Início'} <ChevronRightIcon className="w-4 h-4" />
                     </button>
                 </div>
             )}

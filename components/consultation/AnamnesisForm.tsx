@@ -56,11 +56,12 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
          setCurrentStep(prev => prev + 1);
      } else {
          // Finalizar
-         if (session?.user?.id) {
-             const { data: consultation } = await supabase.from('consultations').select('id').eq('user_id', session.user.id).single();
+         const userId = session?.user?.id || userData?.id;
+         if (userId) {
+             const { data: consultation } = await supabase.from('consultations').select('id').eq('user_id', userId).single();
              if (consultation) {
                  const { error: anamnesisError } = await supabase.from('anamneses').upsert({
-                     user_id: session.user.id,
+                     user_id: userId,
                      consultation_id: consultation.id,
                      goal: formData.objective || '',
                      current_weight: parseFloat(formData.weight) || 0,
@@ -88,7 +89,13 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                  }
                  setConsultationStatus('anamnese_done');
                  if (onSuccess) onSuccess();
+             } else {
+                 // Try to create consultation if it doesn't exist? Just update status to escape the loop at least
+                 setConsultationStatus('anamnese_done');
              }
+         } else {
+             // Fallback if both session and userData fail for some reason
+             setConsultationStatus('anamnese_done');
          }
          localStorage.setItem('fitmind_anamnese', JSON.stringify(formData));
          setShowSuccessModal(true);

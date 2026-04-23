@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ArrowRight, CheckCircle2, Activity, Scale, Heart, Target, Flame, Beef, Apple, Moon, BrainCircuit } from 'lucide-react';
+import { ChevronLeft, ArrowRight, CheckCircle2, Activity, Scale, Heart, Target, Flame, Beef, Apple, Moon, BrainCircuit, Sparkles, FileText, MessageCircle, Smartphone, HeartHandshake } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 
@@ -12,6 +12,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showIntroModal, setShowIntroModal] = useState(() => !localStorage.getItem('fitmind_consultation_intro'));
   const [formData, setFormData] = useState({
      // Step 1
      gender: userData?.gender?.toLowerCase() || '',
@@ -87,19 +88,18 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                      console.error("Error updating consultation:", consultationError);
                      alert("Erro ao atualizar status da consulta (Tabela 'consultations'):\n" + consultationError.message);
                  }
-                 setConsultationStatus('anamnese_done');
-                 if (onSuccess) onSuccess();
-             } else {
-                 // Try to create consultation if it doesn't exist? Just update status to escape the loop at least
-                 setConsultationStatus('anamnese_done');
              }
-         } else {
-             // Fallback if both session and userData fail for some reason
-             setConsultationStatus('anamnese_done');
          }
          localStorage.setItem('fitmind_anamnese', JSON.stringify(formData));
          setShowSuccessModal(true);
      }
+  };
+
+  const finalizeAnamnesis = () => {
+      localStorage.setItem('fitmind_consultation_waiting', 'true');
+      setShowSuccessModal(false);
+      setConsultationStatus('anamnese_done');
+      if (onSuccess) onSuccess();
   };
 
   const OptionCard = ({ icon: Icon, title, description, selected, onClick }: any) => (
@@ -381,6 +381,98 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
 
       </div>
 
+      {showIntroModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-0">
+            <motion.div 
+               initial={{ opacity: 0 }} 
+               animate={{ opacity: 1 }} 
+               className="absolute inset-0 bg-black/40 backdrop-blur-md" 
+            />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+               className="relative w-full max-w-[380px] bg-white dark:bg-[#1C1C1E] rounded-[28px] p-5 shadow-2xl overflow-hidden mx-4"
+            >
+                <div className="bg-[#007AFF]/10 w-11 h-11 rounded-full flex items-center justify-center mb-3 shadow-inner">
+                   <Sparkles className="w-5 h-5 text-[#007AFF]" />
+                </div>
+                <h2 className="text-[20px] font-bold text-gray-900 dark:text-white leading-tight mb-1.5 tracking-tight">Jornada Premium</h2>
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-5 font-medium leading-relaxed">
+                   Entenda os passos para iniciarmos sua estratégia.
+                </p>
+                
+                {/* Timeline */}
+                <div className="relative pl-3 space-y-4">
+                    {/* Linha conectora */}
+                    <div className="absolute left-[18.5px] top-3 bottom-7 w-[2px] bg-gray-100 dark:bg-[#2C2C2E]" />
+                    
+                    {/* Item 1 */}
+                    <div className="relative z-10 flex gap-2.5">
+                       <div className="w-[14px] h-[14px] rounded-full bg-[#007AFF] border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1 shadow-sm" />
+                       <div>
+                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-[#007AFF]" /> Anamnese
+                          </h3>
+                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
+                             Iremos coletar todas as suas métricas cruciais, rotina e restrições para uma análise clínica absoluta.
+                          </p>
+                       </div>
+                    </div>
+
+                    {/* Item 2 */}
+                    <div className="relative z-10 flex gap-2.5">
+                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
+                       <div>
+                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
+                             <MessageCircle className="w-3.5 h-3.5 text-gray-400" /> Agendar Consulta
+                          </h3>
+                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
+                             Você envia mensagem e marca a consulta que definira seu plano.
+                          </p>
+                       </div>
+                    </div>
+
+                    {/* Item 3 */}
+                    <div className="relative z-10 flex gap-2.5">
+                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
+                       <div>
+                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
+                             <Smartphone className="w-3.5 h-3.5 text-gray-400" /> Dieta no App
+                          </h3>
+                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
+                             A estratégia pronta e 100% calculada chega aqui no seu FitMind.
+                          </p>
+                       </div>
+                    </div>
+
+                    {/* Item 4 */}
+                    <div className="relative z-10 flex gap-2.5">
+                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
+                       <div>
+                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
+                            <HeartHandshake className="w-3.5 h-3.5 text-gray-400" /> Consultoria
+                          </h3>
+                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
+                             O Dr. Allan acompanhará sua evolução por WhatsApp sempre que precisar.
+                          </p>
+                       </div>
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                     <button onClick={() => {
+                        localStorage.setItem('fitmind_consultation_intro', 'true');
+                        setShowIntroModal(false);
+                     }} className="w-full bg-gradient-to-b from-[#007AFF] to-[#0066D6] hover:opacity-90 text-white font-bold py-3 rounded-[16px] text-[15px] active:scale-95 transition-all shadow-[0_4px_16px_rgba(0,122,255,0.3)]">
+                         Iniciar Anamnese
+                     </button>
+                </div>
+            </motion.div>
+        </div>,
+        document.body
+      )}
+
       {showSuccessModal && createPortal(
          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-0">
              <motion.div 
@@ -406,10 +498,8 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                 <div className="w-full space-y-2.5">
                    <button 
                       onClick={() => {
-                        localStorage.setItem('fitmind_consultation_waiting', 'true');
                         window.open('https://wa.me/5543999142672?text=Ol%C3%A1%2C%20conclu%C3%AD%20minha%20anamnese%20no%20FitMind%20e%20gostaria%20de%20marcar%20minha%20consulta%20premium.', '_blank');
-                        setShowSuccessModal(false);
-                        navigate('/consultation', { replace: true });
+                        finalizeAnamnesis();
                       }}
                       className="w-full bg-gradient-to-r from-[#25D366] to-[#1DA851] text-white font-bold border-none py-[16px] rounded-[20px] flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_4px_16px_rgba(37,211,102,0.3)] text-[15px]"
                    >
@@ -417,9 +507,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                    </button>
                    <button 
                       onClick={() => {
-                        localStorage.setItem('fitmind_consultation_waiting', 'true');
-                        setShowSuccessModal(false);
-                        navigate('/consultation', { replace: true });
+                        finalizeAnamnesis();
                       }}
                       className="w-full bg-gray-100 dark:bg-[#2C2C2E] text-gray-900 dark:text-white font-bold py-[16px] rounded-[20px] flex items-center justify-center active:scale-95 transition-transform text-[15px]"
                    >

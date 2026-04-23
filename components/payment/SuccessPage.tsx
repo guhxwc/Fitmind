@@ -11,6 +11,7 @@ export const SuccessPage: React.FC = () => {
     const [statusMsg, setStatusMsg] = useState('Ativando sua conta PRO...');
     const [isPolling, setIsPolling] = useState(true);
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const isConsultation = searchParams.get('type') === 'consultation';
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -25,9 +26,22 @@ export const SuccessPage: React.FC = () => {
         if (!session) return;
         const userId = session.user.id;
         const sessionId = searchParams.get('session_id');
+        const paymentType = searchParams.get('type'); // 'consultation' ou null (PRO)
         
         setIsPolling(true);
         setError(null);
+
+        // Se for pagamento de consultoria, aguardar webhook e redirecionar para /consultation
+        if (paymentType === 'consultation') {
+            setStatusMsg('Consultoria ativada! Redirecionando...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            setIsConfirmed(true);
+            setIsPolling(false);
+            setTimeout(() => {
+                finish();
+            }, 1000);
+            return;
+        }
 
         try {
             // 1. Tenta forçar uma sincronização via Edge Function se tivermos o sessionId
@@ -38,18 +52,23 @@ export const SuccessPage: React.FC = () => {
                         body: { sessionId, userId }
                     });
                     
+                    if (!syncError && syncData?.isConsultation) {
+                        // Consultoria ativada pelo stripe-sync-profile
+                        setIsConfirmed(true);
+                        setIsPolling(false);
+                        setStatusMsg('Consultoria ativada com sucesso!');
+                        setTimeout(() => finish(), 2000);
+                        return;
+                    }
                     if (!syncError && syncData?.isPro) {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Assinatura PRO ativada com sucesso!');
-                        setTimeout(() => {
-                            finish();
-                        }, 2000);
+                        setTimeout(() => navigate('/', { replace: true }), 2000);
                         return;
                     }
                 } catch (syncErr) {
                     console.error('Erro na sincronização forçada:', syncErr);
-                    // Continua para o polling normal se a sincronização falhar
                 }
             }
 
@@ -66,9 +85,7 @@ export const SuccessPage: React.FC = () => {
                 setIsConfirmed(true);
                 setIsPolling(false);
                 setStatusMsg('Status PRO confirmado!');
-                setTimeout(() => {
-                    finish();
-                }, 2000);
+                setTimeout(() => navigate('/', { replace: true }), 2000);
                 return;
             }
 
@@ -121,9 +138,7 @@ export const SuccessPage: React.FC = () => {
                     setIsConfirmed(true);
                     setIsPolling(false);
                     setStatusMsg('Assinatura confirmada com sucesso!');
-                    setTimeout(() => {
-                        finish();
-                    }, 2000);
+                    setTimeout(() => navigate('/', { replace: true }), 2000);
                     return;
                 }
                 
@@ -144,26 +159,17 @@ export const SuccessPage: React.FC = () => {
         }
     };
 
-    const isConsultation = searchParams.get('type') === 'consultation';
-    const titleSuccess = isConsultation ? 'Bem-vindo à Consultoria VIP! 🎉' : 'Bem-vindo ao PRO! 🎉';
-    const statusMsgSuccess = isConsultation ? 'Sua consultoria foi assinada com sucesso!' : 'Assinatura confirmada com sucesso!';
-    
-    // Na finish function:
     const finish = async () => {
+        // Se for consultoria, redirecionar para aba de consultoria
+        if (isConsultation) {
+            await fetchData();
+            navigate('/consultation', { replace: true });
+            return;
+        }
         localStorage.setItem('trigger_pro_tour', 'true');
         localStorage.setItem('has_seen_onboarding', 'true');
         localStorage.removeItem('onboarding_step');
         localStorage.removeItem('affiliate_ref');
-
-        // Fallback na criação da consultoria se for desse tipo
-        if (isConsultation) {
-            await supabase.from('consultations').upsert({
-                user_id: session?.user.id,
-                nutritionist_id: '6178130c-e47a-4534-a794-9b80b823766b',
-                status: 'pending', // Apenas re-escreve como pending se não existir, ou atualiza o updated_at.
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' }).catch(console.error); // Add onConflict if possible or just rely on natural upsert
-        }
 
         // Converter indicação pendente para 'converted' se existir
         try {
@@ -188,11 +194,7 @@ export const SuccessPage: React.FC = () => {
         }
 
         await fetchData();
-        if (isConsultation) {
-            navigate('/consultation', { replace: true });
-        } else {
-            navigate('/', { replace: true });
-        }
+        navigate('/', { replace: true }); // PRO vai para home
     };
 
     return (
@@ -215,11 +217,11 @@ export const SuccessPage: React.FC = () => {
             </div>
 
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
-                {isConfirmed ? titleSuccess : 'Quase lá...'}
+                {isConfirmed ? (isConsultation ? 'Consultoria Ativada! 🎉' : 'Bem-vindo ao PRO! 🎉') : 'Quase lá...'}
             </h1>
             
             <p className={`text-sm font-medium mb-6 ${isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                {isConfirmed ? statusMsgSuccess : statusMsg}
+                {statusMsg}
             </p>
 
             {error && (
@@ -244,7 +246,7 @@ export const SuccessPage: React.FC = () => {
                         onClick={finish}
                         className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                     >
-                        {isConsultation ? 'Ir para A Consultoria' : 'Ir para o Início'} <ChevronRightIcon className="w-4 h-4" />
+                        Ir para o Início <ChevronRightIcon className="w-4 h-4" />
                     </button>
                 </div>
             )}

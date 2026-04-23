@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from './AppContext';
@@ -43,16 +42,23 @@ export const MainApp: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment_success') === 'true') {
-        localStorage.setItem('trigger_pro_tour', 'true');
-        localStorage.setItem('has_seen_onboarding', 'true');
+        const paymentType = params.get('type');
         
-        // Limpar parâmetros da URL para evitar recargas
+        // Limpar parâmetros da URL
         const newUrl = window.location.pathname + window.location.hash;
         window.history.replaceState({}, document.title, newUrl);
         
-        // Sincronizar dados para garantir status PRO
         fetchData();
-        addToast("Sua assinatura PRO está ativa!", "success");
+
+        if (paymentType === 'consultation') {
+            addToast("Consultoria ativada! Preencha sua anamnese.", "success");
+            // Navegar para aba de consultoria
+            setTimeout(() => navigate('/consultation'), 500);
+        } else {
+            localStorage.setItem('trigger_pro_tour', 'true');
+            localStorage.setItem('has_seen_onboarding', 'true');
+            addToast("Sua assinatura PRO está ativa!", "success");
+        }
     }
   }, [fetchData, addToast]);
 

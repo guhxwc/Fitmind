@@ -20,19 +20,12 @@ interface ConsultationDashboardProps {
 export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ status, onReload }) => {
   const navigate = useNavigate();
   const { session, userData } = useAppContext();
-  const [showIntroModal, setShowIntroModal] = useState(false);
   const [isWaitingForPlan, setIsWaitingForPlan] = useState(status === 'anamnese_done');
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
 
   useEffect(() => {
     setIsWaitingForPlan(status === 'anamnese_done');
-    if (status !== 'anamnese_done') {
-        const hasSeenIntro = localStorage.getItem('fitmind_consultation_intro');
-        if (!hasSeenIntro) {
-            setShowIntroModal(true);
-        }
-    }
   }, [status]);
 
   useEffect(() => {
@@ -324,7 +317,29 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
           )}
 
           {/* Section 4: Plans Grid */}
-          {!isWaitingForPlan && (
+          {isWaitingForPlan ? (
+              <motion.div variants={itemVariants} className="opacity-50 pointer-events-none">
+                <h3 className="text-[20px] font-bold text-gray-900 dark:text-white tracking-tight px-1 mb-3 flex items-center gap-2">
+                  Planos <Lock className="w-4 h-4 text-gray-400" />
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-[#2C2C2E] flex flex-col justify-between aspect-square">
+                     <div className="w-11 h-11 rounded-[14px] bg-gray-200 dark:bg-[#2C2C2E] animate-pulse mb-4"></div>
+                     <div className="space-y-2">
+                       <div className="w-1/2 h-3 bg-gray-200 dark:bg-[#2C2C2E] rounded-full animate-pulse"></div>
+                       <div className="w-full h-4 bg-gray-200 dark:bg-[#2C2C2E] rounded-full animate-pulse"></div>
+                     </div>
+                  </div>
+                  <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-[#2C2C2E] flex flex-col justify-between aspect-square">
+                     <div className="w-11 h-11 rounded-[14px] bg-gray-200 dark:bg-[#2C2C2E] animate-pulse mb-4"></div>
+                     <div className="space-y-2">
+                       <div className="w-1/2 h-3 bg-gray-200 dark:bg-[#2C2C2E] rounded-full animate-pulse"></div>
+                       <div className="w-full h-4 bg-gray-200 dark:bg-[#2C2C2E] rounded-full animate-pulse"></div>
+                     </div>
+                  </div>
+                </div>
+              </motion.div>
+          ) : (
               <motion.div variants={itemVariants}>
                 <h3 className="text-[20px] font-bold text-gray-900 dark:text-white tracking-tight px-1 mb-3">
                   Planos
@@ -405,99 +420,6 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
 
         </motion.div>
       </div>
-
-      {showIntroModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-0">
-            <motion.div 
-               initial={{ opacity: 0 }} 
-               animate={{ opacity: 1 }} 
-               className="absolute inset-0 bg-black/40 backdrop-blur-md" 
-            />
-            <motion.div 
-               initial={{ opacity: 0, scale: 0.95, y: 20 }}
-               animate={{ opacity: 1, scale: 1, y: 0 }}
-               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-               className="relative w-full max-w-[380px] bg-white dark:bg-[#1C1C1E] rounded-[28px] p-5 shadow-2xl overflow-hidden mx-4"
-            >
-                <div className="bg-[#007AFF]/10 w-11 h-11 rounded-full flex items-center justify-center mb-3 shadow-inner">
-                   <Sparkles className="w-5 h-5 text-[#007AFF]" />
-                </div>
-                <h2 className="text-[20px] font-bold text-gray-900 dark:text-white leading-tight mb-1.5 tracking-tight">Jornada Premium</h2>
-                <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-5 font-medium leading-relaxed">
-                   Entenda os passos para iniciarmos sua estratégia.
-                </p>
-                
-                {/* Timeline */}
-                <div className="relative pl-3 space-y-4">
-                    {/* Linha conectora */}
-                    <div className="absolute left-[18.5px] top-3 bottom-7 w-[2px] bg-gray-100 dark:bg-[#2C2C2E]" />
-                    
-                    {/* Item 1 */}
-                    <div className="relative z-10 flex gap-2.5">
-                       <div className="w-[14px] h-[14px] rounded-full bg-[#007AFF] border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1 shadow-sm" />
-                       <div>
-                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-[#007AFF]" /> Anamnese
-                          </h3>
-                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
-                             Iremos coletar todas as suas métricas cruciais, rotina e restrições para uma análise clínica absoluta.
-                          </p>
-                       </div>
-                    </div>
-
-                    {/* Item 2 */}
-                    <div className="relative z-10 flex gap-2.5">
-                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
-                       <div>
-                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
-                             <MessageCircle className="w-3.5 h-3.5 text-gray-400" /> Agendar Consulta
-                          </h3>
-                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
-                             Você envia mensagem e marca a consulta que definira seu plano.
-                          </p>
-                       </div>
-                    </div>
-
-                    {/* Item 3 */}
-                    <div className="relative z-10 flex gap-2.5">
-                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
-                       <div>
-                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
-                             <Smartphone className="w-3.5 h-3.5 text-gray-400" /> Dieta no App
-                          </h3>
-                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
-                             A estratégia pronta e 100% calculada chega aqui no seu FitMind.
-                          </p>
-                       </div>
-                    </div>
-
-                    {/* Item 4 */}
-                    <div className="relative z-10 flex gap-2.5">
-                       <div className="w-[14px] h-[14px] rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-white dark:border-[#1C1C1E] flex items-center justify-center shrink-0 mt-1" />
-                       <div>
-                          <h3 className="font-bold text-[14px] text-gray-900 dark:text-white leading-none mb-1 flex items-center gap-1.5">
-                            <HeartHandshake className="w-3.5 h-3.5 text-gray-400" /> Consultoria
-                          </h3>
-                          <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed pr-1 flex-1">
-                             O Dr. Allan acompanhará sua evolução por WhatsApp sempre que precisar.
-                          </p>
-                       </div>
-                    </div>
-                </div>
-
-                <div className="mt-6">
-                     <button onClick={() => {
-                        localStorage.setItem('fitmind_consultation_intro', 'true');
-                        setShowIntroModal(false);
-                        navigate('/anamnese');
-                     }} className="w-full bg-gradient-to-b from-[#007AFF] to-[#0066D6] hover:opacity-90 text-white font-bold py-3 rounded-[16px] text-[15px] active:scale-95 transition-all shadow-[0_4px_16px_rgba(0,122,255,0.3)]">
-                         Iniciar Anamnese
-                     </button>
-                </div>
-            </motion.div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 };

@@ -56,8 +56,9 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
      if (currentStep < totalSteps) {
          setCurrentStep(prev => prev + 1);
      } else {
-         // Finalizar
-         const userId = session?.user?.id || userData?.id;
+         // Finalizar — buscar sessão direto para garantir que não é undefined
+         const { data: { session: currentSession } } = await supabase.auth.getSession();
+         const userId = currentSession?.user?.id || session?.user?.id || userData?.id;
          if (userId) {
              const { data: consultation } = await supabase.from('consultations').select('id').eq('user_id', userId).single();
              if (consultation) {
@@ -328,7 +329,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
         {/* Transparent Nav Header */}
         <div className="px-4 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-[#F2F2F7]/80 dark:bg-black/80 backdrop-blur-xl z-50">
           <button 
-            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/consultoria-premium')}
+            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/consultation')}
             className="w-10 h-10 flex flex-col items-center justify-center -ml-2 rounded-full active:opacity-60 transition-opacity"
           >
             <ChevronLeft className="w-7 h-7 text-[#007AFF]" strokeWidth={2.5} />

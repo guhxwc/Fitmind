@@ -14,15 +14,36 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     const fetchPatients = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('consultations')
-            .select(`
-                id, status, next_review_at, notes, created_at,
-                profiles:user_id (id, name, weight, target_weight),
-                anamneses:user_id (*)
-            `);
-        if (!error && data) {
-            setPatients(data);
+        try {
+            // Buscar o nutritionist_id do usuário logado
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user?.id) { setLoading(false); return; }
+
+            const { data: nutri } = await supabase
+                .from('nutritionists')
+                .select('id')
+                .eq('user_id', session.user.id)
+                .single();
+
+            if (!nutri) { setLoading(false); return; }
+
+            const { data, error } = await supabase
+                .from('consultations')
+                .select(`
+                    id, status, next_review_at, notes, created_at,
+                    profiles:user_id (id, name, weight, target_weight, age, gender, medication),
+                    anamneses(*)
+                `)
+                .eq('nutritionist_id', nutri.id)
+                .order('created_at', { ascending: false });
+
+            if (!error && data) {
+                setPatients(data);
+            } else {
+                console.error('fetchPatients error:', error);
+            }
+        } catch (e) {
+            console.error('fetchPatients exception:', e);
         }
         setLoading(false);
     };

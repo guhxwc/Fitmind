@@ -31,33 +31,22 @@ export const SuccessPage: React.FC = () => {
         setIsPolling(true);
         setError(null);
 
-        // Se for pagamento de consultoria, aguardar webhook e redirecionar para /consultation
-        if (paymentType === 'consultation') {
-            setStatusMsg('Consultoria ativada! Redirecionando...');
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            setIsConfirmed(true);
-            setIsPolling(false);
-            setTimeout(() => {
-                finish();
-            }, 1000);
-            return;
-        }
-
         try {
-            // 1. Tenta forçar uma sincronização via Edge Function se tivermos o sessionId
+            // SEMPRE sincronizar com Stripe primeiro se tiver sessionId
             if (sessionId) {
-                setStatusMsg('Sincronizando com o Stripe...');
+                setStatusMsg(paymentType === 'consultation' ? 'Ativando sua consultoria...' : 'Sincronizando com o Stripe...');
                 try {
                     const { data: syncData, error: syncError } = await supabase.functions.invoke('stripe-sync-profile', {
                         body: { sessionId, userId }
                     });
                     
                     if (!syncError && syncData?.isConsultation) {
-                        // Consultoria ativada pelo stripe-sync-profile
+                        // Consultoria criada no banco — agora fetchData vai encontrar e BottomNav vai aparecer
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Consultoria ativada com sucesso!');
-                        setTimeout(() => finish(), 2000);
+                        await fetchData(); // atualiza consultationStatus no contexto → BottomNav aparece
+                        setTimeout(() => navigate('/consultation', { replace: true }), 1500);
                         return;
                     }
                     if (!syncError && syncData?.isPro) {

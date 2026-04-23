@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Session } from '@supabase/supabase-js';
@@ -232,7 +231,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           dailyNotesRes,
           sideEffectsRes,
           customGoalsRes,
-          isNutritionistRes
+          isNutritionistRes,
+          consultationRes
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
@@ -244,7 +244,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             supabase.from('daily_notes').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('custom_goals').select('*').eq('user_id', userId).maybeSingle(),
-            supabase.rpc('is_nutritionist')
+            supabase.rpc('is_nutritionist'),
+            supabase.from('consultations').select('status').eq('user_id', userId).maybeSingle()
         ]);
 
         if (profileRes.data) {
@@ -295,14 +296,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         
         setIsNutritionist(!!isNutritionistRes.data || isNutriFallback);
 
-        if (session?.user?.id) {
-            const { data: cData } = await supabase.from('consultations').select('status').eq('user_id', session.user.id).maybeSingle();
-            if (cData) {
-                setConsultationStatus(cData.status);
-            } else {
-                setConsultationStatus(null);
-            }
-        }
+        // consultationStatus já foi buscado no Promise.all acima
+        setConsultationStatus(consultationRes?.data?.status ?? null);
         
         if (dailyRecordRes.data) {
             dailyRecordIdRef.current = dailyRecordRes.data.id;
@@ -380,6 +375,37 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       supabase.removeChannel(profileSubscription);
     };
   }, [session?.user?.id, userData?.isPro]);
+
+  // Realtime: escutar mudanças em consultations para atualizar BottomNav sem F5
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const consultationSubscription = supabase
+      .channel(`consultation-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'consultations',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('[Realtime] consultation changed:', payload);
+          if (payload.eventType === 'DELETE') {
+            setConsultationStatus(null);
+          } else {
+            const newStatus = (payload.new as any)?.status ?? null;
+            setConsultationStatus(newStatus);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(consultationSubscription);
+    };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     fetchData();

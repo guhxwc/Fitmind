@@ -7,8 +7,14 @@ import { useAppContext } from '../AppContext';
 import { 
   ChevronLeft, Utensils, Target, CalendarClock, 
   Flame, Droplet, Beef, Play, Sparkles, Activity, Lightbulb, MessageCircle, ChevronRight, FileText, Smartphone, HeartHandshake,
-  Clock, Lock
+  Clock, Lock, Check, TrendingDown
 } from 'lucide-react';
+
+import { WeightChart } from './WeightChart';
+
+import { QuickCheckInCard } from './QuickCheckInCard';
+import { OrientationCard } from './OrientationCard';
+import { ConsultationWaitingScreen } from './ConsultationWaitingScreen';
 
 const DR_ALLAN_PHOTO = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png";
 
@@ -23,6 +29,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   const [isWaitingForPlan, setIsWaitingForPlan] = useState(status === 'anamnese_done');
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
+  const materials: any[] = []; // No materials available yet
 
   useEffect(() => {
     setIsWaitingForPlan(status === 'anamnese_done');
@@ -47,6 +54,10 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
       }
   };
 
+  if (isWaitingForPlan) {
+    return <ConsultationWaitingScreen onBack={() => navigate('/')} onChatClick={handleReadMessages} />;
+  }
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
@@ -67,11 +78,9 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
     visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 24, stiffness: 200 } }
   };
 
-  // Image assets for Dr. Allan
-
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
-      <div className="w-full max-w-[480px] min-h-[100dvh] bg-[#F2F2F7] dark:bg-black relative flex flex-col shadow-2xl sm:border-x sm:border-gray-200 dark:sm:border-gray-900 overflow-hidden">
+    <div className="flex-1 w-full bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
+      <div className="flex-1 w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:shadow-[0_0_40px_rgba(0,0,0,0.05)] dark:sm:shadow-[0_0_40px_rgba(0,0,0,0.2)] sm:border-x sm:border-gray-200 dark:sm:border-gray-900">
         
         {/* Glass Header */}
         <div className="px-4 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-[#F2F2F7]/80 dark:bg-black/80 backdrop-blur-xl z-50">
@@ -86,7 +95,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         </div>
 
         <motion.div 
-          className="px-5 pt-4 pb-40 space-y-7"
+          className="px-5 pt-4 pb-6 space-y-7"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -368,53 +377,134 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
               </motion.div>
           )}
 
-          {/* Section 5: Allan's Tips */}
+          {/* Section 4.5: Daily Diet, Weight, Materials */}
+          {!isWaitingForPlan && (
+            <motion.div variants={itemVariants} className="space-y-6">
+              
+              {/* Daily Diet Card */}
+              <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-white/5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Utensils className="w-[22px] h-[22px] text-blue-500" />
+                    <h3 className="text-[18px] font-bold text-gray-900 dark:text-white tracking-tight">Plano alimentar - Hoje</h3>
+                  </div>
+                  <button onClick={() => navigate('/dieta')} className="text-[13px] font-bold text-blue-600 bg-white border border-blue-100 hover:bg-blue-50 dark:bg-transparent dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-blue-900/20 px-4 py-2 rounded-full active:scale-95 transition-all w-fit">
+                    Abrir dieta completa
+                  </button>
+                </div>
+
+                <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory -mx-2 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                  {/* Breakfast */}
+                  <div className="min-w-[240px] flex-1 bg-[#F0FDF4] dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-[24px] p-5 snap-center shrink-0">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Café da manhã</h4>
+                        <span className="text-[13px] text-gray-500 font-medium">07:00</span>
+                      </div>
+                      <div className="w-7 h-7 rounded-full border border-green-400 text-green-500 flex items-center justify-center shrink-0">
+                        <Check className="w-4 h-4 stroke-[3px]" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
+                        785 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
+                      </div>
+                      <span className="text-[13px] font-medium text-gray-500">3/3 alimentos</span>
+                    </div>
+                  </div>
+
+                  {/* Lunch */}
+                  <div className="min-w-[240px] flex-1 bg-[#FFF7ED] dark:bg-orange-900/10 border border-orange-200/60 dark:border-orange-900/30 rounded-[24px] p-5 snap-center shrink-0">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Almoço</h4>
+                        <span className="text-[13px] text-gray-500 font-medium">12:30</span>
+                      </div>
+                      <div className="w-7 h-7 rounded-full border border-orange-300 text-orange-400 flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
+                        592 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
+                      </div>
+                      <span className="text-[13px] font-medium text-gray-500">0/4 alimentos</span>
+                    </div>
+                  </div>
+
+                  {/* Dinner */}
+                  <div className="min-w-[240px] flex-1 bg-[#F8FAFC] dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50 rounded-[24px] p-5 snap-center shrink-0">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Jantar</h4>
+                        <span className="text-[13px] text-gray-500 font-medium">19:00</span>
+                      </div>
+                      <div className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-600 text-gray-400 flex items-center justify-center shrink-0">
+                        <Clock className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
+                        960 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
+                      </div>
+                      <span className="text-[13px] font-medium text-gray-500">0/4 alimentos</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid for Weight */}
+              <div className="grid grid-cols-1 gap-6">
+                
+                {/* Weight Evolution */}
+                <WeightChart />
+              </div>
+            </motion.div>
+          )}
+
           <motion.div variants={itemVariants}>
-            <h3 className="text-[20px] font-bold text-gray-900 dark:text-white tracking-tight px-1 mb-3">
-              Dica do Especialista
+            <h3 className="text-[20px] font-bold text-gray-900 dark:text-white tracking-tight px-1 mb-3 mt-6">
+              Acompanhamento Diário
             </h3>
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-[28px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-[#2C2C2E] flex flex-col gap-4">
-              {/* Header: Avatar + Title */}
-              <div className="flex items-center gap-4 w-full">
-                 <div className="w-[56px] h-[56px] rounded-full overflow-hidden shrink-0 border-[2px] border-gray-100/80 dark:border-[#2C2C2E] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05)] relative flex items-end">
-                    <img 
-                      src={DR_ALLAN_PHOTO} 
-                      alt="Allan" 
-                      className="w-full h-full object-cover object-top absolute inset-0 z-0 scale-[1.3] translate-y-[10px] translate-x-[4px]" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent z-10" />
-                 </div>
-                 <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="flex items-center gap-1.5 bg-[#FF2D55]/10 text-[#FF2D55] text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55] animate-pulse" />
-                        Novo Alerta
-                      </span>
-                      <span className="text-[12px] font-semibold text-[#8E8E93]">Hoje</span>
+            <div className="grid grid-cols-1 gap-6">
+              <QuickCheckInCard />
+              <OrientationCard />
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="mt-6">
+            <h3 className="text-[20px] font-bold text-gray-900 dark:text-white tracking-tight px-1 mb-3">
+              Materiais Enviados
+            </h3>
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-white/5 flex flex-col h-full">
+              {materials.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/10 flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-blue-300 dark:text-blue-500/50" strokeWidth={1.5} />
+                  </div>
+                  <h4 className="text-[16px] font-bold text-gray-900 dark:text-white mb-2">Nenhum material ainda</h4>
+                  <p className="text-[14px] font-medium text-gray-500 dark:text-gray-400">
+                    Seu nutricionista pode enviar PDFs, guias e receitas por aqui. Quando recebê-los, aparecerão nesta seção.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4 flex-1">
+                  {materials.map((m, idx) => (
+                    <div key={idx} className="flex items-center gap-4 bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                      <div className="w-11 h-11 rounded-[14px] bg-white dark:bg-gray-700 flex items-center justify-center shrink-0 shadow-sm border border-gray-100 dark:border-gray-600">
+                        <FileText className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-[14px] font-bold text-gray-900 dark:text-white leading-tight mb-0.5">{m.title}</h4>
+                        <p className="text-[12px] font-medium text-gray-500">Enviado em {m.date}</p>
+                      </div>
                     </div>
-                    <h4 className="text-[18px] font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                      Cuidado com a restrição
-                    </h4>
-                 </div>
-              </div>
-              
-              {/* Message */}
-              <p className="text-[15px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
-                Não caia no erro de cortar os carboidratos na sexta para compensar os furos durante a semana. Mantenha os 160g de proteína diários.
-              </p>
-              
-              {/* Action / Play */}
-              <div className="mt-2">
-                 <button className="w-full bg-gray-50 hover:bg-gray-100 dark:bg-[#2C2C2E] dark:hover:bg-[#3B3B3D] rounded-[20px] p-3 flex items-center justify-between transition-colors group active:scale-[0.98]">
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-[14px] bg-white dark:bg-[#1C1C1E] shadow-sm flex items-center justify-center border border-gray-200 dark:border-gray-800">
-                           <Play className="w-4 h-4 text-[#007AFF] fill-[#007AFF] translate-x-[1px]" />
-                        </div>
-                        <span className="text-[15px] font-bold text-gray-900 dark:text-white">Ouvir orientação</span>
-                    </div>
-                    <span className="text-[13px] font-bold text-[#8E8E93] mr-3">01:45</span>
-                 </button>
-              </div>
+                  ))}
+                  <button className="w-full text-[14px] font-bold text-blue-600 border border-blue-50 hover:border-blue-100 bg-white dark:bg-transparent dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 py-3.5 rounded-full transition-colors mt-5 active:scale-95">
+                    Ver todos os materiais
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
 

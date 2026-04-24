@@ -7,11 +7,13 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../../supabaseClient';
+import { DietPlanEditor } from './DietPlanEditor';
 
 export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, chartData?: any[] }> = ({ patient, onBack }) => {
     
     const [chartData, setChartData] = React.useState<any[]>([]);
     const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
+    const [activeView, setActiveView] = useState<null | 'diet'>(null);
     
     React.useEffect(() => {
         const fetchDeepData = async () => {
@@ -41,7 +43,7 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
     return (
         <div className="fixed inset-0 bg-[#F9FAFC] dark:bg-[#0B0C10] z-[110] flex overflow-hidden font-sans">
             {/* Sidebar */}
-            <aside className="hidden lg:flex w-[260px] bg-white dark:bg-[#1C1C21] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex-col z-[102] shadow-sm">
+            <aside className="hidden lg:flex w-[260px] bg-gradient-to-b from-white via-white/98 to-gray-50/30 dark:from-[#1C1C21] dark:to-[#111116] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex-col z-[102] shadow-sm">
                 <div className="p-6 pb-2 flex justify-start items-center">
                     <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/fitmind_horizontal_o.png" alt="Fitmind Logo" className="h-8 object-contain" />
                     <span className="ml-2 text-[10px] font-bold text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full">PRO</span>
@@ -51,7 +53,10 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
                     <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#007AFF]/5 text-[#007AFF] font-bold text-[14px]">
                         <LayoutDashboard className="w-5 h-5" /> Visão Geral
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+                    <button 
+                        onClick={() => setActiveView('diet')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'diet' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+                    >
                         <Calendar className="w-5 h-5" /> Plano Alimentar
                     </button>
                     <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
@@ -77,9 +82,15 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
                     </button>
                 </nav>
 
-                <div className="p-5 border-t border-gray-100 mt-auto bg-gray-50/50">
+                <div className="p-5 border-t border-gray-100 mt-auto bg-gradient-to-b from-transparent via-white/80 to-white">
                     <div className="flex items-center gap-3 mb-5 px-1">
-                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" alt="Dr. Allan" className="w-10 h-10 rounded-full border border-gray-200 mix-blend-multiply object-cover" />
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 dark:bg-gray-900 shrink-0">
+                            <img 
+                                src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" 
+                                alt="Dr. Allan" 
+                                className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.2] translate-y-1.5 translate-x-0" 
+                            />
+                        </div>
                         <div>
                             <p className="text-[13px] font-bold text-gray-900">Dr. Allan Stachuk</p>
                             <p className="text-[11px] text-gray-500 font-medium">Nutricionista</p>
@@ -92,7 +103,7 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto px-4 lg:px-10 py-8 relative">
+            <main className="flex-1 overflow-y-auto px-4 lg:px-10 py-8 relative -translate-x-[4px]">
                 <div className="max-w-[1240px] mx-auto w-full">
                     {/* Header Top */}
                     <div className="flex items-center justify-between mb-8">
@@ -411,7 +422,10 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
                         <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
                             <h3 className="text-[14px] font-bold text-gray-900 mb-5">Ações rápidas</h3>
                             <div className="space-y-3">
-                                <button className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-[#007AFF] hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left">
+                                <button 
+                                    onClick={() => setActiveView('diet')}
+                                    className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-[#007AFF] hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left"
+                                >
                                     <div className="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center shrink-0">
                                         <LayoutDashboard className="w-5 h-5" />
                                     </div>
@@ -474,6 +488,13 @@ export const PatientDashboard: React.FC<{ patient: any, onBack: () => void, char
                     </div>
                 </div>
             </main>
+
+            {/* Diet Plan Editor Overlay */}
+            {activeView === 'diet' && (
+                <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+                    <DietPlanEditor patient={patient} onBack={() => setActiveView(null)} />
+                </div>
+            )}
 
             {/* Anamnesis Full Screen Modal */}
             {showAnamnesisModal && patient.anamneses?.[0] && (

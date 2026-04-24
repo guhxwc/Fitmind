@@ -23,7 +23,6 @@ import { StepFinalPlan } from './components/onboarding/StepFinalPlan';
 import { ConsultationRoute } from './components/payment/ConsultationRoute';
 import { ConsultationDashboard } from './components/consultation/ConsultationDashboard';
 import { AnamnesisForm } from './components/consultation/AnamnesisForm';
-import { DietPlanPage } from './components/consultation/DietPlanPage';
 import { SubscriptionPage } from './components/SubscriptionPage';
 
 const ScrollToTop = () => {
@@ -294,7 +293,6 @@ const AppContent: React.FC = () => {
         <Route path="/consultoria" element={<ConsultationRoute />} />
         <Route path="/consultoria-premium" element={<ConsultationDashboard />} />
         <Route path="/anamnese" element={<AnamnesisForm />} />
-        <Route path="/dieta" element={<DietPlanPage />} />
         <Route path="/assinaturas" element={<ConsultationRoute initialStep={2} />} />
         <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
         

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { DietPlanEditor } from './DietPlanEditor';
 import { XMarkIcon, HeartIcon, PlusIcon, EditIcon, CheckCircleIcon } from '../core/Icons';
 
 import { PatientDashboard } from './PatientDashboard';
@@ -38,7 +39,7 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             const { data, error } = await supabase
                 .from('consultations')
                 .select(`
-                    id, status, next_review_at, notes, created_at,
+                    id, status, next_review_at, notes, created_at, user_id,
                     profiles:user_id (id, name, weight, target_weight, age, gender, medication),
                     anamneses(*)
                 `)
@@ -108,7 +109,7 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <img 
                             src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" 
                             alt="Dr. Allan" 
-                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.15] translate-y-2.5 translate-x-1" 
+                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.15] translate-y-2.5 translate-x-0.6" 
                         />
                     </div>
                     <div className="text-center w-full">
@@ -502,21 +503,25 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
             {/* Overlays para os Editores */}
             {editingType && (
                 <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex flex-col justify-end">
-                    <div className="bg-[#F2F2F7] dark:bg-[#000000] w-full max-h-[90vh] rounded-t-[32px] flex flex-col overflow-hidden shadow-2xl">
-                        <div className="p-4 border-b border-gray-200 dark:border-[#2C2C2E] flex items-center justify-between bg-white dark:bg-[#1C1C1E]">
-                            <h2 className="font-bold text-lg text-gray-900 dark:text-white">
-                                {editingType === 'dieta' && 'Estratégia Nutricional'}
-                                {editingType === 'metas' && 'Metas & Revisão'}
-                                {editingType === 'mensagens' && 'Mensagens do Especialista'}
-                            </h2>
-                            <button onClick={() => setEditingType(null)} className="p-2 bg-gray-100 dark:bg-[#2C2C2E] rounded-full active:scale-95"><XMarkIcon className="w-5 h-5" /></button>
+                    {editingType === 'dieta' ? (
+                        <div className="bg-white dark:bg-black w-full h-full flex flex-col overflow-hidden">
+                            <DietPlanEditor patient={patient} onBack={() => setEditingType(null)} />
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
-                            {editingType === 'dieta' && <DietEditor patient={patient} onUpdate={onUpdate} />}
-                            {editingType === 'metas' && <GoalsEditor patient={patient} onUpdate={onUpdate} />}
-                            {editingType === 'mensagens' && <MessagesEditor patient={patient} />}
+                    ) : (
+                        <div className="bg-[#F2F2F7] dark:bg-[#000000] w-full max-h-[90vh] rounded-t-[32px] flex flex-col overflow-hidden shadow-2xl">
+                            <div className="p-4 border-b border-gray-200 dark:border-[#2C2C2E] flex items-center justify-between bg-white dark:bg-[#1C1C1E]">
+                                <h2 className="font-bold text-lg text-gray-900 dark:text-white">
+                                    {editingType === 'metas' && 'Metas & Revisão'}
+                                    {editingType === 'mensagens' && 'Mensagens do Especialista'}
+                                </h2>
+                                <button onClick={() => setEditingType(null)} className="p-2 bg-gray-100 dark:bg-[#2C2C2E] rounded-full active:scale-95"><XMarkIcon className="w-5 h-5" /></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
+                                {editingType === 'metas' && <GoalsEditor patient={patient} onUpdate={onUpdate} />}
+                                {editingType === 'mensagens' && <MessagesEditor patient={patient} />}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
         </div>

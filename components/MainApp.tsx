@@ -294,7 +294,7 @@ export const MainApp: React.FC = () => {
       <main 
         key={location.pathname}
         ref={mainRef} 
-        className="flex-grow overflow-y-auto hide-scrollbar pb-40 pt-safe-top"
+        className="flex-grow overflow-y-auto hide-scrollbar pb-24 pt-safe-top flex flex-col"
       >
         <Routes>
           <Route path="/" element={<SummaryTab />} />

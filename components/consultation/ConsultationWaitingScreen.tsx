@@ -20,8 +20,8 @@ export const ConsultationWaitingScreen: React.FC<ConsultationWaitingScreenProps>
   }, []);
 
   return (
-    <div className="flex-1 w-full bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
-      <div className="flex-1 w-full max-w-[480px] relative flex flex-col sm:shadow-[0_0_40px_rgba(0,0,0,0.05)] dark:sm:shadow-[0_0_40px_rgba(0,0,0,0.2)] sm:border-x sm:border-gray-200 dark:sm:border-gray-900 bg-[#F2F2F7] dark:bg-black px-5 pt-6 pb-2">
+    <div className="flex-1 w-full bg-transparent font-sans flex justify-center">
+      <div className="flex-1 w-full max-w-[480px] relative flex flex-col sm:shadow-[0_0_40px_rgba(0,0,0,0.05)] dark:sm:shadow-[0_0_40px_rgba(0,0,0,0.2)] sm:border-x sm:border-gray-200 dark:sm:border-gray-900 bg-transparent px-5 pt-6 pb-6">
         {/* TOP BAR */}
         <div className="flex items-center justify-between mb-6">
           <button 

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Activity, Battery, Smile, UserCircle2 } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
+import { useAppContext } from '../AppContext';
 
 interface SliderProps {
   label: string;
@@ -119,15 +121,76 @@ const SliderRow: React.FC<SliderProps> = ({ label, value, max = 10, metric, onCh
 };
 
 export const QuickCheckInCard: React.FC = () => {
+  const { session } = useAppContext();
   const [hunger, setHunger] = useState(6);
   const [energy, setEnergy] = useState(7);
   const [mood, setMood] = useState(7);
   const [humor, setHumor] = useState(8);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 2000);
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from('consultation_checkins')
+        .select('hunger, energy, mood, humor, created_at')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setLastSentAt(new Date(data.created_at));
+        const today = new Date().toDateString();
+        if (new Date(data.created_at).toDateString() === today) {
+          setHunger(data.hunger);
+          setEnergy(data.energy);
+          setMood(data.mood);
+          setHumor(data.humor);
+          setSubmitted(true);
+        }
+      }
+    };
+    load();
+  }, [session?.user?.id]);
+
+  const handleSubmit = async () => {
+    if (!session?.user?.id || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { error: insertErr } = await supabase
+        .from('consultation_checkins')
+        .insert({
+          user_id: session.user.id,
+          hunger,
+          energy,
+          mood,
+          humor,
+        });
+
+      if (insertErr) throw insertErr;
+
+      setSubmitted(true);
+      setLastSentAt(new Date());
+      setTimeout(() => setSubmitted(false), 2500);
+    } catch (err: any) {
+      console.error('[QuickCheckIn] erro ao salvar:', err);
+      setError('Não foi possível enviar. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const formatLastSent = () => {
+    if (!lastSentAt) return 'Hoje';
+    const today = new Date();
+    const isToday = lastSentAt.toDateString() === today.toDateString();
+    const time = lastSentAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return isToday ? `Hoje, ${time}` : `${lastSentAt.toLocaleDateString('pt-BR')}, ${time}`;
   };
 
   return (
@@ -139,7 +202,7 @@ export const QuickCheckInCard: React.FC = () => {
           </div>
           <h3 className="text-[16px] font-bold text-gray-900 dark:text-white tracking-tight">Check-in rápido</h3>
         </div>
-        <div className="text-[13px] font-medium text-gray-500 mt-1">Hoje, 21:30</div>
+        <div className="text-[13px] font-medium text-gray-500 mt-1">{formatLastSent()}</div>
       </div>
 
       <div className="text-[15px] font-bold text-gray-900 dark:text-white mb-4">Como você está hoje?</div>
@@ -175,15 +238,22 @@ export const QuickCheckInCard: React.FC = () => {
         />
       </div>
 
+      {error && (
+        <div className="mb-3 text-xs font-semibold text-red-600 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-3 py-2">
+          {error}
+        </div>
+      )}
+
       <button 
         onClick={handleSubmit}
-        className={`w-full py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 active:scale-[0.98] ${
+        disabled={submitting}
+        className={`w-full py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 ${
           submitted 
             ? 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.28)]'
             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-[0_4px_14px_rgba(147,51,234,0.28)]'
         }`}
       >
-        {submitted ? '✓ Check-in enviado!' : 'Enviar check-in'}
+        {submitting ? 'Enviando...' : submitted ? '✓ Check-in enviado!' : 'Enviar check-in'}
       </button>
     </div>
   );

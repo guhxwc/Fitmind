@@ -15,6 +15,7 @@ import { WeightChart } from './WeightChart';
 import { QuickCheckInCard } from './QuickCheckInCard';
 import { OrientationCard } from './OrientationCard';
 import { ConsultationWaitingScreen } from './ConsultationWaitingScreen';
+import { PostAnamnesisModal } from './PostAnamnesisModal';
 
 const DR_ALLAN_PHOTO = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png";
 
@@ -29,11 +30,58 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   const [isWaitingForPlan, setIsWaitingForPlan] = useState(status === 'anamnese_done');
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
+  const [activePlan, setActivePlan] = useState<any>(null);
+  const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
   const materials: any[] = []; // No materials available yet
 
+  // Verifica se há um plano enviado pelo nutri pra liberar a consultoria
   useEffect(() => {
-    setIsWaitingForPlan(status === 'anamnese_done');
-  }, [status]);
+    if (!session?.user?.id) {
+      setIsWaitingForPlan(status === 'anamnese_done');
+      return;
+    }
+    let cancelled = false;
+
+    const checkPlan = async () => {
+      const { data } = await supabase
+        .from('patient_plans')
+        .select('id, status, sent_at, goal_calories, protein_g, carbs_g, fats_g, water_l, appointment_at')
+        .eq('user_id', session.user.id)
+        .eq('status', 'sent')
+        .order('sent_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (data) {
+        // Plano enviado → libera a consultoria
+        setActivePlan(data);
+        setIsWaitingForPlan(false);
+      } else {
+        // Sem plano → respeita status original (anamnese_done = aguardando)
+        setActivePlan(null);
+        setIsWaitingForPlan(status === 'anamnese_done');
+      }
+    };
+
+    checkPlan();
+
+    // Realtime: quando o nutri enviar um plano, libera automaticamente
+    const channel = supabase
+      .channel(`consultation-plan-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'patient_plans', filter: `user_id=eq.${session.user.id}` },
+        () => checkPlan()
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [status, session?.user?.id]);
 
   useEffect(() => {
      if (!session?.user?.id) return;
@@ -41,11 +89,54 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
          const { data: msgs } = await supabase.from('nutritionist_messages').select('*').eq('user_id', session.user.id).eq('is_read', false).order('created_at', { ascending: false });
          if (msgs) setUnreadMessages(msgs);
 
-         const { data: cData } = await supabase.from('consultations').select('next_review_at').eq('user_id', session.user.id).single();
-         if (cData) setConsultationData(cData);
+         try {
+             // 1) First ensure the modal table row exists or get its state
+             const { data: scheduleModal } = await supabase.from('consultation_schedule_modal').select('*').eq('user_id', session.user.id).single();
+             if (scheduleModal) {
+                 if (scheduleModal.user_confirmed_scheduled === false) {
+                     setShowAnamnesisModal(true);
+                 }
+             } else {
+                 setShowAnamnesisModal(true);
+             }
+
+             // 2) Get consultation next_review_at
+             const { data: cData } = await supabase.from('consultations').select('next_review_at').eq('user_id', session.user.id).single();
+             if (cData) {
+                 setConsultationData(cData);
+             }
+         } catch (e) {
+             console.error('Failed to load consultation data', e);
+         }
      };
      fetchData();
   }, [session?.user?.id]);
+
+  const handleConfirmScheduled = async () => {
+      try {
+          // Upsert the schedule modal state
+          await supabase.from('consultation_schedule_modal').upsert({ 
+              user_id: session?.user?.id, 
+              user_confirmed_scheduled: true,
+              user_confirmed_scheduled_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      } catch (e) {
+          console.error('Failed to update user_confirmed_scheduled', e);
+      }
+      setShowAnamnesisModal(false);
+  };
+
+  const handleWhatsAppClick = async () => {
+      try {
+          await supabase.from('consultation_schedule_modal').upsert({ 
+              user_id: session?.user?.id, 
+              whatsapp_clicked: true,
+              whatsapp_clicked_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      } catch (e) {
+          console.error('Failed to update whatsapp_clicked', e);
+      }
+  };
 
   const handleReadMessages = async () => {
       if (unreadMessages.length > 0 && session?.user?.id) {
@@ -55,7 +146,12 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   };
 
   if (isWaitingForPlan) {
-    return <ConsultationWaitingScreen onBack={() => navigate('/')} onChatClick={handleReadMessages} />;
+    return (
+      <>
+        <PostAnamnesisModal isOpen={showAnamnesisModal} onConfirmScheduled={handleConfirmScheduled} onWhatsAppClick={handleWhatsAppClick} />
+        <ConsultationWaitingScreen onBack={() => navigate('/')} onChatClick={handleReadMessages} />
+      </>
+    );
   }
 
   useEffect(() => {
@@ -79,8 +175,9 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   };
 
   return (
-    <div className="flex-1 w-full bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
-      <div className="flex-1 w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:shadow-[0_0_40px_rgba(0,0,0,0.05)] dark:sm:shadow-[0_0_40px_rgba(0,0,0,0.2)] sm:border-x sm:border-gray-200 dark:sm:border-gray-900">
+    <div className="flex-1 w-full bg-transparent font-sans flex justify-center">
+      <PostAnamnesisModal isOpen={showAnamnesisModal} onConfirmScheduled={handleConfirmScheduled} onWhatsAppClick={handleWhatsAppClick} />
+      <div className="flex-1 w-full max-w-[480px] bg-transparent relative flex flex-col sm:shadow-[0_0_40px_rgba(0,0,0,0.05)] dark:sm:shadow-[0_0_40px_rgba(0,0,0,0.2)] sm:border-x sm:border-gray-200 dark:sm:border-gray-900 pb-6">
         
         {/* Glass Header */}
         <div className="px-4 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-[#F2F2F7]/80 dark:bg-black/80 backdrop-blur-xl z-50">
@@ -95,7 +192,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         </div>
 
         <motion.div 
-          className="px-5 pt-4 pb-6 space-y-7"
+          className="px-5 pt-4 pb-0 space-y-7"
           variants={containerVariants}
           initial="hidden"
           animate="visible"

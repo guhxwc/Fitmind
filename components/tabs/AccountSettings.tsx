@@ -9,7 +9,7 @@ import {
     ChevronRightIcon, XMarkIcon, ScaleIcon, RulerIcon, 
     CakeIcon, GenderIcon, PersonStandingIcon, SettingsIcon 
 } from '../core/Icons';
-import { User, Mail, Lock, CreditCard, Trash2 } from 'lucide-react';
+import { User, Mail, Lock, CreditCard, Trash2, UserX } from 'lucide-react';
 import Portal from '../core/Portal';
 
 // --- UI Components ---
@@ -79,6 +79,8 @@ export const AccountSettings: React.FC = () => {
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     const [isCanceling, setIsCanceling] = useState(false);
+    const [showCancelConsultationConfirm, setShowCancelConsultationConfirm] = useState(false);
+    const [isCancelingConsultation, setIsCancelingConsultation] = useState(false);
 
     if (!userData || !session) return null;
 
@@ -221,6 +223,64 @@ export const AccountSettings: React.FC = () => {
         }
     };
 
+    const handleCancelConsultation = async () => {
+        if (!session?.user?.id) {
+            addToast("Sessão não encontrada.", "error");
+            return;
+        }
+        setIsCancelingConsultation(true);
+        try {
+            // Busca a consultoria ativa do paciente (não cancelada)
+            const { data: activeConsultation, error: fetchErr } = await supabase
+                .from('consultations')
+                .select('id, status')
+                .eq('user_id', session.user.id)
+                .neq('status', 'cancelled')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (fetchErr) throw fetchErr;
+
+            if (!activeConsultation) {
+                addToast("Você não tem consultoria ativa para cancelar.", "error");
+                setShowCancelConsultationConfirm(false);
+                return;
+            }
+
+            // Atualiza status para 'cancelled' (RLS: paciente pode atualizar a própria)
+            const { error: updateErr } = await supabase
+                .from('consultations')
+                .update({
+                    status: 'cancelled',
+                    cancelled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', activeConsultation.id);
+
+            if (updateErr) throw updateErr;
+
+            // Tenta cancelar a assinatura Stripe (se houver) — mesma edge function da assinatura
+            try {
+                await supabase.functions.invoke('cancel-subscription');
+            } catch (subErr) {
+                // Se falhar, o cancelamento da consultoria já foi feito;
+                // só logamos. O usuário pode cancelar pelo portal Stripe se necessário.
+                console.warn('[cancelConsultation] cancel-subscription falhou (ok ignorar):', subErr);
+            }
+
+            addToast("Consultoria cancelada com sucesso.", "success");
+            setShowCancelConsultationConfirm(false);
+            // Recarrega para refletir mudança de estado em todos os lugares
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Erro ao cancelar consultoria:", error);
+            addToast(error.message || "Erro ao cancelar consultoria.", "error");
+        } finally {
+            setIsCancelingConsultation(false);
+        }
+    };
+
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return 'Definir';
         const [year, month, day] = dateStr.split('-');
@@ -320,6 +380,11 @@ export const AccountSettings: React.FC = () => {
                         icon={<CreditCard className="w-5 h-5" />}
                         label="Cancelar Assinatura" 
                         onClick={() => setShowCancelConfirm(true)} 
+                    />
+                    <ListItem
+                        icon={<UserX className="w-5 h-5" />}
+                        label="Cancelar Consultoria"
+                        onClick={() => setShowCancelConsultationConfirm(true)}
                         isLast
                     />
                 </ListGroup>
@@ -360,6 +425,17 @@ export const AccountSettings: React.FC = () => {
                 cancelText="Voltar"
                 onConfirm={handleCancelSubscription}
                 onCancel={() => setShowCancelConfirm(false)}
+                isDestructive={true}
+            />
+
+            <ConfirmModal
+                isOpen={showCancelConsultationConfirm}
+                title="Cancelar Consultoria"
+                message="Tem certeza que deseja cancelar sua consultoria? Você perderá o acompanhamento com o nutricionista, acesso ao plano alimentar personalizado e check-ins. Esta ação pode ser revertida entrando em contato com o suporte."
+                confirmText={isCancelingConsultation ? "Cancelando..." : "Sim, cancelar consultoria"}
+                cancelText="Voltar"
+                onConfirm={handleCancelConsultation}
+                onCancel={() => setShowCancelConsultationConfirm(false)}
                 isDestructive={true}
             />
 

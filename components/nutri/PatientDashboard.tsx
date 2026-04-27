@@ -9,6 +9,8 @@ import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from 'recha
 import { supabase } from '../../supabaseClient';
 import { DietPlanEditor } from './DietPlanEditor';
 import { CreateFullPlanModal } from './CreateFullPlanModal';
+import { CheckinsView } from './CheckinsView';
+import { EvolutionView } from './EvolutionView';
 import { alertsService, PatientAlert } from '../../services/alertsService';
 
 /* =========================
@@ -158,7 +160,7 @@ const BodyCompositionModal: React.FC<{
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
-  const [activeView, setActiveView] = useState<null | 'diet'>(null);
+  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution'>(null);
 
   // Dados extras do paciente
   const [profile, setProfile] = useState<any>(null);
@@ -417,7 +419,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       {/* Sidebar */}
       <aside className="hidden lg:flex w-[260px] bg-gradient-to-b from-white via-white/98 to-gray-50/30 dark:from-[#1C1C21] dark:to-[#111116] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex-col z-[102] shadow-sm">
         <div className="p-6 pb-2 flex justify-start items-center">
-          <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/fitmind_horizontal_o.png" alt="Fitmind Logo" className="h-8 object-contain" />
+          <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/fitmind_horizontal_o.png" alt="Fitmind Logo" className="h-8 object-contain ml-1" />
           <span className="ml-2 text-[10px] font-bold text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full">PRO</span>
         </div>
 
@@ -437,10 +439,16 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
           >
             <Calendar className="w-5 h-5" /> Plano Alimentar
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+          <button
+            onClick={() => setActiveView('evolution')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'evolution' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
             <Activity className="w-5 h-5" /> Evolução
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+          <button
+            onClick={() => setActiveView('checkins')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'checkins' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
             <CheckCircle2 className="w-5 h-5" /> Check-ins
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
@@ -457,7 +465,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
         <div className="p-5 border-t border-gray-100 mt-auto bg-gradient-to-b from-transparent via-white/80 to-white">
           <div className="flex items-center gap-3 mb-5 px-1">
             <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 dark:bg-gray-900 shrink-0">
-              <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" alt="Dr. Allan" className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.2] translate-y-1.5 translate-x-0" />
+              <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" alt="Dr. Allan" className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.2] translate-y-1.5 translate-x-1" />
             </div>
             <div>
               <p className="text-[13px] font-bold text-gray-900">Dr. Allan Stachuk</p>
@@ -683,7 +691,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                       </div>
                     ))}
                   </div>
-                  <button className="text-[12px] font-bold text-[#007AFF] mt-5 text-left hover:text-[#0056b3] transition-colors">
+                  <button onClick={() => setActiveView('checkins')} className="text-[12px] font-bold text-[#007AFF] mt-5 text-left hover:text-[#0056b3] transition-colors">
                     Ver check-in completo
                   </button>
                 </>
@@ -948,6 +956,20 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       {activeView === 'diet' && (
         <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
           <DietPlanEditor patient={patient} onBack={() => setActiveView(null)} />
+        </div>
+      )}
+
+      {/* Checkins View Overlay */}
+      {activeView === 'checkins' && (
+        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+          <CheckinsView patient={patient} onBack={() => setActiveView(null)} />
+        </div>
+      )}
+
+      {/* Evolution View Overlay */}
+      {activeView === 'evolution' && (
+        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+          <EvolutionView patient={patient} onBack={() => setActiveView(null)} />
         </div>
       )}
 

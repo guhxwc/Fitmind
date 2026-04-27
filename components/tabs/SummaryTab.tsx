@@ -214,7 +214,7 @@ const DailyRecordItem: React.FC<{
 );
 
 export const SummaryTab: React.FC = () => {
-  const { userData, session, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType, nutriDietPlan, consultationStatus } = useAppContext();
+  const { userData, session, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType, nutriDietPlan, consultationStatus, targetMacros } = useAppContext();
   const navigate = useNavigate();
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -381,7 +381,7 @@ export const SummaryTab: React.FC = () => {
           if (hasS) snackGoal = Math.round(sGoal);
       }
   } else {
-      const dailyGoal = userData.goals.calories;
+      const dailyGoal = targetMacros?.calories || userData.goals.calories;
       breakfastGoal = Math.round(dailyGoal * 0.20);
       lunchGoal = Math.round(dailyGoal * 0.35);
       dinnerGoal = Math.round(dailyGoal * 0.30);
@@ -518,7 +518,7 @@ export const SummaryTab: React.FC = () => {
                     icon={<FlameIcon />} 
                     title="Proteína" 
                     value={totalProtein} 
-                    goal={userData.goals.protein} 
+                    goal={targetMacros?.protein || userData.goals.protein} 
                     unit="g" 
                     color="#FF9500" 
                     accentColor="text-orange-500"
@@ -540,7 +540,7 @@ export const SummaryTab: React.FC = () => {
                     icon={<WaterDropIcon />} 
                     title="Hidratação" 
                     value={currentWater} 
-                    goal={userData.goals.water} 
+                    goal={targetMacros?.water || userData.goals.water} 
                     unit="L" 
                     color="#007AFF" 
                     accentColor="text-blue-500"

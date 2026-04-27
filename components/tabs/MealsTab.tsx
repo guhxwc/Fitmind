@@ -17,7 +17,7 @@ import { DietPlanView } from './diet/DietPlanView';
 
 // --- Today View ---
 const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void }> = ({ onAddMeal }) => {
-    const { meals, userData, unlockPro } = useAppContext();
+    const { meals, userData, unlockPro, targetMacros } = useAppContext();
     const { addToast } = useToast();
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
     const [isCalorieCamOpen, setIsCalorieCamOpen] = useState(false);
@@ -82,15 +82,15 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                     <div className="text-right">
                         <p className="text-sm font-semibold opacity-80 uppercase tracking-wide">Meta</p>
                         <p className="text-xl font-bold mt-1">
-                            {userData?.goals.calories}
+                            {targetMacros?.calories}
                         </p>
                     </div>
                 </div>
                 <div className="w-full bg-white/20 dark:bg-black/10 h-2 rounded-full mt-6 overflow-hidden">
-                    <div className="bg-white dark:bg-black h-full rounded-full" style={{width: `${Math.min((totalCalories / (userData?.goals.calories || 2000)) * 100, 100)}%`}}></div>
+                    <div className="bg-white dark:bg-black h-full rounded-full" style={{width: `${Math.min((totalCalories / (targetMacros?.calories || 2000)) * 100, 100)}%`}}></div>
                 </div>
                 <div className="mt-4 flex gap-4 text-sm font-medium opacity-90">
-                    <span className="flex items-center gap-1.5"><FlameIcon className="w-4 h-4" /> {Math.round(totalProtein)}g / {userData?.goals.protein}g Proteína</span>
+                    <span className="flex items-center gap-1.5"><FlameIcon className="w-4 h-4" /> {Math.round(totalProtein)}g / {targetMacros?.protein}g Proteína</span>
                 </div>
             </div>
 

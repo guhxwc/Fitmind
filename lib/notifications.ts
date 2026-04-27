@@ -36,6 +36,7 @@ export interface NotificationContext {
   hasLoggedSideEffectToday: boolean;
   hasStrongSideEffect: boolean;
   proteinProgress: number; // 0-1
+  proteinGoal: number; // in grams
   waterProgress: number; // ml
   weightDiff: number | null; // negative means lost weight
   currentPath: string;
@@ -186,7 +187,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     type: 'modal',
     priority: 4,
     title: 'Sua proteína tá baixa hoje',
-    body: (ctx: NotificationContext) => `Você consumiu só ${Math.round(ctx.proteinProgress * (ctx.userData?.goals?.protein || 100))}g de ${ctx.userData?.goals?.protein || 100}g. Perder músculo com GLP-1 acontece quando a proteína fica abaixo do ideal. Que tal um shake ou ovos antes de dormir?`,
+    body: (ctx: NotificationContext) => `Você consumiu só ${Math.round(ctx.proteinProgress * ctx.proteinGoal)}g de ${ctx.proteinGoal}g. Perder músculo com GLP-1 acontece quando a proteína fica abaixo do ideal. Que tal um shake ou ovos antes de dormir?`,
     primaryAction: { label: 'Ver sugestões', action: '/meals' },
     secondaryAction: { label: 'Entendi', action: 'dismiss' },
     evaluateTrigger: (ctx) => {
@@ -374,7 +375,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     type: 'toast',
     priority: 0,
     title: 'Meta de proteína batida! 💪',
-    body: (ctx: NotificationContext) => `${Math.round(ctx.proteinProgress * (ctx.userData?.goals?.protein || 100))}g de proteína hoje. Seus músculos estão protegidos. Continue assim!`,
+    body: (ctx: NotificationContext) => `${Math.round(ctx.proteinProgress * ctx.proteinGoal)}g de proteína hoje. Seus músculos estão protegidos. Continue assim!`,
     primaryAction: { label: 'Boa!', action: 'dismiss' },
     evaluateTrigger: (ctx) => ctx.proteinProgress >= 1,
   },

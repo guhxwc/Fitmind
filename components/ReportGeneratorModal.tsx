@@ -55,7 +55,7 @@ interface ReportGeneratorModalProps {
 type TimeRange = '1_month' | '3_months' | '6_months' | '1_year';
 
 export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOpen, onClose }) => {
-    const { userData, weightHistory, meals, currentWater, updateStreak } = useAppContext();
+    const { userData, weightHistory, meals, currentWater, updateStreak, targetMacros } = useAppContext();
     const { addToast } = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -135,7 +135,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
 
             const goalsData = [
                 ['Proteína (Meta)', 'Água (Meta)', 'Consistência (Ofensiva)'],
-                [`${userData?.goals?.protein || 0} g`, `${userData?.goals?.water || 0} L`, `${userData?.streak || 0} dias seguidos`]
+                [`${targetMacros?.protein || userData?.goals?.protein || 0} g`, `${targetMacros?.water || userData?.goals?.water || 0} L`, `${userData?.streak || 0} dias seguidos`]
             ];
 
             finalY = drawTable(doc, finalY + 20, goalsData[0], [goalsData[1]]);

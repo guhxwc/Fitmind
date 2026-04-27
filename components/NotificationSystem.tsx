@@ -9,7 +9,7 @@ import { WEEKDAYS } from '../constants';
 import Portal from './core/Portal';
 
 export const NotificationSystem: React.FC = () => {
-    const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData } = useAppContext();
+    const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData, targetMacros } = useAppContext();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -61,7 +61,7 @@ export const NotificationSystem: React.FC = () => {
 
             // Build Context
             const totalProtein = meals.reduce((sum, m) => sum + m.protein, 0) + quickAddProtein;
-            const proteinGoal = userData?.goals?.protein || 100;
+            const proteinGoal = targetMacros?.protein || userData?.goals?.protein || 100;
             
             const lastDoseDate = applicationHistory && applicationHistory.length > 0 
                 ? new Date(applicationHistory[0].date) 
@@ -201,12 +201,13 @@ export const NotificationSystem: React.FC = () => {
     const renderText = (text: string | ((data: any) => string)) => {
         if (typeof text === 'function') {
             const totalProtein = meals.reduce((sum, m) => sum + m.protein, 0) + quickAddProtein;
-            const proteinGoal = userData?.goals?.protein || 100;
+            const proteinGoal = targetMacros?.protein || userData?.goals?.protein || 100;
             
             return text(currentCtx || { 
                 userData, 
                 waterProgress: currentWater, 
                 proteinProgress: totalProtein / proteinGoal, 
+                proteinGoal,
                 subscriberDays: 30, 
                 weightDiff: -1.5 
             });

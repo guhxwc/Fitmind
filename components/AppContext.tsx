@@ -7,9 +7,19 @@ import { useToast } from './ToastProvider';
 
 type Theme = 'light' | 'dark';
 
+export interface TargetMacros {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  water: number;
+  source: 'platform' | 'nutri';
+}
+
 interface AppContextType {
   session: Session | null;
   userData: UserData | null;
+  targetMacros: TargetMacros | null;
   setUserData: React.Dispatch<React.SetStateAction<UserData | null>>;
   weightHistory: WeightEntry[];
   setWeightHistory: React.Dispatch<React.SetStateAction<WeightEntry[]>>;
@@ -261,46 +271,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (profileRes.data) {
           const fetchedUserData = formatProfileToUserData(profileRes.data);
           
-          let overrideGoals = false;
-
-          // 1) Apply nutritionist plan goals if there's an active consultation and plan
-          if (consultationRes.data && consultationRes.data.status !== 'archived') {
-            if (dietPlanRes.data) {
-               fetchedUserData.goals = {
-                  ...fetchedUserData.goals,
-                  calories: dietPlanRes.data.total_calories || dietPlanRes.data.plan?.total_calories || fetchedUserData.goals.calories,
-                  protein: dietPlanRes.data.total_protein_g || dietPlanRes.data.plan?.total_protein_g || fetchedUserData.goals.protein,
-                  water: activePatientPlanRes.data?.water_l || fetchedUserData.goals.water,
-                  carbs: dietPlanRes.data.total_carbs_g || dietPlanRes.data.plan?.total_carbs_g || fetchedUserData.goals.carbs,
-                  fats: dietPlanRes.data.total_fat_g || dietPlanRes.data.plan?.total_fat_g || fetchedUserData.goals.fats
-               };
-               overrideGoals = true;
-            } else if (activePatientPlanRes.data) {
-               fetchedUserData.goals = {
-                  ...fetchedUserData.goals,
-                  calories: activePatientPlanRes.data.goal_calories ?? fetchedUserData.goals.calories,
-                  protein: activePatientPlanRes.data.protein_g ?? fetchedUserData.goals.protein,
-                  water: activePatientPlanRes.data.water_l ?? fetchedUserData.goals.water,
-                  carbs: activePatientPlanRes.data.carbs_g ?? fetchedUserData.goals.carbs,
-                  fats: activePatientPlanRes.data.fats_g ?? fetchedUserData.goals.fats
-               };
-               overrideGoals = true;
-            }
-          }
-          // 2) Apply custom goals if they exist (legacy support)
-
-          else if (customGoalsRes?.data) {
-             fetchedUserData.goals = {
-                ...fetchedUserData.goals,
-                calories: customGoalsRes.data.calories ?? fetchedUserData.goals.calories,
-                protein: customGoalsRes.data.protein_g ?? fetchedUserData.goals.protein,
-                water: customGoalsRes.data.water_ml ? (customGoalsRes.data.water_ml / 1000) : fetchedUserData.goals.water,
-                carbs: customGoalsRes.data.carbs_g ?? fetchedUserData.goals.carbs,
-                fats: customGoalsRes.data.fat_g ?? fetchedUserData.goals.fats
-             };
-             overrideGoals = true;
-          }
-
+          // Removed the override of fetchedUserData.goals so that userData.goals always represents the base goals.
+          
           setUserData(prev => {
             if (!prev) return fetchedUserData;
 
@@ -445,6 +417,36 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     return () => {
       supabase.removeChannel(consultationSubscription);
+    };
+  }, [session?.user?.id]);
+
+  // Realtime: escutar mudanças em diet_plans para atualizar a dieta personalizada do paciente sem F5
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const dietPlanSubscription = supabase
+      .channel(`diet_plans_${session.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE
+          schema: 'public',
+          table: 'diet_plans',
+          filter: `user_id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('[Realtime] diet_plans changed:', payload);
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            setNutriDietPlan((payload.new as any)?.plan ?? null);
+          } else if (payload.eventType === 'DELETE') {
+            setNutriDietPlan(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(dietPlanSubscription);
     };
   }, [session?.user?.id]);
 
@@ -595,10 +597,45 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const targetMacros = React.useMemo<TargetMacros | null>(() => {
+      if (!userData) return null;
+      if (consultationStatus === 'active') {
+          if (nutriDietPlan) {
+              return {
+                  calories: nutriDietPlan.total_calories || nutriDietPlan.plan?.total_calories || userData.goals.calories,
+                  protein: nutriDietPlan.total_protein_g || nutriDietPlan.plan?.total_protein_g || userData.goals.protein,
+                  water: activePatientPlan?.water_l || userData.goals.water,
+                  carbs: nutriDietPlan.total_carbs_g || nutriDietPlan.plan?.total_carbs_g || userData.goals.carbs,
+                  fat: nutriDietPlan.total_fat_g || nutriDietPlan.plan?.total_fat_g || userData.goals.fats,
+                  source: 'nutri'
+              };
+          }
+          if (activePatientPlan) {
+               return {
+                  calories: activePatientPlan.goal_calories ?? userData.goals.calories,
+                  protein: activePatientPlan.protein_g ?? userData.goals.protein,
+                  water: activePatientPlan.water_l ?? userData.goals.water,
+                  carbs: activePatientPlan.carbs_g ?? userData.goals.carbs,
+                  fat: activePatientPlan.fats_g ?? userData.goals.fats,
+                  source: 'nutri'
+               };
+          }
+      }
+      return {
+          calories: userData.goals.calories,
+          protein: userData.goals.protein,
+          water: userData.goals.water,
+          carbs: userData.goals.carbs,
+          fat: userData.goals.fats,
+          source: 'platform'
+      };
+  }, [userData, consultationStatus, nutriDietPlan, activePatientPlan]);
+
   return (
     <AppContext.Provider value={{
       session,
       userData,
+      targetMacros,
       setUserData: setUserDataWithTimestamp,
       weightHistory,
       setWeightHistory,
@@ -668,6 +705,7 @@ export const useAppContext = () => {
     return {
         session: null,
         userData: null,
+        targetMacros: null,
         setUserData: () => {},
         weightHistory: [],
         setWeightHistory: () => {},

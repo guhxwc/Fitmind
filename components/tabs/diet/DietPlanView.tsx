@@ -36,7 +36,7 @@ const DaySelector: React.FC<{ selectedDay: Weekday, onSelect: (day: Weekday) => 
   );
 };
 
-const IngredientRow: React.FC<{ ingredient: DietIngredient, onSwap: (ing: DietIngredient) => void }> = ({ ingredient, onSwap }) => {
+const IngredientRow: React.FC<{ ingredient: DietIngredient, onSwap: (ing: DietIngredient) => void, disableSwap?: boolean }> = ({ ingredient, onSwap, disableSwap }) => {
   return (
     <div className="group flex items-center justify-between py-4 px-4 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl mb-2 last:mb-0 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all active:scale-[0.98]">
       <div className="flex-1">
@@ -51,18 +51,20 @@ const IngredientRow: React.FC<{ ingredient: DietIngredient, onSwap: (ing: DietIn
           )}
         </div>
       </div>
-      <button 
-        onClick={(e) => { e.stopPropagation(); onSwap(ingredient); }}
-        className="p-2.5 text-gray-400 hover:text-blue-500 bg-white dark:bg-gray-700/50 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600 transition-all active:scale-90"
-        aria-label="Trocar ingrediente"
-      >
-        <RefreshCw size={16} />
-      </button>
+      {!disableSwap && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onSwap(ingredient); }}
+          className="p-2.5 text-gray-400 hover:text-blue-500 bg-white dark:bg-gray-700/50 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600 transition-all active:scale-90"
+          aria-label="Trocar ingrediente"
+        >
+          <RefreshCw size={16} />
+        </button>
+      )}
     </div>
   );
 };
 
-const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, ingredient: DietIngredient) => void }> = ({ meal, onSwapIngredient }) => {
+const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, ingredient: DietIngredient) => void, disableSwap?: boolean }> = ({ meal, onSwapIngredient, disableSwap }) => {
   const [isOpen, setIsOpen] = useState(false);
   
   let icon = "🍽️";
@@ -123,7 +125,8 @@ const MealCard: React.FC<{ meal: DietMeal, onSwapIngredient: (mealId: string, in
               <IngredientRow 
                 key={ing.id} 
                 ingredient={ing} 
-                onSwap={(i) => onSwapIngredient(meal.id, i)} 
+                onSwap={(i) => onSwapIngredient(meal.id, i)}
+                disableSwap={disableSwap}
               />
             ))}
           </div>
@@ -231,7 +234,7 @@ const DietLoadingAnimation: React.FC = () => {
 };
 
 export const DietPlanView: React.FC = () => {
-  const { userData, isGeneratingDiet, setIsGeneratingDiet, dietPlan, setDietPlan } = useAppContext();
+  const { userData, isGeneratingDiet, setIsGeneratingDiet, dietPlan, setDietPlan, nutriDietPlan, consultationStatus } = useAppContext();
   const { addToast } = useToast();
   const [selectedDay, setSelectedDay] = useState<Weekday>(() => {
     const days: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
@@ -340,6 +343,43 @@ export const DietPlanView: React.FC = () => {
       confirmSwap(newIngredient);
   };
 
+  const hasNutriPlan = consultationStatus === 'active' && !!nutriDietPlan;
+
+  const displayDietPlan = React.useMemo(() => {
+    if (hasNutriPlan && nutriDietPlan) {
+      const days: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      const dietPlanDays: DietDay[] = days.map((dayName, index) => {
+        const activePlanForDay = nutriDietPlan.plans?.find((p: any) => 
+           p.scope === 'all' || (p.days && p.days.includes(index))
+        ) || nutriDietPlan.plans?.[0];
+
+        if (!activePlanForDay) return { day: dayName, meals: [] };
+
+        const compiledMeals: DietMeal[] = (activePlanForDay.meals || []).map((m: any) => ({
+          id: m.id || Math.random().toString(),
+          name: m.name,
+          time: m.time || '',
+          ingredients: (m.items || m.foods || []).map((item: any) => {
+            const portionRatio = (item.qty || 0) / (item.portion_size || 100);
+            const calcCalories = (item.kcal || item.calories || 0) * portionRatio;
+            const calcProtein = (item.protein || 0) * portionRatio;
+            
+            return {
+              id: item.id || Math.random().toString(),
+              name: item.name || item.food_name || 'Alimento',
+              amount: `${item.qty || item.amount_g || ''}${item.unit || 'g'}`,
+              calories: Math.round(calcCalories),
+              protein: Math.round(calcProtein)
+            };
+          })
+        }));
+        return { day: dayName, meals: compiledMeals };
+      });
+      return { days: dietPlanDays } as DietPlan;
+    }
+    return dietPlan;
+  }, [hasNutriPlan, nutriDietPlan, dietPlan]);
+
   const confirmSwap = (newIngredient: DietIngredient) => {
     if (!dietPlan || !swappingIngredient) return;
 
@@ -374,28 +414,34 @@ export const DietPlanView: React.FC = () => {
     return <DietLoadingAnimation />;
   }
 
-  if (!dietPlan) {
+  if (!displayDietPlan) {
       return (
           <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center animate-fade-in">
               <div className="w-28 h-28 bg-gradient-to-tr from-orange-100 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10 rounded-[40px] flex items-center justify-center mb-10 shadow-inner">
                   <Sparkles className="w-12 h-12 text-orange-500" />
               </div>
-              <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tighter">Dieta Inteligente</h2>
+              <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tighter">
+                {hasNutriPlan ? "Plano do Nutricionista" : "Dieta Inteligente"}
+              </h2>
               <p className="text-gray-500 dark:text-gray-400 mb-12 max-w-xs leading-relaxed font-medium">
-                  Receba um plano alimentar completo, focado em saúde e resultados, gerado especialmente para você.
+                  {hasNutriPlan 
+                    ? "Seu nutricionista validou um plano exclusivo para você."
+                    : "Receba um plano alimentar completo, focado em saúde e resultados, gerado especialmente para você."}
               </p>
-              <button 
-                onClick={() => setIsQuizOpen(true)}
-                className="w-full max-w-xs bg-black dark:bg-white text-white dark:text-black py-5 rounded-[24px] font-bold text-lg shadow-2xl shadow-black/10 active:scale-95 transition-all"
-              >
-                  Começar Agora
-              </button>
+              {!hasNutriPlan && (
+                <button 
+                  onClick={() => setIsQuizOpen(true)}
+                  className="w-full max-w-xs bg-black dark:bg-white text-white dark:text-black py-5 rounded-[24px] font-bold text-lg shadow-2xl shadow-black/10 active:scale-95 transition-all"
+                >
+                    Começar Agora
+                </button>
+              )}
               {isQuizOpen && <DietQuiz onComplete={handleQuizComplete} onClose={() => setIsQuizOpen(false)} />}
           </div>
       )
   }
 
-  const currentDayData = dietPlan.days.find(d => d.day === selectedDay);
+  const currentDayData = displayDietPlan.days.find(d => d.day === selectedDay);
 
   const totalDayCalories = currentDayData?.meals.reduce((sum, meal) => 
     sum + meal.ingredients.reduce((mSum, ing) => mSum + (ing.calories || 0), 0)
@@ -410,27 +456,18 @@ export const DietPlanView: React.FC = () => {
       {/* Header Section */}
       <div className="px-1">
         <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">Cardápio</h2>
-            <button 
-                onClick={() => setIsQuizOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800/50 rounded-2xl text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest transition-all active:scale-95 border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
-            >
-                <RefreshCw size={14} />
-                Regenerar
-            </button>
-        </div>
-
-        <div className="mb-6 bg-white dark:bg-gray-900/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/50 flex items-center gap-3 shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
-                <span className="text-sm font-medium text-gray-900 dark:text-white">AS</span>
-            </div>
-            <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">Cardápio validado por</p>
-                <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">Allan Stachuk</p>
-                    <span className="text-[10px] text-gray-400 font-medium">• CRN 13901</span>
-                </div>
-            </div>
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">
+                {hasNutriPlan ? "Plano do Nutricionista" : "Cardápio"}
+            </h2>
+            {!hasNutriPlan && (
+                <button 
+                    onClick={() => setIsQuizOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800/50 rounded-2xl text-gray-600 dark:text-gray-300 font-bold text-xs uppercase tracking-widest transition-all active:scale-95 border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+                >
+                    <RefreshCw size={14} />
+                    Regenerar
+                </button>
+            )}
         </div>
 
         <DaySelector selectedDay={selectedDay} onSelect={setSelectedDay} />
@@ -459,6 +496,7 @@ export const DietPlanView: React.FC = () => {
                             key={meal.id} 
                             meal={meal} 
                             onSwapIngredient={handleSwapIngredient} 
+                            disableSwap={hasNutriPlan}
                         />
                        ))}
                    </div>

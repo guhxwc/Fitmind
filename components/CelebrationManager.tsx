@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { useAppContext } from './AppContext';
 
 export const CelebrationManager: React.FC = () => {
-    const { userData, currentWater, meals, quickAddProtein } = useAppContext();
+    const { userData, currentWater, meals, quickAddProtein, targetMacros } = useAppContext();
     
     const totalProtein = meals.reduce((sum, meal) => sum + meal.protein, 0) + quickAddProtein;
 
@@ -12,7 +12,7 @@ export const CelebrationManager: React.FC = () => {
     const isReady = useRef(false);
 
     useEffect(() => {
-        if (!userData || !userData.goals) return;
+        if (!userData || !targetMacros) return;
 
         if (!isReady.current) {
             isReady.current = true;
@@ -22,7 +22,7 @@ export const CelebrationManager: React.FC = () => {
         }
 
         // Water celebration
-        if (currentWater >= userData.goals.water && prevWaterRef.current < userData.goals.water) {
+        if (currentWater >= targetMacros.water && prevWaterRef.current < targetMacros.water) {
             confetti({
                 particleCount: 150,
                 spread: 80,
@@ -32,13 +32,13 @@ export const CelebrationManager: React.FC = () => {
             });
         }
         prevWaterRef.current = currentWater;
-    }, [currentWater, userData]);
+    }, [currentWater, userData, targetMacros]);
 
     useEffect(() => {
-        if (!userData || !userData.goals || !isReady.current) return;
+        if (!userData || !targetMacros || !isReady.current) return;
 
         // Protein celebration
-        if (totalProtein >= userData.goals.protein && prevProteinRef.current < userData.goals.protein) {
+        if (totalProtein >= targetMacros.protein && prevProteinRef.current < targetMacros.protein) {
             confetti({
                 particleCount: 150,
                 spread: 80,
@@ -48,7 +48,7 @@ export const CelebrationManager: React.FC = () => {
             });
         }
         prevProteinRef.current = totalProtein;
-    }, [totalProtein, userData]);
+    }, [totalProtein, userData, targetMacros]);
 
     return null;
 };

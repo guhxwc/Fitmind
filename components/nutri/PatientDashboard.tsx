@@ -444,16 +444,10 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
             <CheckCircle2 className="w-5 h-5" /> Check-ins
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
-            <MessageSquare className="w-5 h-5" /> Mensagens
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
             <FileText className="w-5 h-5" /> Materiais
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
             <Stethoscope className="w-5 h-5" /> Exames
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
-            <PenTool className="w-5 h-5" /> Anotações
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
             <Settings className="w-5 h-5" /> Configurações

@@ -25,7 +25,7 @@ interface ConsultationDashboardProps {
 
 export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ status, onReload }) => {
   const navigate = useNavigate();
-  const { session, userData } = useAppContext();
+  const { session, userData, targetMacros } = useAppContext();
   const [isWaitingForPlan, setIsWaitingForPlan] = useState(status === 'anamnese_done');
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
@@ -369,21 +369,21 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                         <Flame className="w-4 h-4 text-[#FF9500]" />
                         <span className="text-[15px] font-medium text-gray-600 dark:text-gray-300">Calorias</span>
                       </div>
-                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{userData?.goals?.calories || 0}</span>
+                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{targetMacros?.calories || userData?.goals?.calories || 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Droplet className="w-4 h-4 text-[#007AFF] fill-[#007AFF]/20" />
                         <span className="text-[15px] font-medium text-gray-600 dark:text-gray-300">Água</span>
                       </div>
-                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{userData?.goals?.water || 0}L</span>
+                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{targetMacros?.water || userData?.goals?.water || 0}L</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Beef className="w-4 h-4 text-[#FF2D55]" />
                         <span className="text-[15px] font-medium text-gray-600 dark:text-gray-300">Proteína</span>
                       </div>
-                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{userData?.goals?.protein || 0}g</span>
+                      <span className="font-bold text-[15px] text-gray-900 dark:text-white">{targetMacros?.protein || userData?.goals?.protein || 0}g</span>
                     </div>
                   </div>
                 </div>
@@ -466,7 +466,31 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                     </div>
                     <div>
                       <h4 className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-widest mb-1">Próximo Ajuste</h4>
-                      <p className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Em 14 dias</p>
+                      {(() => {
+                         if (!consultationData?.next_review_at) {
+                           return <p className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Não definido</p>;
+                         }
+                         const todayDate = new Date();
+                         todayDate.setHours(0, 0, 0, 0);
+                         
+                         const reviewDate = new Date(consultationData.next_review_at);
+                         reviewDate.setHours(0, 0, 0, 0);
+
+                         const diffTime = reviewDate.getTime() - todayDate.getTime();
+                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                         if (diffDays > 1) {
+                           return <p className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Em {diffDays} dias</p>;
+                         } else if (diffDays === 1) {
+                           return <p className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Amanhã</p>;
+                         } else if (diffDays === 0) {
+                           return <p className="text-[15px] font-bold text-[#FF9500] leading-tight">Retorno hoje</p>;
+                         } else if (diffDays === -1 || diffDays === -2) {
+                           return <p className="text-[15px] font-bold text-[#FF3B30] leading-tight">Retorno pendente</p>;
+                         } else {
+                           return <p className="text-[15px] font-bold text-[#FF3B30] leading-tight">Atrasado há {Math.abs(diffDays)} dias</p>;
+                         }
+                      })()}
                     </div>
                   </div>
                 </div>

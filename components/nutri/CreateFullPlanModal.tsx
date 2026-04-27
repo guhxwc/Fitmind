@@ -6,6 +6,7 @@ import {
   CalendarCheck, Trash2, Search, Loader2,
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { calculateAutoGoals } from '../../lib/nutritionGoals';
 
 /* ============================================================
    TIPOS
@@ -1364,16 +1365,25 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
     notes: '',
   });
 
-  const [diet, setDiet] = useState<DietData>({
-    goalCalories: '2000',
-    protein: '150',
-    carbs: '220',
-    fats: '67',
-    water: '2,5',
-    meals: [],
-    restrictions: [],
-    preferences: ['Frango', 'Peixes', 'Ovos', 'Vegetais'],
-    planNotes: '',
+  const [diet, setDiet] = useState<DietData>(() => {
+    const auto = calculateAutoGoals({
+      weight: profile?.weight,
+      height: profile?.height,
+      age: profile?.age,
+      gender: profile?.gender,
+      activityLevel: profile?.activity_level,
+    });
+    return {
+      goalCalories: auto?.calories ? String(auto.calories) : '',
+      protein: auto?.protein ? String(auto.protein) : '',
+      carbs: auto?.carbs ? String(auto.carbs) : '',
+      fats: auto?.fats ? String(auto.fats) : '',
+      water: auto?.water ? String(auto.water).replace('.', ',') : '',
+      meals: [],
+      restrictions: [],
+      preferences: ['Frango', 'Peixes', 'Ovos', 'Vegetais'],
+      planNotes: '',
+    };
   });
 
   const [appointment, setAppointment] = useState<AppointmentData>({
@@ -1519,6 +1529,97 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
           .from('consultations')
           .update({ next_review_at: appointmentAt, status: 'active' })
           .eq('user_id', userId);
+      }
+
+      // Sincroniza com diet_plans (formato lido pelo DietView do paciente
+      // e pelo DietPlanEditor do nutri). Esse upsert faz tudo aparecer
+      // sincronizadamente em /dieta (paciente), Plano Alimentar (nutri),
+      // e Plano Personalizado (nutri).
+      try {
+        // Mapeia DietMeal -> Meal (formato do diet_plans)
+        const mappedMeals = diet.meals.map((m) => ({
+          id: m.id,
+          name: m.name,
+          time: m.time || '',
+          obs: '',
+          items: (m.foods || []).map((f) => ({
+            id: f.id,
+            food_id: String(f.food_id),
+            name: f.food_name,
+            qty: f.amount_g,
+            unit: 'g',
+            portion_size: 100,
+            kcal: f.cal_per_100,      // valores por 100g — DietPlanEditor multiplica por qty/portion_size
+            protein: f.protein_per_100,
+            carbs: f.carbs_per_100,
+            fat: f.fats_per_100,
+          })),
+        }));
+
+        const dietPlanData = {
+          user_id: userId,
+          consultation_id: patient?.id || null,
+          nutritionist_id: nutri?.id || null,
+          title: 'Plano Alimentar',
+          status: 'active',
+          plan_data: {
+            plans: [
+              {
+                id: 'plan_main',
+                name: 'Plano base',
+                scope: 'all',
+                days: [0, 1, 2, 3, 4, 5, 6],
+                meals: mappedMeals,
+              },
+            ],
+          },
+          plan: {
+            plans: [
+              {
+                id: 'plan_main',
+                name: 'Plano base',
+                scope: 'all',
+                days: [0, 1, 2, 3, 4, 5, 6],
+                meals: mappedMeals,
+              },
+            ],
+            total_calories: Number(diet.goalCalories) || 0,
+            total_protein_g: Number(diet.protein) || 0,
+            total_carbs_g: Number(diet.carbs) || 0,
+            total_fat_g: Number(diet.fats) || 0,
+            status: 'active',
+          },
+          total_calories: Number(diet.goalCalories) || 0,
+          total_protein_g: Number(diet.protein) || 0,
+          total_carbs_g: Number(diet.carbs) || 0,
+          total_fat_g: Number(diet.fats) || 0,
+          observations: diet.planNotes || null,
+          version: 1,
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Procura plano existente pra esse user
+        const { data: existingDietPlan } = await supabase
+          .from('diet_plans')
+          .select('id, version')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingDietPlan?.id) {
+          // Atualiza incrementando versão
+          await supabase
+            .from('diet_plans')
+            .update({ ...dietPlanData, version: (existingDietPlan.version || 0) + 1 })
+            .eq('id', existingDietPlan.id);
+        } else {
+          await supabase.from('diet_plans').insert(dietPlanData);
+        }
+      } catch (syncErr) {
+        // Sync falhou, mas o patient_plans já foi gravado. Apenas loga.
+        console.warn('[CreateFullPlanModal] sync com diet_plans falhou:', syncErr);
       }
 
       onSent();

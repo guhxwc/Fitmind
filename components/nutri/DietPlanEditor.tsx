@@ -7,6 +7,7 @@ import {
   Database, Cloud, MoreHorizontal, Settings, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { calculateAutoGoals } from '../../lib/nutritionGoals';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -601,12 +602,25 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
   const profile = Array.isArray(patient.profiles) ? patient.profiles[0] : (patient.profiles || {});
   const anamnese = patient.anamneses?.[0] || {};
 
-  const targets: Targets = useMemo(() => ({
-    kcal: anamnese.target_calories || 2200,
-    protein: anamnese.target_protein || 165,
-    carbs: anamnese.target_carbs || 248,
-    fat: anamnese.target_fat || 70,
-  }), [anamnese]);
+  // Metas calculadas automaticamente a partir do profile (mesma fórmula do FitMind)
+  const autoGoals = useMemo(() => calculateAutoGoals({
+    weight: profile?.weight,
+    height: profile?.height,
+    age: profile?.age,
+    gender: profile?.gender,
+    activityLevel: profile?.activity_level,
+  }), [profile]);
+
+  // Targets é STATE — começa com anamnese > auto > defaults; nutri pode editar.
+  const [targets, setTargets] = useState<Targets>(() => ({
+    kcal: anamnese.target_calories || autoGoals?.calories || 2200,
+    protein: anamnese.target_protein || autoGoals?.protein || 165,
+    carbs: anamnese.target_carbs || autoGoals?.carbs || 248,
+    fat: anamnese.target_fat || autoGoals?.fats || 70,
+  }));
+
+  const [showEditTargets, setShowEditTargets] = useState(false);
+  const [showConfigDays, setShowConfigDays] = useState(false);
 
   const [plans, setPlans] = useState<DietPlan[]>([]);
   const [activePlanId, setActivePlanId] = useState<string>("");
@@ -619,9 +633,11 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
   const totals = useMemo(() => dayTotals(activePlan?.meals || []), [activePlan]);
 
   useEffect(() => {
+    const userId = patient.user_id || profile?.id;
+    if (!userId) return;
+
     const load = async () => {
       setLoading(true);
-      const userId = patient.user_id || profile?.id;
       const { data } = await supabase
         .from('diet_plans')
         .select('*')
@@ -634,6 +650,16 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
         setPlans(data.plan_data.plans);
         setActivePlanId(data.plan_data.plans[0].id);
         setActiveMealId(data.plan_data.plans[0].meals[0]?.id || "");
+
+        // Se o plano já tem metas salvas, usar elas
+        if (data.total_calories || data.total_protein_g || data.total_carbs_g || data.total_fat_g) {
+          setTargets((prev) => ({
+            kcal: Number(data.total_calories) || prev.kcal,
+            protein: Number(data.total_protein_g) || prev.protein,
+            carbs: Number(data.total_carbs_g) || prev.carbs,
+            fat: Number(data.total_fat_g) || prev.fat,
+          }));
+        }
       } else {
         const initialPlan: DietPlan = {
           id: uid(), name: "Plano base", scope: "all", days: [0, 1, 2, 3, 4, 5, 6],
@@ -650,6 +676,19 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
       setLoading(false);
     };
     load();
+
+    // Realtime: se outra fonte (ex: CreateFullPlanModal em outra aba) atualizar
+    // o diet_plans deste paciente, recarrega o editor automaticamente.
+    const channel = supabase
+      .channel(`diet_plans_editor_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'diet_plans', filter: `user_id=eq.${userId}` },
+        () => { load(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [patient, profile]);
 
   const notify = (msg: string) => {
@@ -685,19 +724,20 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
         consultation_id: patient.id,
         nutritionist_id: patient.nutritionist_id || '6178130c-e47a-4534-a794-9b80b823766b',
         title: activePlan.name || 'Plano Alimentar',
-        plan: { 
+        plan: {
           plans,
-          total_calories: r(totals.kcal),
-          total_protein_g: r1(totals.p),
-          total_carbs_g: r1(totals.c),
-          total_fat_g: r1(totals.fat),
+          // Metas configuradas pelo nutri (não os totais somados)
+          total_calories: r(targets.kcal),
+          total_protein_g: r1(targets.protein),
+          total_carbs_g: r1(targets.carbs),
+          total_fat_g: r1(targets.fat),
           status: 'active'
         },
-        // Including these top-level just in case they exist
-        total_calories: r(totals.kcal),
-        total_protein_g: r1(totals.p),
-        total_carbs_g: r1(totals.c),
-        total_fat_g: r1(totals.fat),
+        // Top-level: também são as METAS (paciente lê isso pra exibir meta diária)
+        total_calories: r(targets.kcal),
+        total_protein_g: r1(targets.protein),
+        total_carbs_g: r1(targets.carbs),
+        total_fat_g: r1(targets.fat),
         plan_data: { plans },
         version: 1,
         status: 'active',
@@ -753,6 +793,10 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
 
   const updateMeal = (mId: string, next: Meal) => {
     setPlans(ps => ps.map(p => p.id === activePlan.id ? { ...p, meals: p.meals.map(m => m.id === mId ? next : m) } : p));
+  };
+
+  const updateActivePlan = (patch: Partial<DietPlan>) => {
+    setPlans(ps => ps.map(p => p.id === activePlan.id ? { ...p, ...patch } : p));
   };
 
   const addMeal = () => {
@@ -910,12 +954,15 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
                 </button>
               </div>
               
-              <div className="pb-3 flex items-center gap-3">
+              <div className="pb-3 flex items-center gap-3 flex-wrap">
                 <button onClick={() => duplicatePlan(activePlan.id)} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1C1C21] border border-gray-100 dark:border-transparent text-gray-500 hover:text-blue-500 transition-all text-[13px] font-bold rounded-xl shadow-sm">
                   <Copy className="w-4 h-4" /> Duplicar Plano
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1C1C21] border border-gray-100 dark:border-transparent text-gray-500 hover:text-blue-500 transition-all text-[13px] font-bold rounded-xl shadow-sm">
+                <button onClick={() => setShowConfigDays(true)} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1C1C21] border border-gray-100 dark:border-transparent text-gray-500 hover:text-blue-500 transition-all text-[13px] font-bold rounded-xl shadow-sm">
                   <Calendar className="w-4 h-4" /> Configurar Dias
+                </button>
+                <button onClick={() => setShowEditTargets(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-500/15 transition-all text-[13px] font-bold rounded-xl shadow-sm">
+                  <Target className="w-4 h-4" /> Editar metas
                 </button>
               </div>
             </div>
@@ -1088,6 +1135,198 @@ export const DietPlanEditor: React.FC<DietPlanEditorProps> = ({ patient, onBack 
         </div>
         </div>
       </div>
+
+      {/* ── Modal: Editar metas ── */}
+      <AnimatePresence>
+        {showEditTargets && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-black/50 flex items-center justify-center p-4"
+            onClick={() => setShowEditTargets(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1C1C21] rounded-3xl w-full max-w-[460px] shadow-2xl"
+            >
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-[#2C2C2E] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Editar metas</h3>
+                    <p className="text-[12px] text-gray-500 mt-0.5">Metas diárias do paciente.</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowEditTargets(false)} className="p-1.5 -mr-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-50 dark:hover:bg-[#2C2C2E]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-3">
+                {[
+                  { key: 'kcal' as const, label: 'Calorias', suffix: 'kcal', color: 'bg-rose-50 text-rose-500 dark:bg-rose-500/10' },
+                  { key: 'protein' as const, label: 'Proteínas', suffix: 'g', color: 'bg-blue-50 text-blue-500 dark:bg-blue-500/10' },
+                  { key: 'carbs' as const, label: 'Carboidratos', suffix: 'g', color: 'bg-teal-50 text-teal-500 dark:bg-teal-500/10' },
+                  { key: 'fat' as const, label: 'Gorduras', suffix: 'g', color: 'bg-amber-50 text-amber-500 dark:bg-amber-500/10' },
+                ].map(({ key, label, suffix, color }) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[12px] font-bold ${color}`}>
+                      {suffix}
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[12px] font-bold text-gray-500 uppercase tracking-wide block mb-1">{label}</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={targets[key] || ''}
+                          onChange={(e) => setTargets((t) => ({ ...t, [key]: Number(e.target.value) || 0 }))}
+                          className="w-full bg-gray-50 dark:bg-[#0F0F12] border border-gray-200 dark:border-[#2C2C2E] rounded-xl h-[42px] px-3.5 pr-12 text-[14px] font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
+                          placeholder="0"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400">{suffix}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {autoGoals && (
+                  <button
+                    type="button"
+                    onClick={() => setTargets({
+                      kcal: autoGoals.calories,
+                      protein: autoGoals.protein,
+                      carbs: autoGoals.carbs,
+                      fat: autoGoals.fats,
+                    })}
+                    className="w-full mt-2 px-4 py-2.5 bg-gray-50 dark:bg-[#0F0F12] hover:bg-gray-100 dark:hover:bg-[#2C2C2E] text-gray-600 dark:text-gray-300 text-[12px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Restaurar metas calculadas pelo FitMind
+                  </button>
+                )}
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-[#2C2C2E] flex justify-end gap-3">
+                <button onClick={() => setShowEditTargets(false)} className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2C2C2E] rounded-xl">
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => { setShowEditTargets(false); notify('Metas atualizadas. Clique em Publicar para salvar.'); }}
+                  className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal: Configurar Dias ── */}
+      <AnimatePresence>
+        {showConfigDays && activePlan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-black/50 flex items-center justify-center p-4"
+            onClick={() => setShowConfigDays(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1C1C21] rounded-3xl w-full max-w-[480px] shadow-2xl"
+            >
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-[#2C2C2E] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-[17px] font-bold text-gray-900 dark:text-white">Configurar dias</h3>
+                    <p className="text-[12px] text-gray-500 mt-0.5">Em quais dias da semana este plano se aplica.</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowConfigDays(false)} className="p-1.5 -mr-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-50 dark:hover:bg-[#2C2C2E]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="flex gap-2">
+                  {[
+                    { lbl: 'Todos', days: [0,1,2,3,4,5,6], scope: 'all' as const },
+                    { lbl: 'Seg–Sex', days: [1,2,3,4,5], scope: 'days' as const },
+                    { lbl: 'Fim de semana', days: [0,6], scope: 'days' as const },
+                  ].map((preset) => (
+                    <button
+                      key={preset.lbl}
+                      onClick={() => updateActivePlan({ scope: preset.scope, days: preset.days })}
+                      className="flex-1 px-3 py-2 text-[12px] font-bold bg-gray-50 dark:bg-[#0F0F12] border border-gray-200 dark:border-[#2C2C2E] hover:border-blue-500 hover:text-blue-500 rounded-xl transition-colors"
+                    >
+                      {preset.lbl}
+                    </button>
+                  ))}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-2">Personalizado</label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {DOW_SHORT.map((d, i) => {
+                      const selected = activePlan.scope === 'all' || activePlan.days.includes(i);
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            const currentDays = activePlan.scope === 'all' ? [0,1,2,3,4,5,6] : activePlan.days;
+                            const newDays = currentDays.includes(i)
+                              ? currentDays.filter(x => x !== i)
+                              : [...currentDays, i].sort((a,b) => a-b);
+                            updateActivePlan({
+                              scope: newDays.length === 7 ? 'all' : 'days',
+                              days: newDays,
+                            });
+                          }}
+                          className={`aspect-square rounded-xl text-[12px] font-bold transition-all ${
+                            selected
+                              ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                              : 'bg-gray-50 dark:bg-[#0F0F12] text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2C2C2E]'
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl px-4 py-3">
+                  <p className="text-[12px] font-bold text-blue-700 dark:text-blue-300">
+                    Plano ativo em: {getScopeLabel(activePlan)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-[#2C2C2E] flex justify-end">
+                <button
+                  onClick={() => { setShowConfigDays(false); notify('Dias atualizados. Clique em Publicar para salvar.'); }}
+                  className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Toast ── */}
       <AnimatePresence>

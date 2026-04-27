@@ -13,7 +13,6 @@ import {
 import { WeightChart } from './WeightChart';
 
 import { QuickCheckInCard } from './QuickCheckInCard';
-import { OrientationCard } from './OrientationCard';
 import { ConsultationWaitingScreen } from './ConsultationWaitingScreen';
 import { PostAnamnesisModal } from './PostAnamnesisModal';
 
@@ -565,7 +564,6 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
             </h3>
             <div className="grid grid-cols-1 gap-6">
               <QuickCheckInCard />
-              <OrientationCard />
             </div>
           </motion.div>
 

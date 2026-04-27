@@ -89,7 +89,7 @@ const MiniControlButton: React.FC<{onClick: () => void, children: React.ReactNod
     </button>
 );
 
-const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: number, goal: number, onAdd: () => void, color: string, bgClass: string }> = ({ icon, title, calories, goal, onAdd, color, bgClass }) => (
+const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: number, goal: number | null, onAdd: () => void, color: string, bgClass: string }> = ({ icon, title, calories, goal, onAdd, color, bgClass }) => (
     <div className="bg-ios-card dark:bg-ios-dark-card p-4 rounded-[24px] shadow-soft mb-3 flex items-center justify-between border border-gray-100 dark:border-white/5 active:scale-[0.99] transition-transform">
         <div className="flex items-center gap-4 flex-1">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${bgClass} text-white`}>
@@ -98,16 +98,29 @@ const MealCard: React.FC<{ icon: React.ReactNode, title: string, calories: numbe
             <div className="flex-1">
                 <div className="flex justify-between items-end mb-1 pr-4">
                     <h4 className="text-base font-bold text-gray-900 dark:text-white leading-none">{title}</h4>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        <span className={`text-sm font-bold ${color}`}>{calories}</span> / {goal} kcal
-                    </p>
+                    {goal !== null ? (
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          <span className={`text-sm font-bold ${color}`}>{calories}</span> / {goal} kcal
+                      </p>
+                    ) : (
+                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">
+                          <span className={`text-sm font-bold ${color}`}>{calories}</span> kcal
+                      </p>
+                    )}
                 </div>
                 <div className="w-full pr-4">
                     <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                            className={`h-full rounded-full ${bgClass.replace('bg-', 'bg-')}`} // Use dynamic bg
-                            style={{ width: `${Math.min((calories/goal)*100, 100)}%` }}
-                        ></div>
+                        {goal !== null ? (
+                          <div 
+                              className={`h-full rounded-full ${bgClass.replace('bg-', 'bg-')}`} // Use dynamic bg
+                              style={{ width: `${Math.min((calories/goal)*100, 100)}%` }}
+                          ></div>
+                        ) : (
+                          <div 
+                              className={`h-full rounded-full ${bgClass.replace('bg-', 'bg-')} opacity-40`} 
+                              style={{ width: calories > 0 ? '100%' : '0%' }}
+                          ></div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -201,7 +214,7 @@ const DailyRecordItem: React.FC<{
 );
 
 export const SummaryTab: React.FC = () => {
-  const { userData, session, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType } = useAppContext();
+  const { userData, session, meals, setMeals, updateStreak, quickAddProtein, setQuickAddProtein, currentWater, setCurrentWater, unlockPro, sideEffects, setSideEffects, applicationHistory, weightHistory, workoutHistory, selectedDate, setSelectedDate, setUserData, setWeightHistory, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, setInitialMealType, nutriDietPlan, consultationStatus } = useAppContext();
   const navigate = useNavigate();
   const [isSmartLogOpen, setIsSmartLogOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -314,11 +327,66 @@ export const SummaryTab: React.FC = () => {
   const snackCals = getMealStats('Lanche', 15, 18);
   const dinnerCals = getMealStats('Jantar', 18, 22);
 
-  const dailyGoal = userData.goals.calories;
-  const breakfastGoal = Math.round(dailyGoal * 0.20);
-  const lunchGoal = Math.round(dailyGoal * 0.35);
-  const dinnerGoal = Math.round(dailyGoal * 0.30);
-  const snackGoal = Math.round(dailyGoal * 0.15);
+  let breakfastGoal: number | null = null;
+  let lunchGoal: number | null = null;
+  let dinnerGoal: number | null = null;
+  let snackGoal: number | null = null;
+
+  const hasConsultation = consultationStatus === 'active' || consultationStatus === 'pending' || consultationStatus === 'completed';
+  const hasDietPlan = !!nutriDietPlan && hasConsultation;
+
+  if (hasDietPlan) {
+      const dayOfWeek = selectedDate.getDay();
+      let activePlan = null;
+      if (nutriDietPlan.plans && Array.isArray(nutriDietPlan.plans)) {
+          activePlan = nutriDietPlan.plans.find((p: any) => p.scope === 'all' || (p.days && p.days.includes(dayOfWeek)));
+          if (!activePlan && nutriDietPlan.plans.length > 0) {
+             activePlan = nutriDietPlan.plans[0];
+          }
+      }
+
+      if (activePlan && activePlan.meals) {
+          let bGoal = 0, lGoal = 0, dGoal = 0, sGoal = 0;
+          let hasB = false, hasL = false, hasD = false, hasS = false;
+          activePlan.meals.forEach((m: any) => {
+              const nameRaw = m.name?.toLowerCase().trim() || "";
+              const name = nameRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+              let mealKcal = 0;
+              if (m.items && Array.isArray(m.items)) {
+                  m.items.forEach((it: any) => {
+                      const f = (it.qty || 0) / (it.portion_size || 1);
+                      mealKcal += (it.kcal || 0) * f;
+                  });
+              }
+
+              if (name.includes("cafe")) {
+                  bGoal += mealKcal;
+                  hasB = true;
+              } else if (name.includes("almoco")) {
+                  lGoal += mealKcal;
+                  hasL = true;
+              } else if (name.includes("janta")) {
+                  dGoal += mealKcal;
+                  hasD = true;
+              } else {
+                  sGoal += mealKcal;
+                  hasS = true;
+              }
+          });
+
+          if (hasB) breakfastGoal = Math.round(bGoal);
+          if (hasL) lunchGoal = Math.round(lGoal);
+          if (hasD) dinnerGoal = Math.round(dGoal);
+          if (hasS) snackGoal = Math.round(sGoal);
+      }
+  } else {
+      const dailyGoal = userData.goals.calories;
+      breakfastGoal = Math.round(dailyGoal * 0.20);
+      lunchGoal = Math.round(dailyGoal * 0.35);
+      dinnerGoal = Math.round(dailyGoal * 0.30);
+      snackGoal = Math.round(dailyGoal * 0.15);
+  }
 
   // Aggregate Today's History
   const offset = selectedDate.getTimezoneOffset() * 60000;

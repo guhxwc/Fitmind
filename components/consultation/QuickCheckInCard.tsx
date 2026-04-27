@@ -197,7 +197,7 @@ export const QuickCheckInCard: React.FC = () => {
     <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 dark:border-white/5">
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
             <Activity className="w-4 h-4" strokeWidth={2.5} />
           </div>
           <h3 className="text-[16px] font-bold text-gray-900 dark:text-white tracking-tight">Check-in rápido</h3>
@@ -250,7 +250,7 @@ export const QuickCheckInCard: React.FC = () => {
         className={`w-full py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 active:scale-[0.98] disabled:opacity-60 ${
           submitted 
             ? 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.28)]'
-            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-[0_4px_14px_rgba(147,51,234,0.28)]'
+            : 'bg-blue-500 hover:bg-blue-600 text-white shadow-[0_4px_14px_rgba(59,130,246,0.28)]'
         }`}
       >
         {submitting ? 'Enviando...' : submitted ? '✓ Check-in enviado!' : 'Enviar check-in'}

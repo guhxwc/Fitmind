@@ -12,7 +12,7 @@ export const CelebrationManager: React.FC = () => {
     const isReady = useRef(false);
 
     useEffect(() => {
-        if (!userData) return;
+        if (!userData || !userData.goals) return;
 
         if (!isReady.current) {
             isReady.current = true;
@@ -32,10 +32,10 @@ export const CelebrationManager: React.FC = () => {
             });
         }
         prevWaterRef.current = currentWater;
-    }, [currentWater, userData, userData?.goals?.water]);
+    }, [currentWater, userData]);
 
     useEffect(() => {
-        if (!userData || !isReady.current) return;
+        if (!userData || !userData.goals || !isReady.current) return;
 
         // Protein celebration
         if (totalProtein >= userData.goals.protein && prevProteinRef.current < userData.goals.protein) {
@@ -48,7 +48,7 @@ export const CelebrationManager: React.FC = () => {
             });
         }
         prevProteinRef.current = totalProtein;
-    }, [totalProtein, userData, userData?.goals?.protein]);
+    }, [totalProtein, userData]);
 
     return null;
 };

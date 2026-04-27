@@ -35,6 +35,10 @@ interface AppContextType {
   setCurrentWater: React.Dispatch<React.SetStateAction<number>>;
   dietPlan: DietPlan | null;
   setDietPlan: React.Dispatch<React.SetStateAction<DietPlan | null>>;
+  nutriDietPlan: any | null;
+  setNutriDietPlan: React.Dispatch<React.SetStateAction<any | null>>;
+  activePatientPlan: any | null;
+  setActivePatientPlan: React.Dispatch<React.SetStateAction<any | null>>;
   loading: boolean;
   fetchData: () => Promise<void>;
   updateStreak: () => void;
@@ -85,6 +89,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [quickAddProtein, setQuickAddProtein] = useState(0);
   const [currentWater, setCurrentWater] = useState(0);
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [nutriDietPlan, setNutriDietPlan] = useState<any | null>(null);
+  const [activePatientPlan, setActivePatientPlan] = useState<any | null>(null);
   const [isGeneratingDiet, setIsGeneratingDiet] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
@@ -232,7 +238,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           sideEffectsRes,
           customGoalsRes,
           isNutritionistRes,
-          consultationRes
+          consultationRes,
+          dietPlanRes,
+          activePatientPlanRes
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
             supabase.from('weight_history').select('*').eq('user_id', userId).order('date', { ascending: false }),
@@ -245,14 +253,43 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             supabase.from('side_effects').select('*').eq('user_id', userId).order('date', { ascending: false }),
             supabase.from('custom_goals').select('*').eq('user_id', userId).maybeSingle(),
             supabase.rpc('is_nutritionist'),
-            supabase.from('consultations').select('status').eq('user_id', userId).maybeSingle()
+            supabase.from('consultations').select('status').eq('user_id', userId).maybeSingle(),
+            supabase.from('diet_plans').select('*').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+            supabase.from('patient_plans').select('*').eq('user_id', userId).eq('status', 'sent').order('created_at', { ascending: false }).limit(1).maybeSingle()
         ]);
 
         if (profileRes.data) {
           const fetchedUserData = formatProfileToUserData(profileRes.data);
           
-          // Apply custom goals if they exist
-          if (customGoalsRes?.data) {
+          let overrideGoals = false;
+
+          // 1) Apply nutritionist plan goals if there's an active consultation and plan
+          if (consultationRes.data && consultationRes.data.status !== 'archived') {
+            if (dietPlanRes.data) {
+               fetchedUserData.goals = {
+                  ...fetchedUserData.goals,
+                  calories: dietPlanRes.data.total_calories || dietPlanRes.data.plan?.total_calories || fetchedUserData.goals.calories,
+                  protein: dietPlanRes.data.total_protein_g || dietPlanRes.data.plan?.total_protein_g || fetchedUserData.goals.protein,
+                  water: activePatientPlanRes.data?.water_l || fetchedUserData.goals.water,
+                  carbs: dietPlanRes.data.total_carbs_g || dietPlanRes.data.plan?.total_carbs_g || fetchedUserData.goals.carbs,
+                  fats: dietPlanRes.data.total_fat_g || dietPlanRes.data.plan?.total_fat_g || fetchedUserData.goals.fats
+               };
+               overrideGoals = true;
+            } else if (activePatientPlanRes.data) {
+               fetchedUserData.goals = {
+                  ...fetchedUserData.goals,
+                  calories: activePatientPlanRes.data.goal_calories ?? fetchedUserData.goals.calories,
+                  protein: activePatientPlanRes.data.protein_g ?? fetchedUserData.goals.protein,
+                  water: activePatientPlanRes.data.water_l ?? fetchedUserData.goals.water,
+                  carbs: activePatientPlanRes.data.carbs_g ?? fetchedUserData.goals.carbs,
+                  fats: activePatientPlanRes.data.fats_g ?? fetchedUserData.goals.fats
+               };
+               overrideGoals = true;
+            }
+          }
+          // 2) Apply custom goals if they exist (legacy support)
+
+          else if (customGoalsRes?.data) {
              fetchedUserData.goals = {
                 ...fetchedUserData.goals,
                 calories: customGoalsRes.data.calories ?? fetchedUserData.goals.calories,
@@ -261,10 +298,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 carbs: customGoalsRes.data.carbs_g ?? fetchedUserData.goals.carbs,
                 fats: customGoalsRes.data.fat_g ?? fetchedUserData.goals.fats
              };
+             overrideGoals = true;
           }
 
           setUserData(prev => {
             if (!prev) return fetchedUserData;
+
             
             const isRecentLocalUpdate = Date.now() - lastWeightUpdateRef.current < 3000;
             if (isRecentLocalUpdate && fetchedUserData.weight !== prev.weight) {
@@ -289,6 +328,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setApplicationHistory(applicationHistoryRes.data || []);
         setDailyNotes(dailyNotesRes.data || []);
         setSideEffects(sideEffectsRes.data || []);
+        setNutriDietPlan(dietPlanRes.data?.plan || null);
+        setActivePatientPlan(activePatientPlanRes.data || null);
         
         // Força permissão para os e-mails de teste do Gustavo e Allan caso o RPC falhe ou não tenha sido atualizado
         const userEmail = session?.user?.email?.toLowerCase();
@@ -583,6 +624,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setCurrentWater,
       dietPlan,
       setDietPlan,
+      nutriDietPlan,
+      setNutriDietPlan,
+      activePatientPlan,
+      setActivePatientPlan,
       loading,
       fetchData,
       updateStreak,
@@ -648,6 +693,10 @@ export const useAppContext = () => {
         setCurrentWater: () => {},
         dietPlan: null,
         setDietPlan: () => {},
+        nutriDietPlan: null,
+        setNutriDietPlan: () => {},
+        activePatientPlan: null,
+        setActivePatientPlan: () => {},
         loading: false,
         fetchData: async () => {},
         updateStreak: () => {},

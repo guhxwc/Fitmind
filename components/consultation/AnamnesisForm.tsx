@@ -507,7 +507,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                 <div className="w-full space-y-2.5">
                    <button 
                       onClick={() => {
-                        window.open('https://wa.me/5543999142672?text=Ol%C3%A1%2C%20conclu%C3%AD%20minha%20anamnese%20no%20FitMind%20e%20gostaria%20de%20marcar%20minha%20consulta%20premium.', '_blank');
+                        window.location.href = 'https://wa.me/5543999142672?text=Ol%C3%A1%2C%20conclu%C3%AD%20minha%20anamnese%20no%20FitMind%20e%20gostaria%20de%20marcar%20minha%20consulta%20premium.';
                         finalizeAnamnesis();
                       }}
                       className="w-full bg-gradient-to-r from-[#25D366] to-[#1DA851] text-white font-bold border-none py-[16px] rounded-[20px] flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_4px_16px_rgba(37,211,102,0.3)] text-[15px]"

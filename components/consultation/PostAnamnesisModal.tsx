@@ -14,7 +14,7 @@ export const PostAnamnesisModal: React.FC<PostAnamnesisModalProps> = ({ isOpen, 
 
   const handleWhatsAppClick = () => {
     if (onWhatsAppClick) onWhatsAppClick();
-    window.open('https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%2C%20acabei%20de%20enviar%20minha%20anamnese%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.', '_blank');
+    window.location.href = 'https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%2C%20acabei%20de%20enviar%20minha%20anamnese%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.';
   };
 
   const modalContent = (

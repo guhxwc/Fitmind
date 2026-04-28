@@ -563,7 +563,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                 onClick={() => {
                   if (profile?.whatsapp) {
                     const num = profile.whatsapp.replace(/\D/g, '');
-                    window.open(`https://wa.me/${num}`, '_blank');
+                    window.location.href = `https://wa.me/${num}`;
                   } else {
                     alert('Paciente não possui WhatsApp cadastrado.');
                   }
@@ -577,7 +577,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                 onClick={() => {
                   if (profile?.whatsapp) {
                     const num = profile.whatsapp.replace(/\D/g, '');
-                    window.open(`https://wa.me/${num}`, '_blank');
+                    window.location.href = `https://wa.me/${num}`;
                   } else {
                     alert('Paciente não possui WhatsApp cadastrado.');
                   }

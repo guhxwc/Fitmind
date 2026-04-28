@@ -359,7 +359,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
               onClick={() => {
                 localStorage.setItem('fitmind_consultation_waiting', 'true');
                 setIsWaitingForPlan(true);
-                window.open('https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.', '_blank');
+                window.location.href = 'https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.';
               }}
               className="w-full bg-gradient-to-r from-[#25D366]/10 to-[#128C7E]/10 border border-[#25D366]/20 dark:border-[#25D366]/10 rounded-[24px] p-4 flex items-center justify-between active:scale-[0.98] transition-all group"
             >

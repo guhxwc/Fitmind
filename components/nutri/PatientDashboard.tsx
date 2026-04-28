@@ -11,6 +11,8 @@ import { DietPlanEditor } from './DietPlanEditor';
 import { CreateFullPlanModal } from './CreateFullPlanModal';
 import { CheckinsView } from './CheckinsView';
 import { EvolutionView } from './EvolutionView';
+import { MaterialsView } from './MaterialsView';
+import { ExamsView } from './ExamsView';
 import { alertsService, PatientAlert } from '../../services/alertsService';
 
 /* =========================
@@ -160,7 +162,22 @@ const BodyCompositionModal: React.FC<{
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
-  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution'>(null);
+  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams'>(null);
+  const [nutritionistId, setNutritionistId] = useState<string | null>(null);
+
+  // Busca id do nutri logado (uma vez)
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('nutritionists')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data?.id) setNutritionistId(data.id);
+    })();
+  }, []);
 
   // Dados extras do paciente
   const [profile, setProfile] = useState<any>(null);
@@ -168,6 +185,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
   const [dailyRecords, setDailyRecords] = useState<any[]>([]);
   const [latestCheckin, setLatestCheckin] = useState<any>(null);
   const [bodyComposition, setBodyComposition] = useState<any>(null);
+  const [recentMaterials, setRecentMaterials] = useState<any[]>([]);
   const [workoutHistory, setWorkoutHistory] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<PatientAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
@@ -199,6 +217,15 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
         supabase.from('workout_history').select('*').eq('user_id', userId).order('date', { ascending: false }).limit(14),
         supabase.from('patient_plans').select('*').eq('user_id', userId).eq('status', 'sent').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
+
+      // Materiais recentes (últimos 3)
+      const { data: matsData } = await supabase
+        .from('patient_materials')
+        .select('id, title, type, created_at, read_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (matsData) setRecentMaterials(matsData);
 
       if (profRes.data) setProfile(profRes.data);
       if (goalsRes.data) setCustomGoals(goalsRes.data);
@@ -451,10 +478,16 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
           >
             <CheckCircle2 className="w-5 h-5" /> Check-ins
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+          <button
+            onClick={() => setActiveView('materials')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'materials' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
             <FileText className="w-5 h-5" /> Materiais
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+          <button
+            onClick={() => setActiveView('exams')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'exams' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
             <Stethoscope className="w-5 h-5" /> Exames
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
@@ -923,7 +956,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                   <p className="text-[11px] text-gray-400 italic">Nenhum material enviado ainda</p>
                 </div>
               </div>
-              <button className="text-[12px] font-bold text-[#007AFF] mt-2 text-left hover:underline">
+              <button onClick={() => setActiveView('materials')} className="text-[12px] font-bold text-[#007AFF] mt-2 text-left hover:underline">
                 Ver todos os materiais
               </button>
             </div>
@@ -970,6 +1003,28 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       {activeView === 'evolution' && (
         <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
           <EvolutionView patient={patient} onBack={() => setActiveView(null)} />
+        </div>
+      )}
+
+      {/* Materials View Overlay */}
+      {activeView === 'materials' && (
+        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+          <MaterialsView
+            patient={patient}
+            nutritionistId={nutritionistId}
+            onBack={() => setActiveView(null)}
+          />
+        </div>
+      )}
+
+      {/* Exams View Overlay */}
+      {activeView === 'exams' && (
+        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+          <ExamsView
+            patient={patient}
+            nutritionistId={nutritionistId}
+            onBack={() => setActiveView(null)}
+          />
         </div>
       )}
 

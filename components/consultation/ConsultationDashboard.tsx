@@ -15,6 +15,9 @@ import { WeightChart } from './WeightChart';
 import { QuickCheckInCard } from './QuickCheckInCard';
 import { ConsultationWaitingScreen } from './ConsultationWaitingScreen';
 import { PostAnamnesisModal } from './PostAnamnesisModal';
+import {
+  materialsService, MATERIAL_TYPE_META, PatientMaterial, formatBytes,
+} from '../../services/materialsExamsService';
 
 const DR_ALLAN_PHOTO = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png";
 
@@ -31,7 +34,46 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   const [consultationData, setConsultationData] = useState<any>(null);
   const [activePlan, setActivePlan] = useState<any>(null);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
-  const materials: any[] = []; // No materials available yet
+  const [materials, setMaterials] = useState<PatientMaterial[]>([]);
+
+  // Carrega materiais do paciente + realtime
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const userId = session.user.id;
+
+    const loadMaterials = async () => {
+      try {
+        const list = await materialsService.listForPatient(userId);
+        setMaterials(list);
+      } catch (err) {
+        console.error('[ConsultationDashboard] erro ao carregar materiais:', err);
+      }
+    };
+    loadMaterials();
+
+    const channel = supabase
+      .channel(`materials_patient_${userId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'patient_materials', filter: `user_id=eq.${userId}` },
+        () => loadMaterials())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [session?.user?.id]);
+
+  const handleOpenMaterial = async (m: PatientMaterial) => {
+    try {
+      const url = await materialsService.getOpenUrl(m);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      // Marca como lido se ainda não estiver
+      if (!m.read_at) {
+        await materialsService.markAsRead(m.id);
+        setMaterials((prev) => prev.map((x) => x.id === m.id ? { ...x, read_at: new Date().toISOString() } : x));
+      }
+    } catch (err: any) {
+      console.error('Erro ao abrir material:', err);
+      alert('Não foi possível abrir o material. Tente novamente.');
+    }
+  }; // No materials available yet
 
   // Verifica se há um plano enviado pelo nutri pra liberar a consultoria
   useEffect(() => {
@@ -607,21 +649,38 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4 flex-1">
-                  {materials.map((m, idx) => (
-                    <div key={idx} className="flex items-center gap-4 bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                      <div className="w-11 h-11 rounded-[14px] bg-white dark:bg-gray-700 flex items-center justify-center shrink-0 shadow-sm border border-gray-100 dark:border-gray-600">
-                        <FileText className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-[14px] font-bold text-gray-900 dark:text-white leading-tight mb-0.5">{m.title}</h4>
-                        <p className="text-[12px] font-medium text-gray-500">Enviado em {m.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <button className="w-full text-[14px] font-bold text-blue-600 border border-blue-50 hover:border-blue-100 bg-white dark:bg-transparent dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 py-3.5 rounded-full transition-colors mt-5 active:scale-95">
-                    Ver todos os materiais
-                  </button>
+                <div className="space-y-3 flex-1">
+                  {materials.slice(0, 4).map((m) => {
+                    const meta = MATERIAL_TYPE_META[m.type];
+                    const isNew = !m.read_at;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => handleOpenMaterial(m)}
+                        className="w-full flex items-center gap-4 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-50 dark:hover:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50 transition-all text-left active:scale-[0.99]"
+                      >
+                        <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 ${meta.bg} ${meta.color}`}>
+                          <FileText className="w-5 h-5" strokeWidth={2.2} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-[14px] font-bold text-gray-900 dark:text-white leading-tight truncate">{m.title}</h4>
+                            {isNew && <span className="bg-blue-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">Novo</span>}
+                          </div>
+                          <p className="text-[11px] font-medium text-gray-500 mt-0.5">
+                            {meta.label} • {new Date(m.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                            {m.file_size && ` • ${formatBytes(m.file_size)}`}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                      </button>
+                    );
+                  })}
+                  {materials.length > 4 && (
+                    <button className="w-full text-[14px] font-bold text-blue-600 border border-blue-50 hover:border-blue-100 bg-white dark:bg-transparent dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 py-3.5 rounded-full transition-colors mt-2 active:scale-95">
+                      Ver todos ({materials.length})
+                    </button>
+                  )}
                 </div>
               )}
             </div>

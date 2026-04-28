@@ -625,8 +625,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           calories: userData.goals.calories,
           protein: userData.goals.protein,
           water: userData.goals.water,
-          carbs: userData.goals.carbs,
-          fat: userData.goals.fats,
+          carbs: userData.goals.carbs || 0,
+          fat: userData.goals.fats || 0,
           source: 'platform'
       };
   }, [userData, consultationStatus, nutriDietPlan, activePatientPlan]);

@@ -88,6 +88,7 @@ export const NotificationSystem: React.FC = () => {
                 hasLoggedSideEffectToday: false, // Mocked
                 hasStrongSideEffect: false, // Mocked
                 proteinProgress: totalProtein / proteinGoal,
+                proteinGoal,
                 waterProgress: currentWater,
                 weightDiff: weightHistory.length >= 2 ? weightHistory[0].weight - weightHistory[1].weight : null,
                 currentPath: location.pathname,

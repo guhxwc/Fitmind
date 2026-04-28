@@ -46,14 +46,13 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
     if (rootElement) {
         rootElement.scrollTop = 0;
     }
-  }, []);
+  }, [currentStep]);
 
   const handleChange = (field: string, value: string) => {
       setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNext = async () => {
-     window.scrollTo({ top: 0, behavior: 'smooth' });
      if (currentStep < totalSteps) {
          setCurrentStep(prev => prev + 1);
      } else {
@@ -333,8 +332,8 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F2F2F7] dark:bg-black font-sans flex justify-center pb-32">
-      <div className="w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:border-x sm:border-gray-200 dark:sm:border-gray-900 pb-20">
+    <div className="w-full min-h-[100dvh] bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
+      <div className="w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:border-x sm:border-gray-200 dark:sm:border-gray-900">
         
         {/* Transparent Nav Header */}
         <div className="px-4 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-[#F2F2F7]/80 dark:bg-black/80 backdrop-blur-xl z-50">
@@ -371,23 +370,22 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                  animate={{ opacity: 1, x: 0 }}
                  exit={{ opacity: 0, x: -20 }}
                  transition={{ duration: 0.25, ease: "easeOut" }}
-                 className="flex-1"
+                 className="flex-1 flex flex-col"
               >
                   {getStepContent()}
+                  
+                  <div className="mt-10 pb-16 sm:pb-12">
+                     <button 
+                        onClick={handleNext}
+                        disabled={!isStepValid()}
+                        className="w-full bg-[#007AFF] disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:cursor-not-allowed hover:bg-[#0066D6] text-white font-bold text-[17px] py-[18px] rounded-[18px] shadow-[0_8px_24px_rgba(0,122,255,0.3)] disabled:shadow-none flex items-center justify-center gap-2 transition-all active:scale-95"
+                     >
+                        {currentStep === totalSteps ? 'Enviar e Concluir' : 'Continuar'}
+                        {currentStep !== totalSteps && <ArrowRight className="w-5 h-5 text-white/70" strokeWidth={2.5} />}
+                     </button>
+                  </div>
               </motion.div>
           </AnimatePresence>
-        </div>
-
-        {/* Footer Fixed Action Button */}
-        <div className="fixed sm:absolute bottom-0 left-0 w-full bg-gradient-to-t from-[#F2F2F7] via-[#F2F2F7] dark:from-black dark:via-black to-transparent pt-12 pb-8 px-5 z-40">
-           <button 
-              onClick={handleNext}
-              disabled={!isStepValid()}
-              className="w-full bg-[#007AFF] disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:cursor-not-allowed hover:bg-[#0066D6] text-white font-bold text-[17px] py-[18px] rounded-[18px] shadow-[0_8px_24px_rgba(0,122,255,0.3)] disabled:shadow-none flex items-center justify-center gap-2 transition-all active:scale-95"
-           >
-              {currentStep === totalSteps ? 'Enviar e Concluir' : 'Continuar'}
-              {currentStep !== totalSteps && <ArrowRight className="w-5 h-5 text-white/70" strokeWidth={2.5} />}
-           </button>
         </div>
 
       </div>

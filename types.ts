@@ -24,6 +24,7 @@ export interface NotificationSchedule {
 export interface UserData {
   id: string;
   name: string;
+  whatsapp?: string;
   gender: Gender;
   age: number;
   birthDate?: string; 

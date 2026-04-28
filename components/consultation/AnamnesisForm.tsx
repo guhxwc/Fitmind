@@ -15,6 +15,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   const [showIntroModal, setShowIntroModal] = useState(() => !localStorage.getItem('fitmind_consultation_intro'));
   const [formData, setFormData] = useState({
      // Step 1
+     whatsapp: userData?.whatsapp || '',
      gender: userData?.gender?.toLowerCase() || '',
      age: userData?.age?.toString() || '',
      weight: userData?.weight?.toString() || '',
@@ -62,6 +63,10 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
          if (userId) {
              const { data: consultation } = await supabase.from('consultations').select('id').eq('user_id', userId).single();
              if (consultation) {
+                 if (formData.whatsapp) {
+                     await supabase.from('profiles').update({ whatsapp: formData.whatsapp }).eq('id', userId);
+                 }
+                 
                  const { error: anamnesisError } = await supabase.from('anamneses').upsert({
                      user_id: userId,
                      consultation_id: consultation.id,
@@ -154,6 +159,11 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
                     <label className="block text-[14px] font-bold text-gray-700 dark:text-gray-300 mb-2">Altura (cm)</label>
                     <input type="number" placeholder="Ex: 175" value={formData.height} onChange={(e) => handleChange('height', e.target.value)} className="w-full bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 rounded-[16px] px-4 py-3.5 text-[16px] font-medium text-gray-900 dark:text-white outline-none focus:border-[#007AFF] transition-colors" />
                  </div>
+             </div>
+
+             <div>
+                <label className="block text-[14px] font-bold text-gray-700 dark:text-gray-300 mb-2">Celular / WhatsApp</label>
+                <input type="tel" placeholder="Seu número com DDD" value={formData.whatsapp} onChange={(e) => handleChange('whatsapp', e.target.value)} className="w-full bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 rounded-[16px] px-4 py-3.5 text-[16px] font-medium text-gray-900 dark:text-white outline-none focus:border-[#007AFF] transition-colors" />
              </div>
 
              <div>
@@ -313,7 +323,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   const isStepValid = () => {
       // Regras de validação simples por step
       switch(currentStep) {
-          case 1: return formData.gender && formData.age && formData.weight && formData.height;
+          case 1: return formData.gender && formData.age && formData.weight && formData.height && formData.whatsapp;
           case 2: return formData.objective;
           case 3: return formData.activityLevel && formData.trainingFrequency;
           default: return true; 

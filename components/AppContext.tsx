@@ -182,6 +182,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const formatProfileToUserData = (profile: any): UserData => ({
       id: profile.id,
+      whatsapp: profile.whatsapp,
       name: profile.name || DEFAULT_USER_DATA.name,
       gender: profile.gender || DEFAULT_USER_DATA.gender,
       age: profile.age || DEFAULT_USER_DATA.age,

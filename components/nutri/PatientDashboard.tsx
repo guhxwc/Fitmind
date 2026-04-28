@@ -13,6 +13,7 @@ import { CheckinsView } from './CheckinsView';
 import { EvolutionView } from './EvolutionView';
 import { MaterialsView } from './MaterialsView';
 import { ExamsView } from './ExamsView';
+import { PatientSettingsView } from './PatientSettingsView';
 import { alertsService, PatientAlert } from '../../services/alertsService';
 
 /* =========================
@@ -162,7 +163,7 @@ const BodyCompositionModal: React.FC<{
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
-  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams'>(null);
+  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
   const [nutritionistId, setNutritionistId] = useState<string | null>(null);
 
   // Busca id do nutri logado (uma vez)
@@ -490,7 +491,10 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
           >
             <Stethoscope className="w-5 h-5" /> Exames
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px]">
+          <button
+            onClick={() => setActiveView('settings')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'settings' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
             <Settings className="w-5 h-5" /> Configurações
           </button>
         </nav>
@@ -555,11 +559,31 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="px-5 py-2.5 bg-white border border-gray-200 text-green-600 font-bold text-sm rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => {
+                  if (profile?.whatsapp) {
+                    const num = profile.whatsapp.replace(/\D/g, '');
+                    window.open(`https://wa.me/${num}`, '_blank');
+                  } else {
+                    alert('Paciente não possui WhatsApp cadastrado.');
+                  }
+                }}
+                className="px-5 py-2.5 bg-white border border-gray-200 text-green-600 font-bold text-sm rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-colors"
+              >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 2.013c-5.512 0-9.998 4.486-9.998 9.998 0 1.954.55 3.842 1.597 5.467L2.014 22l4.632-1.587c1.57.94 3.393 1.436 5.362 1.436 5.513 0 9.998-4.487 9.998-9.998s-4.485-9.998-9.998-9.998z" /></svg>
                 WhatsApp
               </button>
-              <button className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-sm rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm">
+              <button 
+                onClick={() => {
+                  if (profile?.whatsapp) {
+                    const num = profile.whatsapp.replace(/\D/g, '');
+                    window.open(`https://wa.me/${num}`, '_blank');
+                  } else {
+                    alert('Paciente não possui WhatsApp cadastrado.');
+                  }
+                }}
+                className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-sm rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm"
+              >
                 <MessageSquare className="w-4 h-4" /> Enviar mensagem
               </button>
             </div>
@@ -1024,6 +1048,16 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
             patient={patient}
             nutritionistId={nutritionistId}
             onBack={() => setActiveView(null)}
+          />
+        </div>
+      )}
+
+      {/* Settings View Overlay */}
+      {activeView === 'settings' && (
+        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#0B0C10]">
+          <PatientSettingsView
+            patient={patient}
+            onBack={() => { setActiveView(null); loadAll(); }}
           />
         </div>
       )}

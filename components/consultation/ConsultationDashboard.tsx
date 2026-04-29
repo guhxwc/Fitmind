@@ -357,9 +357,13 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
           <motion.div variants={itemVariants}>
             <button 
               onClick={() => {
-                localStorage.setItem('fitmind_consultation_waiting', 'true');
-                setIsWaitingForPlan(true);
-                window.location.href = 'https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.';
+                if (status !== 'active') {
+                   localStorage.setItem('fitmind_consultation_waiting', 'true');
+                   setIsWaitingForPlan(true);
+                   window.location.href = 'https://wa.me/5543999142672?text=Ol%C3%A1%2C%20adquiri%20a%20consultoria%20premium%20pelo%20FitMind%20e%20gostaria%20de%20marcar%20meu%20hor%C3%A1rio%20para%20iniciar.';
+                } else {
+                   window.location.href = 'https://wa.me/5543999142672';
+                }
               }}
               className="w-full bg-gradient-to-r from-[#25D366]/10 to-[#128C7E]/10 border border-[#25D366]/20 dark:border-[#25D366]/10 rounded-[24px] p-4 flex items-center justify-between active:scale-[0.98] transition-all group"
             >
@@ -368,8 +372,12 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                      <MessageCircle className="w-[26px] h-[26px] text-white" fill="currentColor" />
                   </div>
                   <div className="text-left">
-                     <h3 className="text-[#128C7E] dark:text-[#25D366] font-bold text-[16px] leading-tight mb-0.5 tracking-tight">Agendar Início</h3>
-                     <p className="text-gray-600 dark:text-gray-400 text-[13px] font-medium leading-tight">Falar com Allan no WhatsApp</p>
+                     <h3 className="text-[#128C7E] dark:text-[#25D366] font-bold text-[16px] leading-tight mb-0.5 tracking-tight">
+                       {status === 'active' ? 'Falar com Dr. Allan' : 'Agendar Início'}
+                     </h3>
+                     <p className="text-gray-600 dark:text-gray-400 text-[13px] font-medium leading-tight">
+                       {status === 'active' ? 'Tire suas dúvidas ou acompanhamento' : 'Falar com Allan no WhatsApp'}
+                     </p>
                   </div>
                </div>
                <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center">

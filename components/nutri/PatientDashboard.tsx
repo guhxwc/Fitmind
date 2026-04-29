@@ -14,6 +14,7 @@ import { EvolutionView } from './EvolutionView';
 import { MaterialsView } from './MaterialsView';
 import { ExamsView } from './ExamsView';
 import { PatientSettingsView } from './PatientSettingsView';
+import { FullPlanManager } from './FullPlanManager';
 import { alertsService, PatientAlert } from '../../services/alertsService';
 
 /* =========================
@@ -163,7 +164,7 @@ const BodyCompositionModal: React.FC<{
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
-  const [activeView, setActiveView] = useState<null | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
+  const [activeView, setActiveView] = useState<null | 'full_plan' | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
   const [nutritionistId, setNutritionistId] = useState<string | null>(null);
 
   // Busca id do nutri logado (uma vez)
@@ -192,6 +193,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [showBodyCompModal, setShowBodyCompModal] = useState(false);
   const [showFullPlanModal, setShowFullPlanModal] = useState(false);
+  const [planIdToEdit, setPlanIdToEdit] = useState<string | null>(null);
   const [latestPlan, setLatestPlan] = useState<any>(null);
 
   const userId = patient.user_id;
@@ -456,8 +458,8 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
             <LayoutDashboard className="w-5 h-5" /> Visão Geral
           </button>
           <button
-            onClick={() => setShowFullPlanModal(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 font-semibold text-[14px] transition-all"
+            onClick={() => setActiveView('full_plan')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-[14px] transition-all ${activeView === 'full_plan' ? 'bg-[#007AFF]/5 text-[#007AFF]' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             <Sparkles className="w-5 h-5" /> Plano Completo
           </button>
@@ -1033,10 +1035,28 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       {showFullPlanModal && (
         <CreateFullPlanModal
           patient={{ ...patient, profiles: profile || patient.profiles }}
-          onClose={() => setShowFullPlanModal(false)}
+          planIdToEdit={planIdToEdit}
+          onClose={() => {
+             setShowFullPlanModal(false);
+             setPlanIdToEdit(null);
+          }}
           onSent={() => {
             loadAll();
+            setPlanIdToEdit(null);
+            setShowFullPlanModal(false);
           }}
+        />
+      )}
+
+      {/* Full Plan Manager Overlay */}
+      {activeView === 'full_plan' && (
+        <FullPlanManager 
+          patient={patient} 
+          onBack={() => setActiveView(null)} 
+          onEditPlan={(planId) => {
+             setPlanIdToEdit(planId || null);
+             setShowFullPlanModal(true);
+          }} 
         />
       )}
 

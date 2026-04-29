@@ -260,14 +260,10 @@ export const AccountSettings: React.FC = () => {
 
             if (updateErr) throw updateErr;
 
-            // Tenta cancelar a assinatura Stripe (se houver) — mesma edge function da assinatura
-            try {
-                await supabase.functions.invoke('cancel-subscription');
-            } catch (subErr) {
-                // Se falhar, o cancelamento da consultoria já foi feito;
-                // só logamos. O usuário pode cancelar pelo portal Stripe se necessário.
-                console.warn('[cancelConsultation] cancel-subscription falhou (ok ignorar):', subErr);
-            }
+            // IMPORTANTE: cancelar consultoria NÃO cancela a assinatura PRO (R$49) do Stripe.
+            // Pra cancelar a assinatura, o usuário usa o botão 'Cancelar Assinatura' separado.
+            // Cada cobrança é independente: PRO (acesso ao app) é uma; Consultoria é outra
+            // (gerenciada pelo nutri externamente, não pelo Stripe direto).
 
             addToast("Consultoria cancelada com sucesso.", "success");
             setShowCancelConsultationConfirm(false);
@@ -431,7 +427,7 @@ export const AccountSettings: React.FC = () => {
             <ConfirmModal
                 isOpen={showCancelConsultationConfirm}
                 title="Cancelar Consultoria"
-                message="Tem certeza que deseja cancelar sua consultoria? Você perderá o acompanhamento com o nutricionista, acesso ao plano alimentar personalizado e check-ins. Esta ação pode ser revertida entrando em contato com o suporte."
+                message="Tem certeza que deseja cancelar sua consultoria? Você perderá o acompanhamento com o nutricionista, acesso ao plano alimentar personalizado e check-ins. Sua assinatura PRO continua ativa. Esta ação pode ser revertida entrando em contato com o suporte."
                 confirmText={isCancelingConsultation ? "Cancelando..." : "Sim, cancelar consultoria"}
                 cancelText="Voltar"
                 onConfirm={handleCancelConsultation}

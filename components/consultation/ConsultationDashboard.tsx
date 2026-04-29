@@ -86,7 +86,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
     const checkPlan = async () => {
       const { data } = await supabase
         .from('patient_plans')
-        .select('id, status, sent_at, goal_calories, protein_g, carbs_g, fats_g, water_l, appointment_at')
+        .select('id, title, status, sent_at, goal_calories, protein_g, carbs_g, fats_g, water_l, appointment_at')
         .eq('user_id', session.user.id)
         .eq('status', 'sent')
         .order('sent_at', { ascending: false })
@@ -500,13 +500,18 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                   Planos
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-[#2C2C2E] flex flex-col justify-between aspect-square active:scale-95 transition-transform cursor-pointer">
+                  <div 
+                    onClick={() => navigate('/dieta')}
+                    className="bg-white dark:bg-[#1C1C1E] rounded-[24px] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-[#2C2C2E] flex flex-col justify-between aspect-square active:scale-95 transition-transform cursor-pointer"
+                  >
                     <div className="w-11 h-11 rounded-[14px] bg-[#007AFF]/10 flex items-center justify-center mb-4">
                       <Target className="w-[22px] h-[22px] text-[#007AFF] stroke-[2.5]" />
                     </div>
                     <div>
                       <h4 className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-widest mb-1">Plano Atual</h4>
-                      <p className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Fase 1:<br/>Adaptação</p>
+                      <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-tight line-clamp-3">
+                         {activePlan?.title || "Fase 1: Adaptação"}
+                      </p>
                     </div>
                   </div>
                   

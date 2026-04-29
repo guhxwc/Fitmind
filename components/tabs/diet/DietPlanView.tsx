@@ -250,6 +250,7 @@ export const DietPlanView: React.FC = () => {
   const [manualSearchQuery, setManualSearchQuery] = useState("");
   const [manualSearchResults, setManualSearchResults] = useState<FoodItem[]>([]);
   const [manualSearchLoading, setManualSearchLoading] = useState(false);
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedPlan = localStorage.getItem('diet_plan');
@@ -345,13 +346,24 @@ export const DietPlanView: React.FC = () => {
 
   const hasNutriPlan = consultationStatus === 'active' && !!nutriDietPlan;
 
+  useEffect(() => {
+    if (hasNutriPlan && nutriDietPlan?.plans?.length > 0 && !activePlanId) {
+       setActivePlanId(nutriDietPlan.plans[0].id);
+    }
+  }, [hasNutriPlan, nutriDietPlan, activePlanId]);
+
   const displayDietPlan = React.useMemo(() => {
     if (hasNutriPlan && nutriDietPlan) {
       const days: Weekday[] = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
       const dietPlanDays: DietDay[] = days.map((dayName, index) => {
-        const activePlanForDay = nutriDietPlan.plans?.find((p: any) => 
-           p.scope === 'all' || (p.days && p.days.includes(index))
-        ) || nutriDietPlan.plans?.[0];
+        // If a variant is explicitly selected, use it. Otherwise, fallback to the one assigned for this day.
+        let activePlanForDay = nutriDietPlan.plans?.find((p: any) => p.id === activePlanId);
+        
+        if (!activePlanForDay) {
+           activePlanForDay = nutriDietPlan.plans?.find((p: any) => 
+              p.scope === 'all' || (p.days && p.days.includes(index))
+           ) || nutriDietPlan.plans?.[0];
+        }
 
         if (!activePlanForDay) return { day: dayName, meals: [] };
 
@@ -378,7 +390,7 @@ export const DietPlanView: React.FC = () => {
       return { days: dietPlanDays } as DietPlan;
     }
     return dietPlan;
-  }, [hasNutriPlan, nutriDietPlan, dietPlan]);
+  }, [hasNutriPlan, nutriDietPlan, dietPlan, activePlanId]);
 
   const confirmSwap = (newIngredient: DietIngredient) => {
     if (!dietPlan || !swappingIngredient) return;
@@ -455,10 +467,18 @@ export const DietPlanView: React.FC = () => {
     <div className="space-y-8 pb-40 animate-fade-in">
       {/* Header Section */}
       <div className="px-1">
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">
-                {hasNutriPlan ? "Plano do Nutricionista" : "Cardápio"}
-            </h2>
+        <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">
+                  {hasNutriPlan ? (nutriDietPlan?.title || "Plano do Nutricionista") : "Cardápio"}
+              </h2>
+              {hasNutriPlan && nutriDietPlan?.observations && (
+                 <p className="text-[13px] text-gray-500 mt-2 font-medium bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
+                   <Sparkles className="inline w-3 h-3 text-orange-500 mr-1.5" />
+                   {nutriDietPlan.observations}
+                 </p>
+              )}
+            </div>
             {!hasNutriPlan && (
                 <button 
                     onClick={() => setIsQuizOpen(true)}
@@ -469,6 +489,25 @@ export const DietPlanView: React.FC = () => {
                 </button>
             )}
         </div>
+
+        {/* Diet Variants Tabs */}
+        {hasNutriPlan && nutriDietPlan?.plans?.length > 1 && (
+            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
+               {nutriDietPlan.plans.map((p: any) => (
+                  <button
+                     key={p.id}
+                     onClick={() => setActivePlanId(p.id)}
+                     className={`px-5 py-2.5 rounded-[1.2rem] whitespace-nowrap font-bold text-sm transition-all focus:outline-none ${
+                        activePlanId === p.id
+                           ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                           : 'bg-white dark:bg-gray-800/50 text-gray-400 border border-gray-100 dark:border-gray-800'
+                     }`}
+                  >
+                     {p.name}
+                  </button>
+               ))}
+            </div>
+        )}
 
         <DaySelector selectedDay={selectedDay} onSelect={setSelectedDay} />
       </div>

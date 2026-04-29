@@ -15,6 +15,7 @@ import { calculateAutoGoals } from '../../lib/nutritionGoals';
 type Step = 1 | 2 | 3;
 
 interface BasicData {
+  planTitle: string;
   name: string;
   birthDate: string;
   age: string;
@@ -65,13 +66,21 @@ interface DietMeal {
   expanded?: boolean; // controla expansão inline
 }
 
+interface DietVariant {
+  id: string;
+  name: string;
+  days: number[]; // 0=Dom, 1=Seg...
+  meals: DietMeal[];
+}
+
 interface DietData {
   goalCalories: string;
   protein: string;
   carbs: string;
   fats: string;
   water: string;
-  meals: DietMeal[];
+  variants: DietVariant[];
+  activeVariantId: string;
   restrictions: string[];
   preferences: string[];
   planNotes: string;
@@ -263,6 +272,15 @@ const Step1Data: React.FC<{ data: BasicData; setData: React.Dispatch<React.SetSt
 
   return (
     <div className="space-y-5">
+      {/* Fase do Plano */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <h3 className="text-[15px] font-bold text-gray-900 mb-1">Identificação do Plano</h3>
+        <p className="text-[12px] text-gray-500 mb-4">Dê um nome para identificar a fase atual da dieta para o paciente.</p>
+        <div className="md:w-1/2">
+            <Field label="Nome do Plano / Fase" value={data.planTitle} onChange={(v) => set('planTitle', v)} placeholder="Ex: Fase 1 - Adaptação, Dieta Bulking..." />
+        </div>
+      </div>
+
       {/* Dados básicos */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <h3 className="text-[15px] font-bold text-gray-900 mb-4">Dados básicos</h3>
@@ -680,10 +698,28 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
 
   const set = <K extends keyof DietData>(k: K, v: DietData[K]) => setData((d) => ({ ...d, [k]: v }));
 
+  const activeVariant = data.variants.find(v => v.id === data.activeVariantId) || data.variants[0];
+
+  const updateVariantMeals = (meals: DietMeal[]) => {
+    setData((d) => ({
+      ...d,
+      variants: d.variants.map((v) => (v.id === d.activeVariantId ? { ...v, meals } : v)),
+    }));
+  };
+
+  const updateVariant = (patch: Partial<DietVariant>) => {
+    setData((d) => ({
+      ...d,
+      variants: d.variants.map((v) => (v.id === d.activeVariantId ? { ...v, ...patch } : v)),
+    }));
+  };
+
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+
   // Somatório do que já foi adicionado nas refeições (para comparar com a meta)
   const totals = useMemo(
     () =>
-      data.meals.reduce(
+      activeVariant.meals.reduce(
         (a, m) => ({
           cal: a.cal + m.calories,
           p: a.p + m.protein,
@@ -692,7 +728,7 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
         }),
         { cal: 0, p: 0, c: 0, f: 0 }
       ),
-    [data.meals]
+    [activeVariant.meals]
   );
 
   const macroPct = useMemo(
@@ -747,10 +783,84 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
         {/* Distribuição refeições */}
         <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          {/* Aba de Variantes de Dieta */}
+          <div className="flex items-center gap-2 mb-6 pb-2 border-b border-gray-100 overflow-x-auto no-scrollbar">
+            {data.variants.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => set('activeVariantId', v.id)}
+                className={`flex items-center justify-between min-w-[120px] px-4 py-2.5 rounded-xl font-bold text-[13px] transition-all whitespace-nowrap ${
+                  data.activeVariantId === v.id
+                    ? 'bg-[#007AFF] text-white shadow-md'
+                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <span>{v.name}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                const newId = `var_${Date.now()}`;
+                setData((d) => ({
+                  ...d,
+                  variants: [
+                    ...d.variants,
+                    { id: newId, name: `Variante ${d.variants.length + 1}`, days: [], meals: [] },
+                  ],
+                  activeVariantId: newId,
+                }));
+              }}
+              className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-[#007AFF]/10 text-[#007AFF] hover:bg-[#007AFF]/20 transition-colors tooltip"
+              title="Adicionar nova dieta"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+
           <div className="flex items-start justify-between mb-1 gap-3">
             <div>
-              <h3 className="text-[15px] font-bold text-gray-900">Distribuição das refeições</h3>
-              <p className="text-[12px] text-gray-500 mt-0.5">Configure as refeições e a distribuição de macronutrientes.</p>
+              <h3 className="text-[15px] font-bold text-gray-900">Distribuição das refeições - {activeVariant.name}</h3>
+              <p className="text-[12px] text-gray-500 mt-0.5">Configure as refeições para esta variante.</p>
+              
+              <div className="mt-3 flex items-center gap-3">
+                 <input 
+                   type="text" 
+                   value={activeVariant.name}
+                   onChange={e => updateVariant({ name: e.target.value })}
+                   className="text-[13px] font-bold text-gray-900 px-3 py-1.5 border border-gray-200 rounded-lg outline-none focus:border-[#007AFF]"
+                   placeholder="Nome da dieta (Ex: Dia Off)"
+                 />
+                 <button
+                    type="button"
+                    onClick={() => setShowCalendarModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 rounded-lg text-[12px] font-bold transition-colors"
+                 >
+                    <CalendarIcon className="w-4 h-4" />
+                    Configurar Dias
+                 </button>
+                 {data.variants.length > 1 && (
+                     <button
+                        type="button"
+                        onClick={() => {
+                          setData(d => {
+                             const newVariants = d.variants.filter(v => v.id !== activeVariant.id);
+                             return {
+                               ...d,
+                               variants: newVariants,
+                               activeVariantId: newVariants.length > 0 ? newVariants[0].id : ''
+                             };
+                          });
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                        title="Remover variante"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                 )}
+              </div>
             </div>
             <button
               onClick={() => setShowMealModal(true)}
@@ -761,21 +871,18 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
           </div>
 
           <div className="mt-5 space-y-2.5">
-            {data.meals.length === 0 && (
+            {activeVariant.meals.length === 0 && (
               <div className="text-center py-10 text-gray-400 text-sm font-medium border-2 border-dashed border-gray-200 rounded-2xl">
-                Nenhuma refeição. Clique em "Adicionar refeição".
+                Nenhuma refeição na {activeVariant.name}. Clique em "Adicionar refeição".
               </div>
             )}
-            {data.meals.map((m) => {
+            {activeVariant.meals.map((m) => {
               const meta = MEAL_TYPE_META[m.type];
               const Icon = meta.icon;
               const isExpanded = !!m.expanded;
 
               const updateMeal = (patch: Partial<DietMeal>) => {
-                setData((d) => ({
-                  ...d,
-                  meals: d.meals.map((x) => (x.id === m.id ? { ...x, ...patch } : x)),
-                }));
+                updateVariantMeals(activeVariant.meals.map((x) => (x.id === m.id ? { ...x, ...patch } : x)));
               };
 
               const recalcFromFoods = (foods: MealFood[]) => {
@@ -824,7 +931,7 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
               };
 
               const removeMeal = () => {
-                setData((d) => ({ ...d, meals: d.meals.filter((x) => x.id !== m.id) }));
+                updateVariantMeals(activeVariant.meals.filter((x) => x.id !== m.id));
               };
 
               return (
@@ -1020,11 +1127,61 @@ const Step2Diet: React.FC<{ data: DietData; setData: React.Dispatch<React.SetSta
         <MealEditModal
           meal={null}
           onSave={(m) => {
-            // Ao criar, já abre expandida pra adicionar alimentos
-            setData((d) => ({ ...d, meals: [...d.meals, { ...m, expanded: true, foods: [] }] }));
+            updateVariantMeals([...activeVariant.meals, { ...m, expanded: true, foods: [] }]);
           }}
           onClose={() => setShowMealModal(false)}
         />
+      )}
+
+      {/* Calendar Modal para Variante */}
+      {showCalendarModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[24px] p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Dias da semana</h3>
+            <p className="text-sm text-gray-500 mb-6">Em quais dias esta dieta ({activeVariant.name}) deve ser seguida?</p>
+            
+            <div className="flex flex-wrap gap-2 mb-8 justify-center">
+              {[
+                { id: 0, label: 'Dom' },
+                { id: 1, label: 'Seg' },
+                { id: 2, label: 'Ter' },
+                { id: 3, label: 'Qua' },
+                { id: 4, label: 'Qui' },
+                { id: 5, label: 'Sex' },
+                { id: 6, label: 'Sáb' },
+              ].map(d => {
+                const isActive = activeVariant.days.includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => {
+                       const newDays = isActive 
+                          ? activeVariant.days.filter(x => x !== d.id) 
+                          : [...activeVariant.days, d.id].sort();
+                       updateVariant({ days: newDays });
+                    }}
+                    className={`w-12 h-12 rounded-xl text-sm font-bold transition-all ${
+                       isActive 
+                          ? 'bg-[#007AFF] text-white shadow-md' 
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3">
+               <button 
+                  onClick={() => setShowCalendarModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+               >
+                 Concluído
+               </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1332,19 +1489,22 @@ const Step3Schedule: React.FC<{ data: AppointmentData; setData: React.Dispatch<R
 
 interface Props {
   patient: any; // tem user_id, profiles, etc.
+  planIdToEdit?: string | null;
   onClose: () => void;
   onSent: () => void; // callback após envio
 }
 
-export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent }) => {
+export const CreateFullPlanModal: React.FC<Props> = ({ patient, planIdToEdit, onClose, onSent }) => {
   const [step, setStep] = useState<Step>(1);
   const [saving, setSaving] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(!!planIdToEdit);
   const [error, setError] = useState<string | null>(null);
 
   const userId = patient.user_id;
   const profile = patient.profiles;
 
   const [basic, setBasic] = useState<BasicData>({
+    planTitle: 'Plano Alimentar',
     name: profile?.name || '',
     birthDate: '',
     age: profile?.age ? `${profile.age} anos` : '',
@@ -1373,13 +1533,22 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
       gender: profile?.gender,
       activityLevel: profile?.activity_level,
     });
+    const defaultVariantId = 'var_1';
     return {
       goalCalories: auto?.calories ? String(auto.calories) : '',
       protein: auto?.protein ? String(auto.protein) : '',
       carbs: auto?.carbs ? String(auto.carbs) : '',
       fats: auto?.fats ? String(auto.fats) : '',
       water: auto?.water ? String(auto.water).replace('.', ',') : '',
-      meals: [],
+      variants: [
+        {
+          id: defaultVariantId,
+          name: 'Plano base',
+          days: [0, 1, 2, 3, 4, 5, 6],
+          meals: [],
+        }
+      ],
+      activeVariantId: defaultVariantId,
       restrictions: [],
       preferences: ['Frango', 'Peixes', 'Ovos', 'Vegetais'],
       planNotes: '',
@@ -1393,6 +1562,114 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
     time: '',
     notes: '',
   });
+
+  useEffect(() => {
+     if (!planIdToEdit) return;
+     const loadPlan = async () => {
+         try {
+             // Fetch plan
+             const { data: plan, error: planError } = await supabase
+                 .from('patient_plans')
+                 .select('*')
+                 .eq('id', planIdToEdit)
+                 .single();
+                 
+             if (planError) throw planError;
+             
+             // Setup basic
+             setBasic(b => ({
+                 ...b,
+                 planTitle: plan.title || 'Plano Alimentar',
+                 weightKg: plan.weight_kg ? String(plan.weight_kg).replace('.',',') : b.weightKg,
+                 heightM: plan.height_m ? String(plan.height_m).replace('.',',') : b.heightM,
+             }));
+             
+             // Setup diet basic
+             setDiet(d => ({
+                 ...d,
+                 goalCalories: plan.goal_calories ? String(plan.goal_calories) : '',
+                 protein: plan.protein_g ? String(plan.protein_g) : '',
+                 carbs: plan.carbs_g ? String(plan.carbs_g) : '',
+                 fats: plan.fats_g ? String(plan.fats_g) : '',
+                 water: plan.water_l ? String(plan.water_l).replace('.',',') : '',
+                 planNotes: plan.observations || '',
+             }));
+             
+             // Try to fetch variants
+             const { data: variants, error: varError } = await supabase
+                 .from('plan_diet_variants')
+                 .select('*')
+                 .eq('plan_id', planIdToEdit);
+                 
+             if (varError) throw varError;
+             
+             if (variants && variants.length > 0) {
+                 // Format variants with their meals
+                 const { data: meals, error: mealError } = await supabase
+                     .from('plan_meals')
+                     .select(`*, plan_meal_foods(*)`)
+                     .in('variant_id', variants.map(v => v.id))
+                     .order('time_order', { ascending: true }); // Assume time order roughly
+                     
+                 const formattedVariants: DietVariant[] = variants.map(v => {
+                     const varMeals = (meals || []).filter(m => m.variant_id === v.id).map(m => ({
+                         id: m.id,
+                         type: m.type as any,
+                         name: m.name,
+                         time: m.time,
+                         calories: m.calories || 0,
+                         protein: m.protein || 0,
+                         carbs: m.carbs || 0,
+                         fats: m.fats || 0,
+                         expanded: false,
+                         foods: (m.plan_meal_foods || []).map((f: any) => ({
+                            id: f.id,
+                            foodId: f.food_id,
+                            name: f.food_name,
+                            amount_g: f.amount_g,
+                            calories: f.calories || 0,
+                            protein: f.protein || 0,
+                            carbs: f.carbs || 0,
+                            fats: f.fats || 0,
+                            cal_per_100: f.cal_per_100 || 0,
+                            protein_per_100: f.protein_per_100 || 0,
+                            carbs_per_100: f.carbs_per_100 || 0,
+                            fats_per_100: f.fats_per_100 || 0,
+                            measureUnit: f.measure_unit,
+                         }))
+                     }));
+                     return {
+                         id: v.id,
+                         name: v.name,
+                         days: v.days || [],
+                         meals: varMeals
+                     };
+                 });
+                 setDiet(d => ({ ...d, variants: formattedVariants, activeVariantId: formattedVariants[0]?.id }));
+             }
+
+             // Appointment
+             if (plan.appointment_at) {
+                 const d = new Date(plan.appointment_at);
+                 const yyyy = d.getFullYear();
+                 const mm = String(d.getMonth() + 1).padStart(2, '0');
+                 const dd = String(d.getDate()).padStart(2, '0');
+                 
+                 setAppointment(a => ({
+                    ...a,
+                    date: `${yyyy}-${mm}-${dd}`,
+                    time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+                 }));
+             }
+         } catch (e) {
+             console.error('Error loading plan for edit:', e);
+             setError('Erro ao carregar o plano para edição.');
+         } finally {
+             setLoadingInitial(false);
+         }
+     }
+     loadPlan();
+  }, [planIdToEdit]);
 
   const goNext = () => setStep((s) => (Math.min(3, s + 1) as Step));
   const goBack = () => setStep((s) => (Math.max(1, s - 1) as Step));
@@ -1425,6 +1702,7 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
         status: 'sent',
         sent_at: new Date().toISOString(),
 
+        title: basic.planTitle,
         name: basic.name,
         birth_date: basic.birthDate || null,
         age: basic.age ? parseInt(basic.age) : null,
@@ -1462,63 +1740,96 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
         appointment_notes: appointment.notes || null,
       };
 
-      // Insere o plano
-      const { data: plan, error: planErr } = await supabase
-        .from('patient_plans')
-        .insert(planRow)
-        .select('id')
-        .single();
+      // Insere ou atualiza o plano
+      let planId = planIdToEdit || null;
+      if (planId) {
+         const { error: updateErr } = await supabase
+           .from('patient_plans')
+           .update(planRow)
+           .eq('id', planId);
+         if (updateErr) throw updateErr;
 
-      if (planErr) throw planErr;
+         // Deleta as variantes antigas (as refeicoes/alimentos devem estar com onDelete cascade ou ser explicitamente excluidos)
+         // Para seguranca de fk, deletamos as refeicoes tbm:
+         await supabase.from('plan_meals').delete().eq('plan_id', planId); 
+         await supabase.from('plan_diet_variants').delete().eq('plan_id', planId);
+      } else {
+         const { data: newPlan, error: planErr } = await supabase
+           .from('patient_plans')
+           .insert(planRow)
+           .select('id')
+           .single();
+         if (planErr) throw planErr;
+         planId = newPlan.id;
+      }
 
-      // Insere as refeições e captura os IDs gerados
-      if (diet.meals.length > 0 && plan?.id) {
-        const mealRows = diet.meals.map((m, i) => ({
-          plan_id: plan.id,
-          user_id: userId,
-          meal_order: i,
-          meal_type: m.type,
-          name: m.name,
-          time_of_day: m.time || null,
-          calories: m.calories || 0,
-          protein_g: m.protein || 0,
-          carbs_g: m.carbs || 0,
-          fats_g: m.fats || 0,
-        }));
+      // Insere as variantes e refeições
+      if (diet.variants.length > 0 && planId) {
+        for (const variant of diet.variants) {
+          // Inserir variante
+          const { data: dbVariant, error: varErr } = await supabase
+            .from('plan_diet_variants')
+            .insert({
+              plan_id: planId,
+              name: variant.name,
+              days: variant.days,
+            })
+            .select('id')
+            .single();
 
-        const { data: insertedMeals, error: mealsErr } = await supabase
-          .from('plan_meals')
-          .insert(mealRows)
-          .select('id, meal_order');
+          if (varErr) throw varErr;
 
-        if (mealsErr) throw mealsErr;
+          // Inserir refeições da variante
+          if (variant.meals.length > 0 && dbVariant?.id) {
+            const mealRows = variant.meals.map((m, i) => ({
+              plan_id: planId,
+              variant_id: dbVariant.id,
+              user_id: userId,
+              meal_order: i,
+              meal_type: m.type,
+              name: m.name,
+              time_of_day: m.time || null,
+              calories: m.calories || 0,
+              protein_g: m.protein || 0,
+              carbs_g: m.carbs || 0,
+              fats_g: m.fats || 0,
+            }));
 
-        // Insere os alimentos de cada refeição (plan_meal_foods)
-        if (insertedMeals && insertedMeals.length > 0) {
-          const foodRows: any[] = [];
-          diet.meals.forEach((m, i) => {
-            if (!m.foods || m.foods.length === 0) return;
-            const dbMeal = insertedMeals.find((x: any) => x.meal_order === i);
-            if (!dbMeal) return;
-            m.foods.forEach((f, fIdx) => {
-              foodRows.push({
-                meal_id: dbMeal.id,
-                user_id: userId,
-                food_id: f.food_id,
-                food_name: f.food_name,
-                amount_g: f.amount_g,
-                calories: f.calories,
-                protein_g: f.protein,
-                carbs_g: f.carbs,
-                fats_g: f.fats,
-                food_order: fIdx,
+            const { data: insertedMeals, error: mealsErr } = await supabase
+              .from('plan_meals')
+              .insert(mealRows)
+              .select('id, meal_order');
+
+            if (mealsErr) throw mealsErr;
+
+            // Insere alimentos
+            if (insertedMeals && insertedMeals.length > 0) {
+              const foodRows: any[] = [];
+              variant.meals.forEach((m, i) => {
+                if (!m.foods || m.foods.length === 0) return;
+                const dbMeal = insertedMeals.find((x: any) => x.meal_order === i);
+                if (!dbMeal) return;
+                m.foods.forEach((f, fIdx) => {
+                  foodRows.push({
+                    meal_id: dbMeal.id,
+                    user_id: userId,
+                    food_id: f.food_id,
+                    food_name: f.food_name,
+                    amount_g: f.amount_g,
+                    calories: f.calories,
+                    protein_g: f.protein,
+                    carbs_g: f.carbs,
+                    fats_g: f.fats,
+                    food_order: fIdx,
+                  });
+                });
               });
-            });
-          });
 
-          if (foodRows.length > 0) {
-            const { error: foodsErr } = await supabase.from('plan_meal_foods').insert(foodRows);
-            if (foodsErr) throw foodsErr;
+              if (foodRows.length > 0) {
+                const { error: foodsErr } = await supabase.from('plan_meal_foods').insert(foodRows);
+                if (foodsErr) throw foodsErr;
+              }
+            }
           }
         }
       }
@@ -1536,53 +1847,45 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
       // sincronizadamente em /dieta (paciente), Plano Alimentar (nutri),
       // e Plano Personalizado (nutri).
       try {
-        // Mapeia DietMeal -> Meal (formato do diet_plans)
-        const mappedMeals = diet.meals.map((m) => ({
-          id: m.id,
-          name: m.name,
-          time: m.time || '',
-          obs: '',
-          items: (m.foods || []).map((f) => ({
-            id: f.id,
-            food_id: String(f.food_id),
-            name: f.food_name,
-            qty: f.amount_g,
-            unit: 'g',
-            portion_size: 100,
-            kcal: f.cal_per_100,      // valores por 100g — DietPlanEditor multiplica por qty/portion_size
-            protein: f.protein_per_100,
-            carbs: f.carbs_per_100,
-            fat: f.fats_per_100,
-          })),
-        }));
+        // Mapeia todas as variantes -> JSON plans
+        const mappedPlans = diet.variants.map((variant) => {
+          return {
+            id: variant.id,
+            name: variant.name,
+            scope: 'custom',
+            days: variant.days,
+            meals: variant.meals.map((m) => ({
+              id: m.id,
+              name: m.name,
+              time: m.time || '',
+              obs: '',
+              items: (m.foods || []).map((f) => ({
+                id: f.id,
+                food_id: String(f.food_id),
+                name: f.food_name,
+                qty: f.amount_g,
+                unit: 'g',
+                portion_size: 100,
+                kcal: f.cal_per_100,
+                protein: f.protein_per_100,
+                carbs: f.carbs_per_100,
+                fat: f.fats_per_100,
+              })),
+            }))
+          };
+        });
 
         const dietPlanData = {
           user_id: userId,
           consultation_id: patient?.id || null,
           nutritionist_id: nutri?.id || null,
-          title: 'Plano Alimentar',
+          title: basic.planTitle || 'Plano Alimentar',
           status: 'active',
           plan_data: {
-            plans: [
-              {
-                id: 'plan_main',
-                name: 'Plano base',
-                scope: 'all',
-                days: [0, 1, 2, 3, 4, 5, 6],
-                meals: mappedMeals,
-              },
-            ],
+            plans: mappedPlans,
           },
           plan: {
-            plans: [
-              {
-                id: 'plan_main',
-                name: 'Plano base',
-                scope: 'all',
-                days: [0, 1, 2, 3, 4, 5, 6],
-                meals: mappedMeals,
-              },
-            ],
+            plans: mappedPlans,
             total_calories: Number(diet.goalCalories) || 0,
             total_protein_g: Number(diet.protein) || 0,
             total_carbs_g: Number(diet.carbs) || 0,
@@ -1635,7 +1938,7 @@ export const CreateFullPlanModal: React.FC<Props> = ({ patient, onClose, onSent 
   const canGoNext = step === 1
     ? !!basic.name && !!basic.weightKg && !!basic.heightM
     : step === 2
-    ? diet.meals.length > 0
+    ? diet.variants.some(v => v.meals.length > 0)
     : true;
 
   return (

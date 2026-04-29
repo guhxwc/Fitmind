@@ -3,7 +3,7 @@ import {
   ArrowLeft, LayoutDashboard, Calendar, Activity, CheckCircle2,
   MessageSquare, FileText, Stethoscope, PenTool, Settings,
   Bell, Check, ActivitySquare, AlertTriangle, TrendingDown, TrendingUp,
-  XIcon, Droplet, Flame, Beef, Zap, RefreshCw, Plus, Sparkles,
+  XIcon, Droplet, Flame, Beef, Zap, RefreshCw, Plus, Sparkles, ArrowRight,
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../../supabaseClient';
@@ -641,17 +641,17 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
               <div className="flex flex-col items-center justify-center flex-1 w-full bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                 {patient.anamneses && patient.anamneses.length > 0 ? (
                   <>
-                    <div className="w-12 h-12 bg-[#007AFF]/10 rounded-full flex items-center justify-center mb-3">
+                    <div className="w-12 h-12 bg-[#007AFF]/10 rounded-full flex items-center justify-center mb-3 translate-y-2">
                       <FileText className="w-6 h-6 text-[#007AFF]" />
                     </div>
                     <p className="text-[13px] font-bold text-gray-900 mb-4">Anamnese Preenchida</p>
-                    <button onClick={() => setShowAnamnesisModal(true)} className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-[13px] rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm w-[90%] justify-center">
+                    <button onClick={() => setShowAnamnesisModal(true)} className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-[13px] rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm w-[90%] justify-center -translate-y-1">
                       Abrir Anamnese
                     </button>
                   </>
                 ) : (
                   <>
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mb-2 translate-y-2">
                       <AlertTriangle className="w-5 h-5 text-gray-400" />
                     </div>
                     <p className="text-[12px] font-medium text-gray-500 text-center px-4 leading-relaxed">
@@ -973,15 +973,46 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
             </div>
 
             {/* Materiais recentes */}
-            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
+            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col min-h-[220px]">
               <h3 className="text-[14px] font-bold text-gray-900 mb-5">Materiais recentes</h3>
-              <div className="space-y-4 flex-1">
-                <div className="flex items-center justify-center flex-1 text-center py-4">
-                  <p className="text-[11px] text-gray-400 italic">Nenhum material enviado ainda</p>
-                </div>
+              
+              <div className="flex-1">
+                {recentMaterials && recentMaterials.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentMaterials.map((mat) => (
+                      <div 
+                        key={mat.id} 
+                        onClick={() => setActiveView('materials')}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group border border-transparent hover:border-gray-100"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#007AFF]/5 text-[#007AFF] flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[12px] font-bold text-gray-900 truncate group-hover:text-[#007AFF] transition-colors">{mat.title}</span>
+                          <span className="text-[10px] font-medium text-gray-400 mt-0.5">
+                            {new Date(mat.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center flex-1 py-8 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-100">
+                    <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                      <FileText className="w-5 h-5 text-gray-300" />
+                    </div>
+                    <p className="text-[12px] text-gray-500 font-bold mb-1">Nenhum material enviado ainda</p>
+                    <p className="text-[11px] text-gray-400 font-medium">Arquivos e orientações aparecerão aqui.</p>
+                  </div>
+                )}
               </div>
-              <button onClick={() => setActiveView('materials')} className="text-[12px] font-bold text-[#007AFF] mt-2 text-left hover:underline">
-                Ver todos os materiais
+              
+              <button 
+                onClick={() => setActiveView('materials')} 
+                className="text-[12px] font-bold text-[#007AFF] mt-5 flex items-center gap-1.5 hover:gap-2 transition-all w-fit"
+              >
+                Ver todos os materiais <ArrowRight className="w-3 h-3 text-[#007AFF]/60" />
               </button>
             </div>
           </div>

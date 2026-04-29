@@ -79,8 +79,10 @@ const bmiLabel = (bmi: number | null) => {
 };
 
 const fmtPhone = (raw: string) => {
+  // Mantém só dígitos
   const digits = raw.replace(/\D/g, '').slice(0, 13);
   if (!digits) return '';
+  // Formato: +55 (XX) XXXXX-XXXX
   if (digits.length <= 2) return `+${digits}`;
   if (digits.length <= 4) return `+${digits.slice(0, 2)} (${digits.slice(2)}`;
   if (digits.length <= 9) return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4)}`;
@@ -272,7 +274,7 @@ export const PatientSettingsView: React.FC<Props> = ({ patient, onBack }) => {
     setLoading(true);
     setError(null);
     try {
-      const [profRes, consRes] = await Promise.all([
+      const [profRes, consRes, emailRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
         supabase
           .from('consultations')
@@ -281,11 +283,23 @@ export const PatientSettingsView: React.FC<Props> = ({ patient, onBack }) => {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        // Email do auth.users (se profiles.email tiver vazio)
+        supabase.rpc('get_user_email', { p_user_id: userId }),
       ]);
 
       if (profRes.error) throw profRes.error;
       if (profRes.data) {
-        setProfile(profRes.data as Profile);
+        const raw: any = profRes.data;
+        // Pré-popula: se target_* não tem valor, herda do goals (jsonb) salvo no onboarding
+        const goals = raw.goals || {};
+        const merged: Profile = {
+          ...raw,
+          email: raw.email || emailRes?.data || null,
+          target_calories: raw.target_calories ?? goals.calories ?? null,
+          target_protein: raw.target_protein ?? goals.protein ?? null,
+          target_water: raw.target_water ?? goals.water ?? null,
+        };
+        setProfile(merged);
         setDraft({});
       }
       if (consRes.data) {

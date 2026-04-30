@@ -27,10 +27,9 @@ import { NotificationManager } from './NotificationManager';
 import { CelebrationManager } from './CelebrationManager';
 import { WeightMilestoneModal } from './WeightMilestoneModal';
 import { DietView } from './consultation/DietView';
-import { NutriPanel } from './nutri/NutriPanel';
 
 export const MainApp: React.FC = () => {
-  const { isNutritionist, userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, isNutriPanelOpen, setIsNutriPanelOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
+  const { isNutritionist, userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useToast();
@@ -344,8 +343,6 @@ export const MainApp: React.FC = () => {
             onSave={handleSaveSideEffects} 
           />
       )}
-      
-      {isNutriPanelOpen && <NutriPanel onClose={() => setIsNutriPanelOpen(false)} />}
       
       <input 
         type="file" 

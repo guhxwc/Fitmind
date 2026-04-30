@@ -54,6 +54,9 @@ export const NotificationSystem: React.FC = () => {
             // USER REQUEST: Notifications ONLY for PRO users. No exceptions.
             if (!userData.isPro) return;
 
+            // Do not show notifications on nutri panel
+            if (location.pathname.startsWith('/painel-nutri')) return;
+
             // Don't show new notifications if one is already active or weight milestone is showing
             if (activeModal || activeToast || weightMilestoneData) return;
             

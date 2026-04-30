@@ -17,7 +17,31 @@ interface SmartLogModalProps {
   initialMode?: LogMode;
 }
 
-type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'manual' | 'favorites';
+type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'favorites' | 'review';
+
+export interface BaseFood {
+  id: string;
+  name: string;
+  category: string | null;
+  portion_size: number;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface ReviewIngredient {
+  id: string;
+  baseFood: BaseFood | null;
+  name: string;
+  grams: number;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sodium: number;
+}
 
 export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType, initialMode }) => {
   const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
@@ -25,6 +49,12 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
   const [mode, setMode] = useState<LogMode>(initialMode || 'menu');
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reviewData, setReviewData] = useState<{
+    name: string;
+    type: string;
+    ingredients: ReviewIngredient[];
+    notes: string;
+  } | null>(null);
   
   useScrollLock(true);
   
@@ -109,31 +139,51 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       const model = "gemini-3-flash-preview";
 
       const prompt = `
-        Você é um assistente de nutrição inteligente. O usuário vai descrever o que comeu, bebeu ou seu peso atual.
-        Analise a entrada e extraia as informações nutricionais.
+        Você é um assistente de nutrição inteligente. O usuário vai descrever o que comeu.
+        Extraia a refeição e seus ingredientes, com quantidades em gramas (se não especificado, estime uma porção padrão de 100g ou 1 unidade).
+        Sugira um "nome" para a refeição inteira (ex: "Peito de Frango Grelhado com Arroz e Salada"). 
+        Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
         
-        Regras:
-        1. Identifique refeições (nome, calorias, proteína, tipo: 'Café da manhã', 'Almoço', 'Jantar', 'Lanche').
-        2. Identifique consumo de água em litros (water_liters).
-        3. Identifique registro de peso em kg (weight_kg).
-        4. O horário atual é ${currentTimeStr}.
-        
-        Retorne APENAS um JSON com a seguinte estrutura:
-        {
-          "meals": [
-            { "name": "Frango Grelhado", "calories": 250, "protein": 30, "meal_type": "Almoço", "time": "12:30" }
-          ],
-          "water_liters": 0.5,
-          "weight_kg": 75.5
-        }
+        Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
+        Exemplo: se o usuário disse "Peito de frango grelhado na manteiga", as palavras-chave ideais seriam ["frango", "peito"].
+        Se disse "arroz branco", as palavras-chave são ["arroz", "branco"].
+        Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.
       `;
+
+      const responseSchema = {
+        type: "object",
+        properties: {
+          meal_name: { type: "string" },
+          meal_type: { type: "string" },
+          ingredients: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                search_keywords: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "1 a 3 palavras-chave fundamentais para buscar na tabela TACO"
+                },
+                grams: { type: "number" }
+              },
+              required: ["name", "search_keywords", "grams"]
+            }
+          }
+        },
+        required: ["meal_name", "meal_type", "ingredients"]
+      };
 
       let response;
       if (source === 'text') {
         response = await ai.models.generateContent({
           model: model,
           contents: `${prompt}\n\nEntrada do usuário: "${input}"`,
-          config: { responseMimeType: "application/json" }
+          config: { 
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+          }
         });
       } else {
         const base64Audio = await blobToBase64(audioBlob!);
@@ -152,84 +202,101 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
               ]
             }
           ],
-          config: { responseMimeType: "application/json" }
+          config: { 
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+          }
         });
       }
 
       const result = JSON.parse(response.text || '{}');
       
-      if (result.meals && result.meals.length > 0) {
-          const newMeals = result.meals.map((m: any) => ({
-              name: m.name,
-              calories: m.calories,
-              protein: m.protein,
-              type: m.meal_type || 'Almoço',
-              id: new Date().toISOString() + Math.random(),
-              time: m.time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          }));
-          setMeals(prev => [...prev, ...newMeals]);
-      }
-
-      if (result.water_liters && result.water_liters > 0) {
-          setCurrentWater(prev => parseFloat((prev + result.water_liters).toFixed(1)));
-      }
-
-      if (result.weight_kg && result.weight_kg > 0) {
-          const prevWeight = userData.weight;
-          setUserData(prev => {
-              if (!prev) return null;
+      if (result.ingredients && result.ingredients.length > 0) {
+          const ingredientPromises = result.ingredients.map(async (ing: any) => {
+            let foundFood: BaseFood | null = null;
+            
+            // Try matching all keywords first
+            let query = supabase.from('foods').select('*');
+            if (ing.search_keywords && ing.search_keywords.length > 0) {
+              ing.search_keywords.forEach((keyword: string) => {
+                 // Remove special characters
+                 const cleanKeyword = keyword.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
+                 if (cleanKeyword.length > 0) {
+                    query = query.ilike('name', `%${cleanKeyword}%`);
+                 }
+              });
               
-              let newGoals = prev.goals;
-              let newLastWeightGoalUpdate = prev.lastWeightGoalUpdate || prev.weight;
-
-              // Check if we should recalculate goals (every 5kg)
-              if (Math.abs(result.weight_kg - (prev.lastWeightGoalUpdate || prev.weight)) >= 5) {
-                  newGoals = calculateGoals(result.weight_kg, prev.activityLevel, prev.height, prev.age, prev.gender);
-                  newLastWeightGoalUpdate = result.weight_kg;
+              const { data: exactData } = await query.limit(1);
+              if (exactData && exactData.length > 0) {
+                foundFood = exactData[0] as BaseFood;
               }
+            }
+            
+            // Fallback 1: match just the first keyword
+            if (!foundFood && ing.search_keywords && ing.search_keywords.length > 0) {
+               const firstClean = ing.search_keywords[0].replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
+               if (firstClean.length > 2) {
+                  const { data: fallbackData } = await supabase.from('foods')
+                    .select('*')
+                    .ilike('name', `%${firstClean}%`)
+                    .limit(1);
+                  if (fallbackData && fallbackData.length > 0) {
+                    foundFood = fallbackData[0] as BaseFood;
+                  }
+               }
+            }
 
-              return { 
-                  ...prev, 
-                  weight: result.weight_kg, 
-                  goals: newGoals, 
-                  lastWeightGoalUpdate: newLastWeightGoalUpdate 
+            // Fallback 2: first word of ingredient's name
+            if (!foundFood) {
+              const nameFirstWord = ing.name.split(' ')[0].replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
+              if (nameFirstWord.length > 2) {
+                const { data: fallback2Data } = await supabase.from('foods')
+                  .select('*')
+                  .ilike('name', `%${nameFirstWord}%`)
+                  .limit(1);
+                if (fallback2Data && fallback2Data.length > 0) {
+                  foundFood = fallback2Data[0] as BaseFood;
+                }
+              }
+            }
+
+            if (foundFood) {
+              const ratio = ing.grams / (foundFood.portion_size || 100);
+              return {
+                id: Math.random().toString(),
+                baseFood: foundFood,
+                name: foundFood.name,
+                grams: ing.grams,
+                kcal: Math.round(Number(foundFood.kcal || 0) * ratio),
+                protein: Number((Number(foundFood.protein || 0) * ratio).toFixed(1)),
+                carbs: Number((Number(foundFood.carbs || 0) * ratio).toFixed(1)),
+                fat: Number((Number(foundFood.fat || 0) * ratio).toFixed(1)),
+                fiber: 0,
+                sodium: 0
               };
+            } else {
+               return {
+                id: Math.random().toString(),
+                baseFood: null,
+                name: ing.name,
+                grams: ing.grams,
+                kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0
+              };
+            }
           });
-          
-          const { data: weightData } = await supabase.from('weight_history').insert({ 
-              user_id: userData.id, 
-              date: new Date().toISOString(), 
-              weight: result.weight_kg 
-          }).select();
-          
-          if (weightData) {
-             setWeightHistory(prev => [...prev, weightData[0]].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-          }
-          
-          // Update profile in DB with new goals if they changed
-          const updatePayload: any = { weight: result.weight_kg };
-          const currentWeight = result.weight_kg;
-          if (Math.abs(currentWeight - (userData.lastWeightGoalUpdate || userData.weight)) >= 5) {
-              const newGoals = calculateGoals(currentWeight, userData.activityLevel, userData.height, userData.age, userData.gender);
-              updatePayload.goals = newGoals;
-              updatePayload.last_weight_goal_update = currentWeight;
-          }
-          
-          if ('pro_expires_at' in updatePayload) {
-              delete updatePayload.pro_expires_at;
-          }
-          await supabase.from('profiles').update(updatePayload).eq('id', userData.id);
-          
-          if (userData.isPro && result.weight_kg !== prevWeight) {
-              setWeightMilestoneData({ oldWeight: prevWeight, newWeight: result.weight_kg });
-          }
-      }
 
-      updateStreak();
-      if (!result.weight_kg) {
-          addToast('Registrado com sucesso!', 'success');
+          const finalIngredients = await Promise.all(ingredientPromises);
+
+          setReviewData({
+            name: result.meal_name || 'Refeição',
+            type: result.meal_type || 'Almoço',
+            ingredients: finalIngredients,
+            notes: ''
+          });
+          setMode('review');
+      } else {
+          addToast('Não foi possível identificar ingredientes da refeição.', 'error');
       }
-      onClose();
 
     } catch (error) {
       console.error(error);
@@ -243,6 +310,63 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleSaveReview = () => {
+    if (!reviewData) return;
+    
+    const totalKcal = reviewData.ingredients.reduce((acc, curr) => acc + curr.kcal, 0);
+    const totalProtein = reviewData.ingredients.reduce((acc, curr) => acc + curr.protein, 0);
+    
+    setMeals(prev => [...prev, {
+      id: Date.now().toString(),
+      name: reviewData.name,
+      calories: totalKcal,
+      protein: totalProtein,
+      type: reviewData.type,
+      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    }]);
+
+    updateStreak();
+    addToast('Refeição salva!', 'success');
+    onClose();
+  };
+
+  const handleUpdateIngredient = (id: string, grams: string) => {
+    const numGrams = parseInt(grams) || 0;
+    setReviewData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ingredients: prev.ingredients.map(ing => {
+          if (ing.id === id) {
+            if (ing.baseFood) {
+              const ratio = numGrams / (ing.baseFood.portion_size || 100);
+              return {
+                ...ing,
+                grams: numGrams,
+                kcal: Math.round(Number(ing.baseFood.kcal || 0) * ratio),
+                protein: Number((Number(ing.baseFood.protein || 0) * ratio).toFixed(1)),
+                carbs: Number((Number(ing.baseFood.carbs || 0) * ratio).toFixed(1)),
+                fat: Number((Number(ing.baseFood.fat || 0) * ratio).toFixed(1))
+              };
+            }
+            return { ...ing, grams: numGrams };
+          }
+          return ing;
+        })
+      };
+    });
+  };
+
+  const handleRemoveIngredient = (id: string) => {
+    setReviewData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ingredients: prev.ingredients.filter(ing => ing.id !== id)
+      };
+    });
   };
 
   if (mode === 'camera') {
@@ -315,19 +439,6 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
                   <div className="grid grid-cols-1 gap-4 mb-4">
                     <button 
-                      onClick={() => setMode('manual')}
-                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all"
-                    >
-                      <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-orange-600 dark:text-orange-400 shadow-sm">
-                        <KeyboardIcon className="w-6 h-6" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-gray-900 dark:text-white">Manual</p>
-                        <p className="text-xs text-gray-500">Preencha os dados da refeição</p>
-                      </div>
-                    </button>
-
-                    <button 
                       onClick={() => {
                         if (userData?.isPro) {
                           setMode('type');
@@ -346,7 +457,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                         <SparklesIcon className="w-6 h-6" />
                       </div>
                       <div className="text-left">
-                        <p className="font-bold text-gray-900 dark:text-white">Digitar (IA)</p>
+                        <p className="font-bold text-gray-900 dark:text-white">Digitar</p>
                         <p className="text-xs text-gray-500">Escreva naturalmente o que comeu</p>
                       </div>
                     </button>
@@ -406,25 +517,142 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 <div className="animate-fade-in">
                   <div className="flex items-center justify-between mb-6">
                     <button onClick={() => setMode('menu')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar Registro</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar</h2>
                     <div className="w-6"></div>
                   </div>
+
+                  <p className="text-center text-gray-600 dark:text-gray-300 mb-4 px-4 text-sm">
+                    Descreva os detalhes da refeição e quantidades
+                  </p>
 
                   <textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ex: Almocei frango com salada agora ao meio-dia..."
-                      className="w-full h-40 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600 mb-6"
+                      placeholder="Ex: 100g de arroz, 100g de frango, 1 prato de salada..."
+                      className="w-full h-40 bg-[#F4F5F7] dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none mb-6"
                       autoFocus
                   />
 
                   <button
                       onClick={() => handleProcess('text')}
                       disabled={isProcessing || !input.trim()}
-                      className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                      className="w-full bg-[#7A7A7A] text-white py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
                   >
-                      {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Processar com IA"}
+                      {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Registrar"}
                   </button>
+                </div>
+              )}
+
+              {mode === 'review' && reviewData && (
+                <div className="animate-fade-in pb-20">
+                  <div className="flex items-center justify-between mb-6">
+                    <button onClick={() => setMode('type')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revisar Refeição</h2>
+                    <div className="w-6"></div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Nome da Refeição */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Nome da Refeição</label>
+                      <input 
+                        type="text" 
+                        value={reviewData.name} 
+                        onChange={(e) => setReviewData({...reviewData, name: e.target.value})}
+                        className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm text-gray-900 dark:text-white font-medium"
+                      />
+                    </div>
+
+                    {/* Informações Nutricionais */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Informações Nutricionais</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🔥 Calorias</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.kcal,0))} />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥩 Proteínas</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.protein,0))} />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🍞 Carboidratos</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.carbs,0))} />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥑 Gorduras</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.fat,0))} />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🌾 Fibras</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={0} />
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🧂 Sódio</div>
+                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={0} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ingredientes */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-3">Ingredientes</label>
+                      <div className="space-y-3">
+                        {reviewData.ingredients.map(ing => (
+                          <div key={ing.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
+                            <div className="flex-1 min-w-0 pr-3">
+                              <p className="font-bold text-gray-900 dark:text-white truncate">{ing.name}</p>
+                              <p className="text-xs text-gray-500">{ing.kcal} kcal</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="relative">
+                                <input 
+                                  type="number" 
+                                  value={ing.grams || ''} 
+                                  onChange={(e) => handleUpdateIngredient(ing.id, e.target.value)}
+                                  className="w-16 h-10 px-2 pr-6 text-center border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-transparent"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">g</span>
+                              </div>
+                              <button onClick={() => handleRemoveIngredient(ing.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                         onClick={() => {
+                           addToast("Busca manual será adicionada em breve.", "info");
+                           // Future: Open food search modal
+                         }}
+                         className="mt-3 text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1"
+                      >
+                         + Adicionar ingrediente
+                      </button>
+                    </div>
+
+                    {/* Observações */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Observações</label>
+                      <textarea
+                        value={reviewData.notes}
+                        onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
+                        placeholder="Adicione detalhes sobre a refeição..."
+                        className="w-full h-24 p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm resize-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fixed Bottom Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 flex gap-3 z-10 rounded-b-[32px]">
+                    <button onClick={onClose} className="flex-1 py-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 text-gray-500 font-bold rounded-xl active:scale-[0.98] transition-transform">
+                      Descartar
+                    </button>
+                    <button onClick={handleSaveReview} className="flex-[2] py-4 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl active:scale-[0.98] transition-transform">
+                      Salvar
+                    </button>
+                  </div>
                 </div>
               )}
 

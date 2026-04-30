@@ -371,15 +371,6 @@ export const NOTIFICATIONS: AppNotification[] = [
     evaluateTrigger: (ctx) => ctx.waterProgress >= 2000,
   },
   {
-    id: 'protein_goal_toast',
-    type: 'toast',
-    priority: 0,
-    title: 'Meta de proteína batida! 💪',
-    body: (ctx: NotificationContext) => `${Math.round(ctx.proteinProgress * ctx.proteinGoal)}g de proteína hoje. Seus músculos estão protegidos. Continue assim!`,
-    primaryAction: { label: 'Boa!', action: 'dismiss' },
-    evaluateTrigger: (ctx) => ctx.proteinProgress >= 1,
-  },
-  {
     id: 'side_effect_toast',
     type: 'toast',
     priority: 0,

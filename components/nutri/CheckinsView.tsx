@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ArrowLeft, Activity, Battery, Smile, UserCircle2,
   TrendingUp, TrendingDown, Calendar as CalendarIcon, Filter, ChevronDown,
   Flame,
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { supabase } from '../../supabaseClient';
 
 /* =========================================================
    TYPES
@@ -20,22 +21,6 @@ interface Checkin {
 }
 
 type Period = '7d' | '30d' | 'all';
-
-/* =========================================================
-   MOCK DATA
-========================================================= */
-const MOCK_CHECKINS: Checkin[] = [
-  { id: '1', date: '2026-04-26T08:30:00', hunger: 6, energy: 7, mood: 8, humor: 8, notes: 'Acordei bem disposto hoje, dormi 8 horas.' },
-  { id: '2', date: '2026-04-25T09:00:00', hunger: 7, energy: 6, mood: 7, humor: 7 },
-  { id: '3', date: '2026-04-24T08:45:00', hunger: 5, energy: 8, mood: 9, humor: 9, notes: 'Treino pesado ontem, mas me sinto ótimo.' },
-  { id: '4', date: '2026-04-23T07:50:00', hunger: 8, energy: 5, mood: 6, humor: 6, notes: 'Ansiedade alta hoje pelo trabalho.' },
-  { id: '5', date: '2026-04-22T08:20:00', hunger: 6, energy: 7, mood: 7, humor: 8 },
-  { id: '6', date: '2026-04-21T09:10:00', hunger: 7, energy: 6, mood: 7, humor: 7 },
-  { id: '7', date: '2026-04-20T08:00:00', hunger: 5, energy: 8, mood: 8, humor: 8, notes: 'Domingo tranquilo.' },
-  { id: '8', date: '2026-04-19T08:30:00', hunger: 4, energy: 9, mood: 9, humor: 9 },
-  { id: '9', date: '2026-04-18T09:00:00', hunger: 6, energy: 7, mood: 8, humor: 8 },
-  { id: '10', date: '2026-04-17T08:15:00', hunger: 7, energy: 6, mood: 6, humor: 7 },
-];
 
 /* =========================================================
    HELPERS
@@ -147,13 +132,48 @@ const CheckinCard: React.FC<{ checkin: Checkin }> = ({ checkin }) => (
 export const CheckinsView: React.FC<{ patient: any; onBack: () => void }> = ({ patient, onBack }) => {
   const [period, setPeriod] = useState<Period>('30d');
   const patientName = patient?.profiles?.name || 'Paciente';
+  
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCheckins = async () => {
+      if (!patient?.user_id) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('consultation_checkins')
+          .select('*')
+          .eq('user_id', patient.user_id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        setCheckins((data || []).map(row => ({
+          id: row.id.toString(),
+          date: row.created_at,
+          hunger: row.hunger,
+          energy: row.energy,
+          mood: row.mood,
+          humor: row.humor,
+          notes: row.notes,
+        })));
+      } catch (err) {
+        console.error('Error fetching checkins:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCheckins();
+  }, [patient?.user_id]);
 
   const filteredCheckins = useMemo(() => {
     const now = Date.now();
     const days = period === '7d' ? 7 : period === '30d' ? 30 : 365;
     const cutoff = now - days * 24 * 60 * 60 * 1000;
-    return MOCK_CHECKINS.filter((c) => new Date(c.date).getTime() >= cutoff);
-  }, [period]);
+    return checkins.filter((c) => new Date(c.date).getTime() >= cutoff);
+  }, [checkins, period]);
 
   // Médias da semana atual e da anterior pra calcular delta
   const stats = useMemo(() => {

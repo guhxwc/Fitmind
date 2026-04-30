@@ -126,6 +126,7 @@ export const QuickCheckInCard: React.FC = () => {
   const [energy, setEnergy] = useState(7);
   const [mood, setMood] = useState(7);
   const [humor, setHumor] = useState(8);
+  const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastSentAt, setLastSentAt] = useState<Date | null>(null);
@@ -136,7 +137,7 @@ export const QuickCheckInCard: React.FC = () => {
     const load = async () => {
       const { data } = await supabase
         .from('consultation_checkins')
-        .select('hunger, energy, mood, humor, created_at')
+        .select('hunger, energy, mood, humor, notes, created_at')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -150,6 +151,7 @@ export const QuickCheckInCard: React.FC = () => {
           setEnergy(data.energy);
           setMood(data.mood);
           setHumor(data.humor);
+          if (data.notes) setNotes(data.notes);
           setSubmitted(true);
         }
       }
@@ -170,6 +172,7 @@ export const QuickCheckInCard: React.FC = () => {
           energy,
           mood,
           humor,
+          notes: notes.trim() || null,
         });
 
       if (insertErr) throw insertErr;
@@ -235,6 +238,18 @@ export const QuickCheckInCard: React.FC = () => {
           onChange={setHumor} 
           metric="humor" 
           icon={<Smile className="w-[18px] h-[18px]" strokeWidth={2.5} />}
+        />
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-[13px] font-bold text-gray-900 dark:text-white mb-2">
+          Observações (Opcional)
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Como foi o seu dia? Sentiu algo diferente?"
+          className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none h-[80px]"
         />
       </div>
 

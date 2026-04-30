@@ -24,6 +24,7 @@ import { ConsultationRoute } from './components/payment/ConsultationRoute';
 import { ConsultationDashboard } from './components/consultation/ConsultationDashboard';
 import { AnamnesisForm } from './components/consultation/AnamnesisForm';
 import { SubscriptionPage } from './components/SubscriptionPage';
+import { NutriPanel } from './components/nutri/NutriPanel'; // <-- Added NutriPanel import
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -295,6 +296,7 @@ const AppContent: React.FC = () => {
         <Route path="/anamnese" element={<AnamnesisForm />} />
         <Route path="/assinaturas" element={<ConsultationRoute initialStep={2} />} />
         <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
+        <Route path="/painel-nutri/*" element={session ? <NutriPanel onClose={() => navigate('/')} /> : <Navigate to="/auth" />} />
         
         <Route path="/*" element={
           session ? (

@@ -228,7 +228,7 @@ import { TrialResultsScreen } from '../TrialResultsScreen';
 import { TrialTestModal } from '../TrialTestModal';
 
 export const SettingsTab: React.FC = () => {
-    const { userData, theme, toggleTheme, unlockPro, fetchData, isNutritionist, setIsNutriPanelOpen } = useAppContext();
+    const { userData, theme, toggleTheme, unlockPro, fetchData, isNutritionist } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [showNotifications, setShowNotifications] = useState(false);
@@ -403,7 +403,7 @@ export const SettingsTab: React.FC = () => {
                         <SettingsItem 
                             icon={<Users className="w-5 h-5 text-blue-500" />}
                             label="Acessar Painel do Nutri" 
-                            onClick={() => setIsNutriPanelOpen(true)} 
+                            onClick={() => navigate('/painel-nutri')} 
                             isLast
                         />
                     </SettingsGroup>

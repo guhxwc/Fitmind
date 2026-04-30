@@ -413,6 +413,132 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     );
   }
 
+  if (mode === 'review' && reviewData) {
+    return (
+      <Portal>
+        <div className="fixed inset-0 bg-[#F4F5F7] dark:bg-black z-[100] flex justify-center overflow-hidden animate-fade-in">
+          <div className="w-full max-w-[480px] h-full flex flex-col relative bg-white dark:bg-black">
+            {/* Header */}
+            <div className="flex-shrink-0 pt-12 pb-4 px-6 bg-white dark:bg-black flex items-center justify-between z-20 sticky top-0">
+               <button onClick={() => setMode('type')} className="text-gray-900 dark:text-white p-2 -ml-2 active:scale-95 transition-transform">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                 </svg>
+               </button>
+               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Revisar Refeição</h2>
+               <div className="w-10"></div>
+            </div>
+
+            {/* Scrollable Content Area */}
+            <div className="flex-grow overflow-y-auto px-6 pb-28 hide-scrollbar bg-[#F9FAFB] dark:bg-black">
+              <div className="space-y-6 pt-4">
+                {/* Nome da Refeição */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Nome da Refeição</label>
+                  <input 
+                    type="text" 
+                    value={reviewData.name} 
+                    onChange={(e) => setReviewData({...reviewData, name: e.target.value})}
+                    className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm text-gray-900 dark:text-white font-medium"
+                  />
+                </div>
+
+                {/* Informações Nutricionais */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Informações Nutricionais</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🔥 Calorias</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.kcal,0))} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥩 Proteínas</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.protein,0))} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🍞 Carboidratos</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.carbs,0))} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥑 Gorduras</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.fat,0))} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🌾 Fibras</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={reviewData.ingredients.reduce((a,b)=>a+(b.fiber||0),0)} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🧂 Sódio</div>
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={reviewData.ingredients.reduce((a,b)=>a+(b.sodium||0),0)} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ingredientes */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-3">Ingredientes</label>
+                  <div className="space-y-3">
+                    {reviewData.ingredients.map(ing => (
+                      <div key={ing.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="font-bold text-gray-900 dark:text-white truncate">{ing.name}</p>
+                          <p className="text-xs text-gray-500 mt-1">{ing.kcal} kcal</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              value={ing.grams || ''} 
+                              onChange={(e) => handleUpdateIngredient(ing.id, e.target.value)}
+                              className="w-20 h-10 px-2 pr-6 text-center border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold bg-transparent"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">g</span>
+                          </div>
+                          <button onClick={() => handleRemoveIngredient(ing.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button 
+                     onClick={() => {
+                       addToast("Busca manual será adicionada em breve.", "info");
+                     }}
+                     className="mt-4 p-4 w-full bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 text-sm font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                     + Adicionar ingrediente
+                  </button>
+                </div>
+
+                {/* Observações */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Observações</label>
+                  <textarea
+                    value={reviewData.notes}
+                    onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
+                    placeholder="Adicione detalhes sobre a refeição..."
+                    className="w-full h-24 p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm resize-none text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Fixed Bottom Bar */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 flex gap-4 z-10 pb-8">
+              <button onClick={onClose} className="flex-1 py-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 text-gray-500 font-bold rounded-xl active:scale-[0.98] transition-transform">
+                Descartar
+              </button>
+              <button onClick={handleSaveReview} className="flex-[2] py-4 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl active:scale-[0.98] transition-transform">
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Portal>
+    );
+  }
+
   return (
     <Portal>
       <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-md" onClick={onClose}>
@@ -515,10 +641,13 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
               {mode === 'type' && (
                 <div className="animate-fade-in">
-                  <div className="flex items-center justify-between mb-6">
-                    <button onClick={() => setMode('menu')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Digitar</h2>
-                    <div className="w-6"></div>
+                  <div className="flex items-center mb-6">
+                    <button onClick={() => setMode('menu')} className="text-gray-900 dark:text-white p-2 -ml-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                      </svg>
+                    </button>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mx-auto pr-8">Digitar</h2>
                   </div>
 
                   <p className="text-center text-gray-600 dark:text-gray-300 mb-4 px-4 text-sm">
@@ -530,138 +659,28 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Ex: 100g de arroz, 100g de frango, 1 prato de salada..."
                       className="w-full h-40 bg-[#F4F5F7] dark:bg-gray-800 rounded-2xl p-4 text-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none mb-6"
-                      autoFocus
                   />
 
                   <button
                       onClick={() => handleProcess('text')}
                       disabled={isProcessing || !input.trim()}
-                      className="w-full bg-[#7A7A7A] text-white py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-[0.98]"
+                      className={`w-full py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 ${input.trim() ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-[#7A7A7A] text-white'}`}
                   >
                       {isProcessing ? <><svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...</> : "Registrar"}
                   </button>
                 </div>
               )}
 
-              {mode === 'review' && reviewData && (
-                <div className="animate-fade-in pb-20">
-                  <div className="flex items-center justify-between mb-6">
-                    <button onClick={() => setMode('type')} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revisar Refeição</h2>
-                    <div className="w-6"></div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Nome da Refeição */}
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Nome da Refeição</label>
-                      <input 
-                        type="text" 
-                        value={reviewData.name} 
-                        onChange={(e) => setReviewData({...reviewData, name: e.target.value})}
-                        className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm text-gray-900 dark:text-white font-medium"
-                      />
-                    </div>
-
-                    {/* Informações Nutricionais */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Informações Nutricionais</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🔥 Calorias</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.kcal,0))} />
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥩 Proteínas</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.protein,0))} />
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🍞 Carboidratos</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.carbs,0))} />
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🥑 Gorduras</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+b.fat,0))} />
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🌾 Fibras</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={0} />
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
-                           <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🧂 Sódio</div>
-                           <input type="text" readOnly className="w-full bg-transparent font-medium" value={0} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Ingredientes */}
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-3">Ingredientes</label>
-                      <div className="space-y-3">
-                        {reviewData.ingredients.map(ing => (
-                          <div key={ing.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
-                            <div className="flex-1 min-w-0 pr-3">
-                              <p className="font-bold text-gray-900 dark:text-white truncate">{ing.name}</p>
-                              <p className="text-xs text-gray-500">{ing.kcal} kcal</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="relative">
-                                <input 
-                                  type="number" 
-                                  value={ing.grams || ''} 
-                                  onChange={(e) => handleUpdateIngredient(ing.id, e.target.value)}
-                                  className="w-16 h-10 px-2 pr-6 text-center border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-transparent"
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">g</span>
-                              </div>
-                              <button onClick={() => handleRemoveIngredient(ing.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <button 
-                         onClick={() => {
-                           addToast("Busca manual será adicionada em breve.", "info");
-                           // Future: Open food search modal
-                         }}
-                         className="mt-3 text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1"
-                      >
-                         + Adicionar ingrediente
-                      </button>
-                    </div>
-
-                    {/* Observações */}
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Observações</label>
-                      <textarea
-                        value={reviewData.notes}
-                        onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
-                        placeholder="Adicione detalhes sobre a refeição..."
-                        className="w-full h-24 p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm resize-none text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Fixed Bottom Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 flex gap-3 z-10 rounded-b-[32px]">
-                    <button onClick={onClose} className="flex-1 py-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 text-gray-500 font-bold rounded-xl active:scale-[0.98] transition-transform">
-                      Descartar
-                    </button>
-                    <button onClick={handleSaveReview} className="flex-[2] py-4 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl active:scale-[0.98] transition-transform">
-                      Salvar
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {mode === 'voice' && (
                 <div className="animate-fade-in text-center">
-                  <div className="flex items-center justify-between mb-6">
-                    <button onClick={() => { stopRecording(); setMode('menu'); }} className="text-gray-500"><ChevronLeftIcon className="w-6 h-6" /></button>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Falar Registro</h2>
-                    <div className="w-6"></div>
+                  <div className="flex items-center mb-6">
+                    <button onClick={() => { stopRecording(); setMode('menu'); }} className="text-gray-900 dark:text-white p-2 -ml-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                       </svg>
+                    </button>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mx-auto pr-8">Falar Registro</h2>
                   </div>
 
                   <div className="py-10">

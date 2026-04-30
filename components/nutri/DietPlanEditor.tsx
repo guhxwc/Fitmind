@@ -315,14 +315,24 @@ const FoodSearch: React.FC<{ onPick: (f: any) => void; onClose: () => void }> = 
       
       setLoading(true);
       try {
-        let query = supabase.from('foods').select('*');
-        
+        let data: any[] | null = null;
+        let error: any = null;
+
         if (cleanQ) {
-          query = query.ilike('name', `%${cleanQ}%`);
+          // Busca inteligente com ranking por relevância
+          const res = await supabase.rpc('search_foods', { p_query: cleanQ, p_limit: 20 });
+          data = res.data;
+          error = res.error;
+        } else {
+          // Sem query: lista alfabética com is_common no topo
+          const res = await supabase.from('foods').select('*')
+            .order('is_common', { ascending: false })
+            .order('name')
+            .limit(20);
+          data = res.data;
+          error = res.error;
         }
-        
-        const { data, error } = await query.order('name').limit(20);
-        
+
         if (active) {
           if (!error && data && data.length > 0) {
             setResults(data);

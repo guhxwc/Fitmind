@@ -17,7 +17,7 @@ interface SmartLogModalProps {
   initialMode?: LogMode;
 }
 
-type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'favorites' | 'review';
+type LogMode = 'menu' | 'type' | 'voice' | 'camera' | 'favorites' | 'review' | 'manual';
 
 export interface BaseFood {
   id: string;
@@ -214,50 +214,34 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       if (result.ingredients && result.ingredients.length > 0) {
           const ingredientPromises = result.ingredients.map(async (ing: any) => {
             let foundFood: BaseFood | null = null;
-            
-            // Try matching all keywords first
-            let query = supabase.from('foods').select('*');
+
+            // Estratégia: tenta cada keyword (em ordem) usando RPC search_foods,
+            // que ranqueia por relevância (match exato > prefixo > palavra inteira > substring,
+            // com boost pra alimentos comuns e penalidade pra "Alimentos preparados").
+            const tryRpcSearch = async (term: string): Promise<BaseFood | null> => {
+              const cleaned = term.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
+              if (cleaned.length < 2) return null;
+              const { data } = await supabase.rpc('search_foods', { p_query: cleaned, p_limit: 1 });
+              return (data && data.length > 0) ? (data[0] as BaseFood) : null;
+            };
+
+            // 1. Tenta com cada keyword fornecida pelo Gemini (na ordem)
             if (ing.search_keywords && ing.search_keywords.length > 0) {
-              ing.search_keywords.forEach((keyword: string) => {
-                 // Remove special characters
-                 const cleanKeyword = keyword.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
-                 if (cleanKeyword.length > 0) {
-                    query = query.ilike('name', `%${cleanKeyword}%`);
-                 }
-              });
-              
-              const { data: exactData } = await query.limit(1);
-              if (exactData && exactData.length > 0) {
-                foundFood = exactData[0] as BaseFood;
+              for (const keyword of ing.search_keywords) {
+                foundFood = await tryRpcSearch(keyword);
+                if (foundFood) break;
               }
-            }
-            
-            // Fallback 1: match just the first keyword
-            if (!foundFood && ing.search_keywords && ing.search_keywords.length > 0) {
-               const firstClean = ing.search_keywords[0].replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
-               if (firstClean.length > 2) {
-                  const { data: fallbackData } = await supabase.from('foods')
-                    .select('*')
-                    .ilike('name', `%${firstClean}%`)
-                    .limit(1);
-                  if (fallbackData && fallbackData.length > 0) {
-                    foundFood = fallbackData[0] as BaseFood;
-                  }
-               }
             }
 
-            // Fallback 2: first word of ingredient's name
+            // 2. Fallback: primeira palavra do nome do ingrediente
             if (!foundFood) {
-              const nameFirstWord = ing.name.split(' ')[0].replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').trim();
-              if (nameFirstWord.length > 2) {
-                const { data: fallback2Data } = await supabase.from('foods')
-                  .select('*')
-                  .ilike('name', `%${nameFirstWord}%`)
-                  .limit(1);
-                if (fallback2Data && fallback2Data.length > 0) {
-                  foundFood = fallback2Data[0] as BaseFood;
-                }
-              }
+              const nameFirstWord = ing.name?.split(' ')[0] || '';
+              foundFood = await tryRpcSearch(nameFirstWord);
+            }
+
+            // 3. Último recurso: nome completo do ingrediente
+            if (!foundFood && ing.name) {
+              foundFood = await tryRpcSearch(ing.name);
             }
 
             if (foundFood) {
@@ -323,7 +307,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       name: reviewData.name,
       calories: totalKcal,
       protein: totalProtein,
-      type: reviewData.type,
+      type: reviewData.type as "Café da manhã" | "Almoço" | "Jantar" | "Lanche" | undefined,
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     }]);
 

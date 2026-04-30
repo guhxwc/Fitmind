@@ -530,11 +530,10 @@ const FoodSearch: React.FC<{ onPick: (food: MealFood) => void }> = ({ onPick }) 
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const { data, error } = await supabase
-          .from('foods')
-          .select('id, name, category, portion_size, portion_unit, kcal, protein, carbs, fat')
-          .ilike('name', `%${query.trim()}%`)
-          .limit(12);
+        const { data, error } = await supabase.rpc('search_foods', {
+          p_query: query.trim(),
+          p_limit: 12,
+        });
         if (error) throw error;
         setResults((data as AppFood[]) || []);
       } catch (err) {

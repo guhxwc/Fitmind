@@ -18,6 +18,8 @@ function rowToFoodItem(row: any): FoodItem {
     protein:      toNum(row.protein ?? row.proteinas),
     carbs:        toNum(row.carbs ?? row.carboidratos),
     fat:          toNum(row.fat ?? row.gorduras),
+    fiber:        toNum(row.fiber ?? row.fibras),
+    sodium:       toNum(row.sodium ?? row.sodio),
     portion_size: toNum(row.portion_size ?? row.porcao_gramas ?? 100),
     portion_unit: String(row.portion_unit ?? 'g'),
     is_common:    Boolean(row.is_common),
@@ -83,6 +85,8 @@ export const foodDatabaseService = {
       protein:    Math.round(food.protein * f * 10) / 10,
       carbs: Math.round(food.carbs * f * 10) / 10,
       fat:     Math.round(food.fat * f * 10) / 10,
+      fiber:   Math.round((food.fiber || 0) * f * 10) / 10,
+      sodium:  Math.round((food.sodium || 0) * f),
     };
   },
 };

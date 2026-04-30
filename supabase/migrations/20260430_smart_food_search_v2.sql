@@ -84,13 +84,13 @@ begin
     f.group_name, f.popularity_base, f.usage_count,
     (
       (case
-        when lower(f.name) = v_term then 100
-        when lower(f.name) like v_term || '%' then 90
-        when lower(f.name) like '%' || v_term || '%' then 75
-        else (similarity(lower(f.name), v_term) * 70)
-      end) * 0.50 +
-      (f.popularity_base * 0.35) +
-      (least(f.usage_count * 10, 50) * 0.15)
+        when lower(f.name) = v_term then 1000  -- Match exato ganha de tudo
+        when lower(f.name) like v_term || '%' then 200 -- Começa com
+        when lower(f.name) like '%' || v_term || '%' then 100 -- Contém
+        else (similarity(lower(f.name), v_term) * 50) -- Similaridade
+      end) +
+      (f.popularity_base * 2) + -- Popularidade agora é um bônus menor comparado ao texto
+      (least(f.usage_count * 5, 50))
     )::float as relevance_score
   from public.foods f
   where lower(f.name) % v_term or lower(f.name) like '%' || v_term || '%' or lower(f.search_terms) % v_term
@@ -103,6 +103,7 @@ $$;
 update public.foods set popularity_base = 100 where name in ('Arroz Branco', 'Frango peito sem pele', 'Ovo de galinha cozido', 'Feijão preto');
 update public.foods set popularity_base = 90 where name in ('Banana prata', 'Batata inglesa', 'Pão francês', 'Arroz integral');
 update public.foods set popularity_base = 80 where name in ('Brócolis', 'Aveia flocos', 'Iogurte desnatado', 'Maçã Argentina com casca');
+update public.foods set popularity_base = 60 where name ilike '%batata frita%';
 update public.foods set popularity_base = 10 where category = 'Alimentos preparados';
 
 grant execute on function public.search_foods(text, int) to anon, authenticated;

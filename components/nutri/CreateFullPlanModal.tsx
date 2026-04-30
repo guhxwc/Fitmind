@@ -667,11 +667,6 @@ const FoodSearch: React.FC<{ onPick: (food: MealFood) => void }> = ({ onPick }) 
                   <div className="min-w-0">
                     <p className="text-[12px] font-bold text-gray-900 truncate flex items-center gap-2">
                        {r.name}
-                       {r.is_common && (
-                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black rounded uppercase tracking-tighter shrink-0">
-                           ★ Popular
-                         </span>
-                       )}
                     </p>
                     <p className="text-[10px] text-gray-500 font-medium truncate">
                       {r.category || '—'} • {Number(r.kcal)} kcal/{r.portion_size}{r.portion_unit}

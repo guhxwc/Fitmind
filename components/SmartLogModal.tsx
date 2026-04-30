@@ -28,6 +28,8 @@ export interface BaseFood {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  sodium?: number;
 }
 
 export interface ReviewIngredient {
@@ -225,18 +227,28 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
               return (data && data.length > 0) ? (data[0] as BaseFood) : null;
             };
 
-            // 1. Tenta com cada keyword fornecida pelo Gemini (na ordem)
-            if (ing.search_keywords && ing.search_keywords.length > 0) {
+            // 1. Tenta com o nome COMPLETO sugerido pela IA ou com todas as keywords juntas primeiro
+            const fullTerm = ing.name || (ing.search_keywords ? ing.search_keywords.join(' ') : '');
+            if (fullTerm) {
+              foundFood = await tryRpcSearch(fullTerm);
+            }
+
+            // 2. Tenta com cada keyword individualmente apenas se não achou nada (Fallback)
+            if (!foundFood && ing.search_keywords && ing.search_keywords.length > 0) {
               for (const keyword of ing.search_keywords) {
+                // Pula se a keyword sozinha for muito curta ou igual ao termo completo já tentado
+                if (keyword.length < 3 || keyword.toLowerCase() === fullTerm.toLowerCase()) continue;
                 foundFood = await tryRpcSearch(keyword);
                 if (foundFood) break;
               }
             }
 
-            // 2. Fallback: primeira palavra do nome do ingrediente
+            // 3. Fallback: primeira palavra do nome do ingrediente
             if (!foundFood) {
               const nameFirstWord = ing.name?.split(' ')[0] || '';
-              foundFood = await tryRpcSearch(nameFirstWord);
+              if (nameFirstWord.length > 2 && nameFirstWord.toLowerCase() !== fullTerm.toLowerCase()) {
+                foundFood = await tryRpcSearch(nameFirstWord);
+              }
             }
 
             // 3. Último recurso: nome completo do ingrediente
@@ -314,6 +326,83 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     updateStreak();
     addToast('Refeição salva!', 'success');
     onClose();
+  };
+
+  const searchAndUpdateIngredient = async (id: string, name: string, grams: number) => {
+    if (name.trim().length < 2) return;
+    try {
+      const cleaned = name.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
+      const { data } = await supabase.rpc('search_foods', { p_query: cleaned, p_limit: 1 });
+      if (data && data.length > 0) {
+        const foundFood = data[0] as BaseFood;
+        const ratio = (grams || 0) / (foundFood.portion_size || 100);
+        
+        setReviewData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ingredients: prev.ingredients.map(ing => {
+              if (ing.id === id) {
+                 return {
+                   ...ing,
+                   baseFood: foundFood,
+                   kcal: Math.round(Number(foundFood.kcal || 0) * ratio),
+                   protein: Number((Number(foundFood.protein || 0) * ratio).toFixed(1)),
+                   carbs: Number((Number(foundFood.carbs || 0) * ratio).toFixed(1)),
+                   fat: Number((Number(foundFood.fat || 0) * ratio).toFixed(1)),
+                   fiber: Number((Number(foundFood.fiber || 0) * ratio).toFixed(1)),
+                   sodium: Math.round(Number(foundFood.sodium || 0) * ratio),
+                   name: foundFood.name,
+                 };
+              }
+              return ing;
+            })
+          };
+        });
+        addToast(`${foundFood.name} encontrado!`, 'success');
+      } else {
+        addToast(`Não encontramos "${name}"`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleNameChange = (id: string, val: string) => {
+    setReviewData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ingredients: prev.ingredients.map(ing => {
+          if (ing.id === id) return { ...ing, name: val };
+          return ing;
+        })
+      };
+    });
+  };
+
+  const handleAddNewIngredient = () => {
+    setReviewData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ingredients: [
+          ...prev.ingredients,
+          {
+            id: Math.random().toString(),
+            baseFood: null,
+            name: '',
+            grams: 100,
+            kcal: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sodium: 0
+          }
+        ]
+      };
+    });
   };
 
   const handleUpdateIngredient = (id: string, grams: string) => {
@@ -419,11 +508,11 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 {/* Nome da Refeição */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 dark:text-white mb-2">Nome da Refeição</label>
-                  <input 
-                    type="text" 
+                  <textarea 
                     value={reviewData.name} 
                     onChange={(e) => setReviewData({...reviewData, name: e.target.value})}
-                    className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm text-gray-900 dark:text-white font-medium"
+                    className="w-full p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm text-gray-900 dark:text-white font-medium resize-none min-h-[60px]"
+                    rows={2}
                   />
                 </div>
 
@@ -449,11 +538,11 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                     </div>
                     <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
                        <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🌾 Fibras</div>
-                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={reviewData.ingredients.reduce((a,b)=>a+(b.fiber||0),0)} />
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Number(reviewData.ingredients.reduce((a,b)=>a+(b.fiber||0),0)).toFixed(1)} />
                     </div>
                     <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
                        <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">🧂 Sódio</div>
-                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={reviewData.ingredients.reduce((a,b)=>a+(b.sodium||0),0)} />
+                       <input type="text" readOnly className="w-full bg-transparent font-medium" value={Math.round(reviewData.ingredients.reduce((a,b)=>a+(b.sodium||0),0))} />
                     </div>
                   </div>
                 </div>
@@ -465,7 +554,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                     {reviewData.ingredients.map(ing => (
                       <div key={ing.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
                         <div className="flex-1 min-w-0 pr-3">
-                          <p className="font-bold text-gray-900 dark:text-white truncate">{ing.name}</p>
+                          <input 
+                            type="text"
+                            value={ing.name}
+                            onChange={(e) => handleNameChange(ing.id, e.target.value)}
+                            onBlur={() => searchAndUpdateIngredient(ing.id, ing.name, ing.grams)}
+                            placeholder="Nome do alimento"
+                            className="font-bold text-gray-900 dark:text-white bg-transparent outline-none w-full truncate border-b border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
+                          />
                           <p className="text-xs text-gray-500 mt-1">{ing.kcal} kcal</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -486,9 +582,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                     ))}
                   </div>
                   <button 
-                     onClick={() => {
-                       addToast("Busca manual será adicionada em breve.", "info");
-                     }}
+                     onClick={handleAddNewIngredient}
                      className="mt-4 p-4 w-full bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 text-sm font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                      + Adicionar ingrediente

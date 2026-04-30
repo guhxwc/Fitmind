@@ -245,6 +245,8 @@ export interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  sodium?: number;
   is_common: boolean;
   group_name?: string;
   popularity_base?: number;

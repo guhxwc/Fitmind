@@ -326,17 +326,17 @@ export const DietPlanView: React.FC = () => {
       if (gramMatch) {
           const grams = parseInt(gramMatch[1]);
           const calculated = foodDatabaseService.calcForPortion(foodItem, grams);
-          calories = calculated.calorias;
-          protein = calculated.proteinas;
+          calories = calculated.kcal;
+          protein = calculated.protein;
       } else {
           // Se não for em gramas, assume 100g como base ou apenas usa os valores por 100g como estimativa
-          calories = foodItem.calorias;
-          protein = foodItem.proteinas;
+          calories = foodItem.kcal;
+          protein = foodItem.protein;
       }
       
       const newIngredient: DietIngredient = {
           id: Math.random().toString(36).substr(2, 9),
-          name: foodItem.nome,
+          name: foodItem.name,
           amount: swappingIngredient.ingredient.amount, // Mantém a quantidade original para consistência
           calories,
           protein
@@ -716,11 +716,11 @@ export const DietPlanView: React.FC = () => {
                                                 onClick={() => confirmManualSwap(item)}
                                                 className="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-500 dark:hover:border-blue-500 transition-all bg-white dark:bg-gray-900 active:scale-[0.98] shadow-sm"
                                             >
-                                                <p className="font-bold text-gray-900 dark:text-white text-sm mb-1">{item.nome}</p>
+                                                <p className="font-bold text-gray-900 dark:text-white text-sm mb-1">{item.name}</p>
                                                 <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 font-medium">
                                                     <span>Base de dados TACO</span>
-                                                    <span className="text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{item.calorias} kcal/100g</span>
-                                                    <span className="text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{item.proteinas}g prot/100g</span>
+                                                    <span className="text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{item.kcal} kcal/100g</span>
+                                                    <span className="text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{item.protein}g prot/100g</span>
                                                 </div>
                                             </button>
                                         ))

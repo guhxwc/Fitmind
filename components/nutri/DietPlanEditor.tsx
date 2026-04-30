@@ -416,7 +416,14 @@ const FoodSearch: React.FC<{ onPick: (f: any) => void; onClose: () => void }> = 
                 className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#2C2C2E] flex items-center justify-between group transition-colors"
               >
                 <div className="min-w-0 flex-1 pr-4">
-                  <div className="text-[14px] font-medium truncate">{f.name}</div>
+                  <div className="text-[14px] font-medium truncate flex items-center gap-2">
+                    {f.name}
+                    {f.is_common && (
+                      <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[9px] font-black rounded uppercase tracking-tighter">
+                        ★ Popular
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] text-gray-400">{f.category}</div>
                 </div>
                 <div className="text-right shrink-0">

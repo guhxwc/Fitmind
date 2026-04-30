@@ -1,21 +1,7 @@
 import { supabase } from '../supabaseClient';
+import { Food } from '../types';
 
-// Schema real da tabela_alimentos no Supabase:
-// id (serial), nome (text), categoria (text),
-// calorias (numeric), proteinas (numeric), carboidratos (numeric),
-// gorduras (numeric), fibras (numeric)
-
-export interface FoodItem {
-  id: number;
-  nome: string;
-  categoria?: string;
-  calorias: number;     // kcal por 100g
-  proteinas: number;    // g por 100g
-  carboidratos: number; // g por 100g
-  gorduras: number;     // g por 100g
-  fibras: number;       // g por 100g
-  porcao_gramas?: number;
-}
+export type FoodItem = Food;
 
 function toNum(v: unknown): number {
   if (v === null || v === undefined || v === '') return 0;
@@ -23,74 +9,80 @@ function toNum(v: unknown): number {
   return Number.isFinite(n) ? Math.round(n * 10) / 10 : 0;
 }
 
-function rowToFoodItem(row: Record<string, unknown>): FoodItem {
+function rowToFoodItem(row: any): FoodItem {
   return {
-    id:           toNum(row.id),
-    nome:         String(row.nome ?? ''),
-    categoria:    row.categoria ? String(row.categoria) : undefined,
-    calorias:     toNum(row.calorias),
-    proteinas:    toNum(row.proteinas),
-    carboidratos: toNum(row.carboidratos),
-    gorduras:     toNum(row.gorduras),
-    fibras:       toNum(row.fibras),
+    id:           String(row.id),
+    name:         String(row.name ?? row.nome ?? ''),
+    category:     row.category ? String(row.category) : (row.categoria ? String(row.categoria) : null),
+    kcal:         toNum(row.kcal ?? row.calorias),
+    protein:      toNum(row.protein ?? row.proteinas),
+    carbs:        toNum(row.carbs ?? row.carboidratos),
+    fat:          toNum(row.fat ?? row.gorduras),
+    portion_size: toNum(row.portion_size ?? row.porcao_gramas ?? 100),
+    portion_unit: String(row.portion_unit ?? 'g'),
+    is_common:    Boolean(row.is_common),
+    group_name:   row.group_name,
+    popularity_base: row.popularity_base,
+    usage_count:  row.usage_count,
+    relevance_score: row.relevance_score
   };
 }
 
 export const foodDatabaseService = {
   async searchFood(query: string, limit = 20): Promise<FoodItem[]> {
-    if (!query || query.trim().length < 2) return [];
-
     const term = query.trim();
+    
+    // Usando a RPC inteligente se houver termo, senão busca comuns
+    if (term.length >= 2) {
+      const { data, error } = await supabase.rpc('search_foods', {
+        p_query: term,
+        p_limit: limit
+      });
 
-    const { data, error } = await supabase
-      .from('tabela_alimentos')
-      .select('id, nome, categoria, calorias, proteinas, carboidratos, gorduras, fibras')
-      .ilike('nome', `%${term}%`)
-      .order('nome')
-      .limit(limit);
-
-    if (error) {
-      console.error('[foodDatabase] Erro na busca:', error.message);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      // Fallback: tenta com só a primeira palavra
-      const firstWord = term.split(' ')[0];
-      if (firstWord && firstWord !== term) {
-        return this.searchFood(firstWord, limit);
+      if (error) {
+        console.error('[foodDatabase] Erro na RPC:', error.message);
+        return [];
       }
-      return [];
-    }
 
-    return (data as Record<string, unknown>[]).map(rowToFoodItem);
+      return (data || []).map(rowToFoodItem);
+    } else {
+      // Busca populares iniciais se vazio ou curto
+      const { data, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('is_common', true)
+        .order('popularity_base', { ascending: false })
+        .limit(12);
+
+      if (error) {
+        console.error('[foodDatabase] Erro busca populares:', error.message);
+        return [];
+      }
+
+      return (data || []).map(rowToFoodItem);
+    }
   },
 
-  async getFoodById(id: number | string): Promise<FoodItem | null> {
-    const numId = Number(id);
-    if (!Number.isFinite(numId)) return null;
-
+  async getFoodById(id: string): Promise<FoodItem | null> {
     const { data, error } = await supabase
-      .from('tabela_alimentos')
-      .select('id, nome, categoria, calorias, proteinas, carboidratos, gorduras, fibras')
-      .eq('id', numId)
+      .from('foods')
+      .select('*')
+      .eq('id', id)
       .maybeSingle();
 
     if (error || !data) return null;
-    return rowToFoodItem(data as Record<string, unknown>);
+    return rowToFoodItem(data);
   },
 
-  // Calcula macros para uma porção específica em gramas
   calcForPortion(food: FoodItem, gramas: number): FoodItem {
-    const f = gramas / 100;
+    const f = gramas / (food.portion_size || 100);
     return {
       ...food,
-      porcao_gramas: gramas,
-      calorias:     Math.round(food.calorias * f),
-      proteinas:    Math.round(food.proteinas * f * 10) / 10,
-      carboidratos: Math.round(food.carboidratos * f * 10) / 10,
-      gorduras:     Math.round(food.gorduras * f * 10) / 10,
-      fibras:       Math.round(food.fibras * f * 10) / 10,
+      portion_size: gramas,
+      kcal:     Math.round(food.kcal * f),
+      protein:    Math.round(food.protein * f * 10) / 10,
+      carbs: Math.round(food.carbs * f * 10) / 10,
+      fat:     Math.round(food.fat * f * 10) / 10,
     };
   },
 };

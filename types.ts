@@ -234,3 +234,20 @@ export interface WorkoutQuizAnswers {
   splitPreference: 'abc' | 'abcd' | 'abcde' | 'fullbody' | 'no_preference';
   injuries: string[];
 }
+
+export interface Food {
+  id: string;
+  name: string;
+  category: string | null;
+  portion_size: number;
+  portion_unit: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  is_common: boolean;
+  group_name?: string;
+  popularity_base?: number;
+  usage_count?: number;
+  relevance_score?: number;
+}

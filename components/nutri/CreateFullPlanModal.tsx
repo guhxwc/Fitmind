@@ -8,6 +8,8 @@ import {
 import { supabase } from '../../supabaseClient';
 import { calculateAutoGoals } from '../../lib/nutritionGoals';
 
+import { Food } from '../../types';
+
 /* ============================================================
    TIPOS
 ============================================================ */
@@ -501,17 +503,7 @@ const MealEditModal: React.FC<{
    FOOD SEARCH (busca alimento na tabela TACO)
 ============================================================ */
 
-interface AppFood {
-  id: string;
-  name: string;
-  category: string | null;
-  portion_size: number;
-  portion_unit: string;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
+type AppFood = Food;
 
 const FoodSearch: React.FC<{ onPick: (food: MealFood) => void }> = ({ onPick }) => {
   const [query, setQuery] = useState('');
@@ -673,7 +665,14 @@ const FoodSearch: React.FC<{ onPick: (food: MealFood) => void }> = ({ onPick }) 
                   className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-b-0 transition-colors"
                 >
                   <div className="min-w-0">
-                    <p className="text-[12px] font-bold text-gray-900 truncate">{r.name}</p>
+                    <p className="text-[12px] font-bold text-gray-900 truncate flex items-center gap-2">
+                       {r.name}
+                       {r.is_common && (
+                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black rounded uppercase tracking-tighter shrink-0">
+                           ★ Popular
+                         </span>
+                       )}
+                    </p>
                     <p className="text-[10px] text-gray-500 font-medium truncate">
                       {r.category || '—'} • {Number(r.kcal)} kcal/{r.portion_size}{r.portion_unit}
                     </p>

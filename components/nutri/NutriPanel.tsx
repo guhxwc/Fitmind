@@ -99,17 +99,17 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <aside className={`fixed md:relative inset-y-0 left-0 w-[280px] bg-white dark:bg-[#1C1C21] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex flex-col z-[102] transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[4px_0_24px_rgba(0,0,0,0.02)]`}>
                  <div className="p-8 pb-4 flex flex-col items-center">
                     <div className="w-full flex justify-between items-center mb-8 px-2">
-                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/fitmind_horizontal_o.png" alt="Fitmind Logo" className="h-16 md:h-20 w-auto object-contain" />
+                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/logo%20painel.png" alt="Fitmind Logo" className="h-16 md:h-20 w-auto object-contain" />
                         <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 -mr-2 text-gray-400">
                             <XMarkIcon className="w-6 h-6" />
                         </button>
                     </div>
                     
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-white dark:border-[#2C2C35] shadow-lg mb-4 bg-gray-50 dark:bg-gray-900 shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-[4px] border-white dark:border-[#2C2C35] shadow-lg mb-4 bg-gray-100 dark:bg-[#0B0C10] shrink-0">
                         <img 
                             src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png" 
                             alt="Dr. Allan" 
-                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.15] translate-y-2.5 translate-x-0.6" 
+                            className="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal scale-[1.15] translate-y-2.5 translate-x-1.5" 
                         />
                     </div>
                     <div className="text-center w-full">
@@ -296,7 +296,7 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
     const [dailyRecords, setDailyRecords] = useState<any[]>([]);
     const [sideEffects, setSideEffects] = useState<any[]>([]);
     const [patientGoals, setPatientGoals] = useState<any>(null);
-    const [timeframe, setTimeframe] = useState<'7' | '30' | '60' | 'all'>('7');
+    const [timeframe, setTimeframe] = useState<'7' | '30' | '60' | 'all'>('30');
 
     useEffect(() => {
         const fetchDeepData = async () => {
@@ -316,13 +316,21 @@ const PatientDetail: React.FC<{ patient: any, onBack: () => void, onUpdate: () =
     }, [patient.user_id]);
 
     const getFilteredWeight = () => {
-        if (timeframe === 'all') return weightHistory;
+        const history = weightHistory || [];
+        if (timeframe === 'all') return history;
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - parseInt(timeframe));
-        return weightHistory.filter(w => new Date(w.date) >= cutoff);
+        return history.filter(w => new Date(String(w.date || '').replace(' ', 'T')) >= cutoff);
     };
 
-    const chartData = getFilteredWeight().map(w => ({ date: new Date(w.date).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), weight: w.weight }));
+    const chartData = getFilteredWeight().map(w => {
+        const dateStr = String(w.date || '').replace(' ', 'T');
+        const d = new Date(dateStr);
+        return {
+            date: isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            weight: w.weight
+        };
+    });
 
     const todayRecord = dailyRecords.length > 0 && dailyRecords[0].date === new Date().toISOString().split('T')[0] ? dailyRecords[0] : null;
 

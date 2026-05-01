@@ -68,7 +68,7 @@ export const alertsService = {
           .order("date", { ascending: false })
           .limit(30),
         supabase.from("daily_records")
-          .select("date, meals, water_liters, quick_add_protein_grams")
+          .select("date, meals, water_liters, quick_add_protein_grams, total_protein, total_carbs, total_fat, total_calories")
           .eq("user_id", userId)
           .order("date", { ascending: false })
           .limit(14),
@@ -85,7 +85,7 @@ export const alertsService = {
 
       // Métricas derivadas
       const daysSinceWeight = weightHistory[0]
-        ? Math.floor((Date.now() - new Date(weightHistory[0].date).getTime()) / (1000 * 60 * 60 * 24))
+        ? Math.floor((Date.now() - new Date(String(weightHistory[0].date).replace(" ", "T")).getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
       const last7Daily = dailyRecords.slice(0, 7);
@@ -95,18 +95,18 @@ export const alertsService = {
 
       const avgProtein = last7Daily.length
         ? last7Daily.reduce((s, d) => {
-            const mealsP = Array.isArray(d.meals)
-              ? d.meals.reduce((t: number, m: any) => t + (Number(m.protein) || 0), 0)
-              : 0;
-            return s + mealsP + (Number(d.quick_add_protein_grams) || 0);
+            const protein = d.total_protein != null 
+              ? Number(d.total_protein) 
+              : (Array.isArray(d.meals) ? d.meals.reduce((t: number, m: any) => t + (Number(m.protein) || 0), 0) : 0) + (Number(d.quick_add_protein_grams) || 0);
+            return s + protein;
           }, 0) / last7Daily.length
         : 0;
 
       const avgCalories = last7Daily.length
         ? last7Daily.reduce((s, d) => {
-            const cal = Array.isArray(d.meals)
-              ? d.meals.reduce((t: number, m: any) => t + (Number(m.calories) || 0), 0)
-              : 0;
+            const cal = d.total_calories != null 
+              ? Number(d.total_calories) 
+              : (Array.isArray(d.meals) ? d.meals.reduce((t: number, m: any) => t + (Number(m.calories) || 0), 0) : 0);
             return s + cal;
           }, 0) / last7Daily.length
         : 0;
@@ -184,7 +184,7 @@ Regras:
 Retorne APENAS um JSON válido.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -213,7 +213,8 @@ Retorne APENAS um JSON válido.`;
         },
       });
 
-      const text = (response as any).text || "";
+      if (!response.text) throw new Error("Gemini returned no text");
+      const text = response.text.trim();
       const parsed = JSON.parse(text);
       const alerts: PatientAlert[] = (parsed.alerts || []).slice(0, 3);
 

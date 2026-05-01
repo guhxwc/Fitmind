@@ -55,11 +55,19 @@ const MOCK_WORKOUTS_WEEKLY = [
 /* =========================================================
    HELPERS
 ========================================================= */
-const formatBR = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+const formatBR = (iso: string) => {
+  if (!iso) return '—';
+  const s = String(iso).replace(' ', 'T');
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
 
-const formatBRFull = (iso: string) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+const formatBRFull = (iso: string) => {
+  if (!iso) return '—';
+  const s = String(iso).replace(' ', 'T');
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+};
 
 /* =========================================================
    COMPONENTS
@@ -324,19 +332,35 @@ export const EvolutionView: React.FC<{ patient: any; onBack: () => void }> = ({ 
   // Só mostra velocidade se houve perda real
   const avgPerWeek = totalLost > 0 ? +(totalLost / weeksFollowing).toFixed(2) : 0;
 
+  // Auto-troca para 'Tudo' quando o período selecionado não tem nenhum registro
+  useEffect(() => {
+    if (weightHistory.length === 0 || period === 'Tudo') return;
+    const days = period === '7D' ? 7 : period === '30D' ? 30 : period === '90D' ? 90 : 180;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const hasData = weightHistory.some((w) => new Date(String(w.date).replace(' ', 'T')) >= cutoff);
+    if (!hasData) setPeriod('Tudo');
+  }, [weightHistory, period]);
+
   const chartData = useMemo(() => {
     let data = weightHistory;
     if (period !== 'Tudo') {
       const days = period === '7D' ? 7 : period === '30D' ? 30 : period === '90D' ? 90 : 180;
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
-      const filtered = weightHistory.filter((w) => new Date(w.date) >= cutoff);
-      // Se o filtro do período excluir todos os dados, mostra tudo mesmo assim
+      const filtered = weightHistory.filter((w) => new Date(String(w.date).replace(' ', 'T')) >= cutoff);
       data = filtered.length > 0 ? filtered : weightHistory;
     }
-    return data.map((w) => ({
-      date: formatBR(w.date),
-      peso: parseFloat(String(w.weight)),
+    // date no banco é timestamp — extrair só a data YYYY-MM-DD para evitar duplicatas de label
+    // e garantir ordenação correta
+    const seen = new Map<string, number>();
+    data.forEach((w) => {
+      const dateKey = String(w.date).split('T')[0].split(' ')[0]; // suporta "2026-03-18T..." e "2026-03-18 ..."
+      seen.set(dateKey, parseFloat(String(w.weight)));
+    });
+    return Array.from(seen.entries()).map(([dateKey, peso]) => ({
+      date: formatBR(dateKey),
+      peso,
     }));
   }, [weightHistory, period]);
 

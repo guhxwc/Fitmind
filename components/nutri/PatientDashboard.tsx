@@ -5,7 +5,7 @@ import {
   Bell, Check, ActivitySquare, AlertTriangle, TrendingDown, TrendingUp,
   XIcon, Droplet, Flame, Beef, Zap, RefreshCw, Plus, Sparkles, ArrowRight,
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { supabase } from '../../supabaseClient';
 import { DietPlanEditor } from './DietPlanEditor';
 import { CreateFullPlanModal } from './CreateFullPlanModal';
@@ -162,7 +162,8 @@ const BodyCompositionModal: React.FC<{
 ========================= */
 
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [weightHistory, setWeightHistory] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState<'7D' | '30D' | '90D' | '6M' | 'Tudo'>('30D');
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
   const [activeView, setActiveView] = useState<null | 'full_plan' | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
   const [nutritionistId, setNutritionistId] = useState<string | null>(null);
@@ -198,6 +199,30 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
 
   const userId = patient.user_id;
 
+  const chartData = useMemo(() => {
+    let data = weightHistory;
+    if (timeframe !== 'Tudo') {
+      const days = timeframe === '7D' ? 7 : timeframe === '30D' ? 30 : timeframe === '90D' ? 90 : 180;
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      data = weightHistory.filter((w) => new Date(String(w.date).replace(' ', 'T')) >= cutoff);
+    }
+    
+    const seen = new Map<string, number>();
+    data.forEach((w) => {
+      const dateKey = String(w.date).split('T')[0].split(' ')[0];
+      seen.set(dateKey, parseFloat(String(w.weight)));
+    });
+    
+    return Array.from(seen.entries()).map(([dateKey, weight]) => {
+      const d = new Date(dateKey + 'T12:00:00');
+      return {
+        date: isNaN(d.getTime()) ? dateKey : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        weight,
+      };
+    });
+  }, [weightHistory, timeframe]);
+
   /* ----- Carrega todos os dados ----- */
   const loadAll = async () => {
     try {
@@ -231,6 +256,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       if (matsData) setRecentMaterials(matsData);
 
       if (profRes.data) setProfile(profRes.data);
+      if (weightRes.data) setWeightHistory(weightRes.data);
       if (goalsRes.data) setCustomGoals(goalsRes.data);
       if (dailyRes.data) setDailyRecords(dailyRes.data);
       if (checkinRes.data) setLatestCheckin(checkinRes.data);
@@ -238,18 +264,18 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       if (workoutRes.data) setWorkoutHistory(workoutRes.data);
       if (planRes.data) setLatestPlan(planRes.data);
 
-      if (weightRes.data && weightRes.data.length > 0) {
-        setChartData(
-          weightRes.data.map((w: any) => ({
-            date: new Date(w.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            weight: w.weight,
-          }))
-        );
-      }
-
       // Alertas IA (cache 20h)
       if (profRes.data) {
         setAlertsLoading(true);
+        // Prioriza metas customizadas, senão usa as do perfil
+        const finalGoals = goalsRes.data ? {
+          calories: goalsRes.data.calories,
+          protein: goalsRes.data.protein_g,
+          water: goalsRes.data.water_ml ? goalsRes.data.water_ml / 1000 : null,
+          carbs: goalsRes.data.carbs_g,
+          fats: goalsRes.data.fat_g
+        } : profRes.data.goals;
+
         alertsService
           .getOrGenerate(userId, {
             name: profRes.data.name,
@@ -259,7 +285,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
             targetWeight: profRes.data.target_weight,
             startWeight: profRes.data.start_weight,
             height: profRes.data.height,
-            goals: profRes.data.goals,
+            goals: finalGoals,
           })
           .then((a) => setAlerts(a))
           .finally(() => setAlertsLoading(false));
@@ -416,6 +442,14 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
     if (!profile) return;
     setAlertsLoading(true);
     try {
+      const finalGoals = customGoals ? {
+        calories: customGoals.calories,
+        protein: customGoals.protein_g,
+        water: customGoals.water_ml ? customGoals.water_ml / 1000 : null,
+        carbs: customGoals.carbs_g,
+        fats: customGoals.fat_g
+      } : profile.goals;
+
       const newAlerts = await alertsService.generateAndSave(userId, {
         name: profile.name,
         age: profile.age,
@@ -424,7 +458,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
         targetWeight: profile.target_weight,
         startWeight: profile.start_weight,
         height: profile.height,
-        goals: profile.goals,
+        goals: finalGoals,
       });
       setAlerts(newAlerts);
     } finally {
@@ -776,33 +810,66 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
           {/* Middle Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Evolução de peso Chart */}
-            <div className="lg:col-span-2 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
+            <div className="lg:col-span-2 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[14px] font-bold text-gray-900">Evolução de peso</h3>
-                <div className="flex gap-1 bg-gray-50 p-1 rounded-xl">
-                  {['7D', '30D', '90D', 'Tudo'].map((t, i) => (
-                    <button key={t} className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${i === 1 ? 'bg-white text-[#007AFF] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                <div>
+                  <h3 className="text-[14px] font-bold text-gray-900 leading-none">Evolução de peso</h3>
+                  <p className="text-[11px] text-gray-400 mt-1.5 font-medium">Histórico de pesagens {timeframe !== 'Tudo' ? `últimos ${timeframe}` : 'completo'}</p>
+                </div>
+                <div className="flex gap-1 bg-gray-50/80 p-1 rounded-xl">
+                  {['7D', '30D', '90D', '6M', 'Tudo'].map((t) => (
+                    <button 
+                      key={t} 
+                      onClick={() => setTimeframe(t as any)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${timeframe === t ? 'bg-white text-[#007AFF] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="h-[200px] w-full mt-4">
+              <div className="h-[210px] w-full mt-4 -ml-4">
                 {chartData && chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 15, right: 0, left: -25, bottom: 0 }}>
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorWeightBlue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#007AFF" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#007AFF" stopOpacity={0} />
+                          <stop offset="0%" stopColor="#007AFF" stopOpacity={0.18} />
+                          <stop offset="100%" stopColor="#007AFF" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <Area type="monotone" dataKey="weight" stroke="#007AFF" strokeWidth={2.5} fillOpacity={1} fill="url(#colorWeightBlue)" activeDot={{ r: 6, fill: '#007AFF', stroke: 'white', strokeWidth: 2 }} />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
+                      <YAxis domain={['dataMin - 2', 'dataMax + 2']} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 11, fontWeight: 600 }}
+                        labelStyle={{ color: '#0f172a', fontWeight: 800 }}
+                        formatter={(val: number) => [`${val} kg`, 'Peso']}
+                      />
+                      {resumo.meta && resumo.meta > 0 && (
+                        <ReferenceLine 
+                          y={resumo.meta} 
+                          stroke="#10b981" 
+                          strokeDasharray="4 4" 
+                          strokeWidth={2}
+                          label={{ value: `Meta ${resumo.meta}kg`, fill: '#10b981', fontSize: 9, fontWeight: 700, position: 'right' }} 
+                        />
+                      )}
+                      <Area 
+                        type="monotone" 
+                        dataKey="weight" 
+                        stroke="#007AFF" 
+                        strokeWidth={2.5} 
+                        fillOpacity={1} 
+                        fill="url(#colorWeightBlue)" 
+                        dot={{ r: 3, fill: '#007AFF', strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: '#007AFF', stroke: 'white', strokeWidth: 2 }} 
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <span className="text-gray-400 text-sm font-medium">Dados de evolução insuficientes</span>
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                    <TrendingDown className="w-8 h-8 text-gray-200 mb-2" />
+                    <span className="text-gray-400 text-[12px] font-bold">Nenhum registro no período</span>
                   </div>
                 )}
               </div>

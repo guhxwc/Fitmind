@@ -155,6 +155,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
            Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
            
            Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
+           E SEMPRE preencha os estimated_macros para cada ingrediente (calorias, carboidratos, proteínas, etc.) baseados na quantidade em gramas estimada como precaução no caso do ingrediente não ser encontrado na tabela.
            Exemplo: se você viu "Peito de frango grelhado", as palavras-chave ideais seriam ["frango", "peito"].
            Se você viu "arroz branco", as palavras-chave são ["arroz", "branco"].
            Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.`
@@ -164,6 +165,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
            Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
            
            Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
+           E SEMPRE preencha os estimated_macros para cada ingrediente (calorias, carboidratos, proteínas, etc.) baseados na quantidade em gramas estimada como precaução no caso do ingrediente não ser encontrado na tabela.
            Exemplo: se o usuário disse "Peito de frango grelhado na manteiga", as palavras-chave ideais seriam ["frango", "peito"].
            Se disse "arroz branco", as palavras-chave são ["arroz", "branco"].
            Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.`;
@@ -184,7 +186,19 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                   items: { type: "string" },
                   description: "1 a 3 palavras-chave fundamentais para buscar na tabela TACO"
                 },
-                grams: { type: "number" }
+                grams: { type: "number" },
+                estimated_macros: {
+                  type: "object",
+                  description: "Preencha com uma aproximação de calorias e macros correspondente à quantidade em gramas estimada.",
+                  properties: {
+                    kcal: { type: "number" },
+                    protein: { type: "number" },
+                    carbs: { type: "number" },
+                    fat: { type: "number" },
+                    fiber: { type: "number" },
+                    sodium: { type: "number" }
+                  }
+                }
               },
               required: ["name", "search_keywords", "grams"]
             }
@@ -318,7 +332,12 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 baseFood: null,
                 name: ing.name,
                 grams: ing.grams,
-                kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0
+                kcal: Math.round(Number(ing.estimated_macros?.kcal || 0)),
+                protein: Number(Number(ing.estimated_macros?.protein || 0).toFixed(1)),
+                carbs: Number(Number(ing.estimated_macros?.carbs || 0).toFixed(1)),
+                fat: Number(Number(ing.estimated_macros?.fat || 0).toFixed(1)),
+                fiber: Number(Number(ing.estimated_macros?.fiber || 0).toFixed(1)),
+                sodium: Math.round(Number(ing.estimated_macros?.sodium || 0))
               };
             }
           });

@@ -120,7 +120,7 @@ export const AccountSettings: React.FC = () => {
             
             let currentAge = userData.age;
             if (key === 'birth_date' && typeof finalValue === 'string' && finalValue.includes('-')) {
-                const birthYear = new Date(finalValue).getFullYear();
+                const birthYear = parseInt(finalValue.split('-')[0], 10);
                 if (!isNaN(birthYear)) {
                     currentAge = new Date().getFullYear() - birthYear;
                     updateData.age = currentAge; // Update age in DB too
@@ -137,6 +137,7 @@ export const AccountSettings: React.FC = () => {
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
         
         if (error) {
+            console.error("Erro no update perfil:", error);
             addToast('Erro ao atualizar.', 'error');
         } else {
             await fetchData();

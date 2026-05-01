@@ -228,7 +228,7 @@ import { TrialResultsScreen } from '../TrialResultsScreen';
 import { TrialTestModal } from '../TrialTestModal';
 
 export const SettingsTab: React.FC = () => {
-    const { userData, theme, toggleTheme, unlockPro, fetchData, isNutritionist } = useAppContext();
+    const { userData, theme, toggleTheme, unlockPro, fetchData, isNutritionist, calculateGoals } = useAppContext();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [showNotifications, setShowNotifications] = useState(false);
@@ -294,14 +294,13 @@ export const SettingsTab: React.FC = () => {
             
             let currentAge = userData.age;
             if (key === 'birth_date' && typeof finalValue === 'string' && finalValue.includes('-')) {
-                const birthYear = new Date(finalValue).getFullYear();
+                const birthYear = parseInt(finalValue.split('-')[0], 10);
                 if (!isNaN(birthYear)) {
                     currentAge = new Date().getFullYear() - birthYear;
                     updateData.age = currentAge; // Update age in DB too
                 }
             }
 
-            const { calculateGoals } = useAppContext();
             const newGoals = calculateGoals(currentWeight, currentActivity, currentHeight, currentAge, currentGender);
             updateData.goals = newGoals;
         }
@@ -313,6 +312,7 @@ export const SettingsTab: React.FC = () => {
         const { error } = await supabase.from('profiles').update(updateData).eq('id', userData.id);
         
         if (error) {
+            console.error("Erro no update perfil:", error);
             addToast('Erro ao atualizar.', 'error');
         } else {
             await fetchData();
@@ -340,6 +340,10 @@ export const SettingsTab: React.FC = () => {
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return '';
+        if (dateString.includes('-') && dateString.length === 10) {
+            const parts = dateString.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
         try {
             const date = new Date(dateString);
             return date.toLocaleDateString('pt-BR');

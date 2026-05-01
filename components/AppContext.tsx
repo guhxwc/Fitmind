@@ -497,50 +497,69 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }
 
-  useEffect(() => {
-    // Só salva depois da carga inicial estar completa e com userData disponível
-    if (!hasInitialized.current || !userData) {
-      return;
-    }
+  // Refs para o save — evita que o cleanup do useEffect cancele o debounce a cada re-render
+  const mealsRef = useRef(meals);
+  const quickAddProteinRef = useRef(quickAddProtein);
+  const currentWaterRef = useRef(currentWater);
+  const userDataRef = useRef(userData);
+  const selectedDateRef = useRef(selectedDate);
 
+  useEffect(() => { mealsRef.current = meals; }, [meals]);
+  useEffect(() => { quickAddProteinRef.current = quickAddProtein; }, [quickAddProtein]);
+  useEffect(() => { currentWaterRef.current = currentWater; }, [currentWater]);
+  useEffect(() => { userDataRef.current = userData; }, [userData]);
+  useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+
+  useEffect(() => {
+    if (!hasInitialized.current || !userData) return;
+
+    // Cancela debounce anterior
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
+    // Agenda novo save — usa refs para ler valores mais atuais no momento da execução
     debounceTimeoutRef.current = window.setTimeout(async () => {
+      const currentMeals    = mealsRef.current;
+      const currentUD       = userDataRef.current;
+      const currentQP       = quickAddProteinRef.current;
+      const currentW        = currentWaterRef.current;
+      const currentDate     = selectedDateRef.current;
+
+      if (!currentUD) return;
+
       try {
-          const offset = selectedDate.getTimezoneOffset() * 60000;
-          const localISOTime = (new Date(selectedDate.getTime() - offset)).toISOString().slice(0, -1);
+          const offset = currentDate.getTimezoneOffset() * 60000;
+          const localISOTime = (new Date(currentDate.getTime() - offset)).toISOString().slice(0, -1);
           const selectedDateStr = localISOTime.split('T')[0];
-          
+
           let targetId = dailyRecordIdRef.current;
           if (!targetId) {
               const { data: existing } = await supabase
                 .from('daily_records')
                 .select('id')
-                .eq('user_id', userData.id)
+                .eq('user_id', currentUD.id)
                 .eq('date', selectedDateStr)
                 .maybeSingle();
-              
               if (existing) {
                   targetId = existing.id;
                   dailyRecordIdRef.current = existing.id;
               }
           }
 
-          const totalCalories = meals.reduce((acc, m) => acc + (m.calories || 0), 0);
-          const totalProtein  = meals.reduce((acc, m) => acc + (m.protein  || 0), 0);
-          const totalCarbs    = meals.reduce((acc, m) => acc + (m.carbs    || 0), 0);
-          const totalFat      = meals.reduce((acc, m) => acc + (m.fat      || 0), 0);
-          const totalFiber    = meals.reduce((acc, m) => acc + (m.fiber    || 0), 0);
-          const totalSodium   = meals.reduce((acc, m) => acc + (m.sodium   || 0), 0);
+          const totalCalories = currentMeals.reduce((acc, m) => acc + (m.calories || 0), 0);
+          const totalProtein  = currentMeals.reduce((acc, m) => acc + (m.protein  || 0), 0);
+          const totalCarbs    = currentMeals.reduce((acc, m) => acc + (m.carbs    || 0), 0);
+          const totalFat      = currentMeals.reduce((acc, m) => acc + (m.fat      || 0), 0);
+          const totalFiber    = currentMeals.reduce((acc, m) => acc + (m.fiber    || 0), 0);
+          const totalSodium   = currentMeals.reduce((acc, m) => acc + (m.sodium   || 0), 0);
 
           const payload = {
-              user_id: userData.id,
+              user_id: currentUD.id,
               date: selectedDateStr,
-              meals: meals,
-              quick_add_protein_grams: quickAddProtein,
-              water_liters: currentWater,
+              meals: currentMeals,
+              quick_add_protein_grams: currentQP,
+              water_liters: currentW,
               total_calories: Math.round(totalCalories),
               total_protein:  parseFloat(totalProtein.toFixed(1)),
               total_carbs:    parseFloat(totalCarbs.toFixed(1)),
@@ -550,23 +569,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           };
 
           if (targetId) {
-              await supabase.from('daily_records').update(payload).eq('id', targetId);
+              const { error } = await supabase.from('daily_records').update(payload).eq('id', targetId);
+              if (error) console.error('Erro ao atualizar daily_record:', error);
           } else {
-              const { data: newRecord } = await supabase.from('daily_records').insert(payload).select().single();
-              if (newRecord) {
-                  dailyRecordIdRef.current = newRecord.id;
-              }
+              const { data: newRecord, error } = await supabase.from('daily_records').insert(payload).select().single();
+              if (error) console.error('Erro ao inserir daily_record:', error);
+              if (newRecord) dailyRecordIdRef.current = newRecord.id;
           }
       } catch (error) {
           console.error("Error saving daily record:", error);
       }
-    }, 2000); 
+    }, 1500);
 
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
+    // SEM cleanup aqui — o timeout é gerenciado pelo cancelamento no início do effect
   }, [meals, quickAddProtein, currentWater, userData]);
 
   const updateStreak = async () => {

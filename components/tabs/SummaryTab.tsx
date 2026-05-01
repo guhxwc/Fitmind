@@ -315,7 +315,11 @@ export const SummaryTab: React.FC = () => {
           // Fallback para refeições antigas sem o campo 'type'
           const hour = parseInt(m.time.split(':')[0], 10);
           if (type === 'Lanche') {
-              return (hour >= 15 && hour < 18) || (hour >= 0 && hour < 5) || (hour >= 22 && hour < 24);
+              return (hour >= 15 && hour < 18) || (hour >= 2 && hour < 5) || (hour >= 22 && hour < 24);
+          }
+          if (startTime > endTime) {
+              // Ex: Jantar das 18h às 2h
+              return hour >= startTime || hour < endTime;
           }
           return hour >= startTime && hour < endTime;
       });
@@ -325,7 +329,7 @@ export const SummaryTab: React.FC = () => {
   const breakfastCals = getMealStats('Café da manhã', 5, 11);
   const lunchCals = getMealStats('Almoço', 11, 15);
   const snackCals = getMealStats('Lanche', 15, 18);
-  const dinnerCals = getMealStats('Jantar', 18, 22);
+  const dinnerCals = getMealStats('Jantar', 18, 2);
 
   let breakfastGoal: number | null = null;
   let lunchGoal: number | null = null;

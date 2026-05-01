@@ -19,8 +19,7 @@ import { DietPlanView } from './diet/DietPlanView';
 const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void }> = ({ onAddMeal }) => {
     const { meals, userData, unlockPro, targetMacros } = useAppContext();
     const { addToast } = useToast();
-    const [isManualModalOpen, setIsManualModalOpen] = useState(false);
-    const [isCalorieCamOpen, setIsCalorieCamOpen] = useState(false);
+    const [smartLogMode, setSmartLogMode] = useState<'camera' | 'type' | 'menu' | null>(null);
     
     // Pro Features Logic
     const [showProModal, setShowProModal] = useState(false);
@@ -29,7 +28,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
 
     const handleCalorieCamClick = () => {
         if (userData?.isPro) {
-            setIsCalorieCamOpen(true);
+            setSmartLogMode('camera');
         } else {
             setPendingAction('calorieCam');
             setShowProModal(true);
@@ -45,7 +44,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
         unlockPro();
         setShowSubPage(false);
         if (pendingAction === 'calorieCam') {
-            setIsCalorieCamOpen(true);
+            setSmartLogMode('camera');
         }
         setPendingAction(null);
     };
@@ -101,7 +100,7 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                     <div className="bg-white/20 p-2 rounded-full"><DietIcon className="w-6 h-6" /></div>
                     <span>CalorieCam</span>
                 </button>
-                <button onClick={() => setIsManualModalOpen(true)} className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+                <button onClick={() => setSmartLogMode('type')} className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-2xl font-bold flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
                     <div className="bg-white dark:bg-gray-700 p-2 rounded-full"><PlusIcon className="w-6 h-6" /></div>
                     <span>Manual</span>
                 </button>
@@ -138,16 +137,10 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                 )}
             </div>
 
-            {isManualModalOpen && (
-                <ManualMealModal
-                    onClose={() => setIsManualModalOpen(false)}
-                    onAddMeal={onAddMeal}
-                />
-            )}
-            {isCalorieCamOpen && (
+            {smartLogMode && (
                 <SmartLogModal 
-                    onClose={() => setIsCalorieCamOpen(false)}
-                    initialMode="camera"
+                    onClose={() => setSmartLogMode(null)}
+                    initialMode={smartLogMode}
                 />
             )}
             

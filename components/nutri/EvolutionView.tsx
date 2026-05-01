@@ -490,27 +490,43 @@ export const EvolutionView: React.FC<{ patient: any; onBack: () => void }> = ({ 
                 </div>
               </div>
               <div className="h-[260px] -ml-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="evoPeso" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#007AFF" stopOpacity={0.18} />
-                        <stop offset="100%" stopColor="#007AFF" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
-                    <YAxis domain={['dataMin - 1', 'dataMax + 1']} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 12, fontWeight: 600 }}
-                      labelStyle={{ color: '#0f172a', fontWeight: 800 }}
-                    />
-                    <ReferenceLine y={targetWeight} stroke="#10b981" strokeDasharray="4 4" strokeWidth={2}
-                      label={{ value: `Meta ${targetWeight}kg`, fill: '#10b981', fontSize: 10, fontWeight: 700, position: 'right' }} />
-                    <Area type="monotone" dataKey="peso" stroke="#007AFF" strokeWidth={2.5} fill="url(#evoPeso)"
-                      dot={{ r: 3, fill: '#007AFF', strokeWidth: 0 }}
-                      activeDot={{ r: 5, fill: '#007AFF', stroke: 'white', strokeWidth: 2 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {chartData.length === 0 ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 30 L13 18 L20 23 L28 10 L35 20" stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <circle cx="35" cy="20" r="2.5" fill="#CBD5E1"/>
+                      <circle cx="28" cy="10" r="2.5" fill="#CBD5E1"/>
+                    </svg>
+                    <div className="text-center">
+                      <p className="text-[13px] font-bold text-gray-400">Nenhum registro de peso</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">O gráfico aparecerá quando o paciente registrar o peso</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="evoPeso" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#007AFF" stopOpacity={0.18} />
+                          <stop offset="100%" stopColor="#007AFF" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
+                      <YAxis domain={['dataMin - 1', 'dataMax + 1']} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 12, fontWeight: 600 }}
+                        labelStyle={{ color: '#0f172a', fontWeight: 800 }}
+                      />
+                      {targetWeight > 0 && (
+                        <ReferenceLine y={targetWeight} stroke="#10b981" strokeDasharray="4 4" strokeWidth={2}
+                          label={{ value: `Meta ${targetWeight}kg`, fill: '#10b981', fontSize: 10, fontWeight: 700, position: 'right' }} />
+                      )}
+                      <Area type="monotone" dataKey="peso" stroke="#007AFF" strokeWidth={2.5} fill="url(#evoPeso)"
+                        dot={{ r: 3, fill: '#007AFF', strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: '#007AFF', stroke: 'white', strokeWidth: 2 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 

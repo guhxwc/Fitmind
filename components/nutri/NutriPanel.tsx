@@ -40,7 +40,7 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 .from('consultations')
                 .select(`
                     id, status, next_review_at, notes, created_at, user_id,
-                    profiles:user_id (id, name, weight, target_weight, age, gender, medication),
+                    profiles:user_id (id, name, weight, start_weight, target_weight, age, gender, height, medication, created_at, whatsapp),
                     anamneses(*)
                 `)
                 .eq('nutritionist_id', targetNutritionistId)

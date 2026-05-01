@@ -25,6 +25,7 @@ import { ConsultationDashboard } from './components/consultation/ConsultationDas
 import { AnamnesisForm } from './components/consultation/AnamnesisForm';
 import { SubscriptionPage } from './components/SubscriptionPage';
 import { NutriPanel } from './components/nutri/NutriPanel'; // <-- Added NutriPanel import
+import { NutriRoleSelection } from './components/nutri/NutriRoleSelection';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -71,9 +72,19 @@ const InviteRedirect: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const { userData, loading: contextLoading, fetchData, session: contextSession } = useAppContext();
+  const { userData, loading: contextLoading, fetchData, session: contextSession, isNutritionist } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
+  // Controla a tela de seleção de papel (paciente / nutricionista) para usuários que são nutricionistas.
+  // Persistido em sessionStorage para sobreviver a reloads dentro da mesma sessão.
+  const [nutriRoleChoice, setNutriRoleChoice] = useState<'patient' | 'nutri' | null>(() => {
+    try {
+      const stored = sessionStorage.getItem('nutri_role_choice');
+      return stored === 'patient' || stored === 'nutri' ? stored : null;
+    } catch {
+      return null;
+    }
+  });
   const navigate = useNavigate();
   const { addToast } = useToast();
 
@@ -124,6 +135,11 @@ const AppContent: React.FC = () => {
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
+        // Limpa a escolha de papel para que o usuário veja a tela na próxima sessão
+        try {
+          sessionStorage.removeItem('nutri_role_choice');
+        } catch { /* ignore */ }
+        setNutriRoleChoice(null);
       } else {
         setSession(session);
         fetchProfile(session.user.id);
@@ -309,6 +325,15 @@ const AppContent: React.FC = () => {
                 <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
                   <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
                 </div>
+              ) : (isNutritionist && nutriRoleChoice === null) ? (
+                <NutriRoleSelection
+                  onSelectPatient={() => {
+                    try {
+                      sessionStorage.setItem('nutri_role_choice', 'patient');
+                    } catch { /* ignore */ }
+                    setNutriRoleChoice('patient');
+                  }}
+                />
               ) : (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (

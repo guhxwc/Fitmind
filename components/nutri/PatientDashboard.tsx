@@ -293,7 +293,9 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
 
   /* ----- MEMOS: Macros, Checklist, Resumo, Composição ----- */
 
-  // Macros - média dos últimos 7 dias baseados em daily_records.meals
+  // Macros - média dos últimos 7 dias
+  // Usa as colunas total_* quando disponíveis (salvas pelo AppContext corrigido),
+  // com fallback para somar o jsonb de meals (compatibilidade com registros antigos)
   const macrosData = useMemo(() => {
     const last7 = dailyRecords.slice(0, 7);
     if (!last7.length) {
@@ -302,10 +304,15 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
 
     const totals = last7.reduce(
       (acc, d) => {
-        acc.protein += sumMealField(d.meals, 'protein') + (Number(d.quick_add_protein_grams) || 0);
-        acc.carbs += sumMealField(d.meals, 'carbs');
-        acc.fats += sumMealField(d.meals, 'fats');
-        acc.calories += sumMealField(d.meals, 'calories');
+        // Preferir colunas dedicadas; fallback para soma do jsonb
+        const protein  = d.total_protein  != null ? Number(d.total_protein)  : sumMealField(d.meals, 'protein') + (Number(d.quick_add_protein_grams) || 0);
+        const carbs    = d.total_carbs    != null ? Number(d.total_carbs)    : sumMealField(d.meals, 'carbs');
+        const fat      = d.total_fat      != null ? Number(d.total_fat)      : sumMealField(d.meals, 'fat');
+        const calories = d.total_calories != null ? Number(d.total_calories) : sumMealField(d.meals, 'calories');
+        acc.protein  += protein;
+        acc.carbs    += carbs;
+        acc.fats     += fat;
+        acc.calories += calories;
         return acc;
       },
       { protein: 0, carbs: 0, fats: 0, calories: 0 }
@@ -371,15 +378,16 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
 
   // Resumo (peso)
   const resumo = useMemo(() => {
-    const atual = profile?.weight ?? null;
-    const inicial = profile?.start_weight ?? null;
-    const meta = profile?.target_weight ?? null;
+    // start_weight retorna como string do banco (numeric → JSON string) — forçar número
+    const atual   = profile?.weight        != null ? parseFloat(String(profile.weight))        : null;
+    const inicial = profile?.start_weight  != null ? parseFloat(String(profile.start_weight))  : null;
+    const meta    = profile?.target_weight != null ? parseFloat(String(profile.target_weight))  : null;
 
     let delta = 0;
-    if (atual != null && inicial != null) delta = atual - inicial;
+    if (atual != null && inicial != null) delta = +(atual - inicial).toFixed(1);
 
     let pctObj = 0;
-    if (atual != null && inicial != null && meta != null && inicial !== meta) {
+    if (atual != null && inicial != null && meta != null && Math.abs(inicial - meta) > 0.01) {
       pctObj = Math.max(0, Math.min(100, Math.round(((inicial - atual) / (inicial - meta)) * 100)));
     }
 

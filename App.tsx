@@ -71,7 +71,7 @@ const InviteRedirect: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const { userData, loading: contextLoading, fetchData } = useAppContext();
+  const { userData, loading: contextLoading, fetchData, session: contextSession } = useAppContext();
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [upsellDismissed, setUpsellDismissed] = useState(false);
   const navigate = useNavigate();
@@ -305,7 +305,11 @@ const AppContent: React.FC = () => {
                 <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
               </div>
             ) : profileExists ? (
-              (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
+              contextLoading || !userData ? (
+                <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+                  <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+                </div>
+              ) : (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (
                 ['canceled', 'past_due', 'unpaid'].includes(userData?.subscriptionStatus || '') ? (

@@ -115,6 +115,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const debounceTimeoutRef = useRef<number | null>(null);
   const isInitialLoad = useRef(true);
+  const hasInitialized = useRef(false);
   const dailyRecordIdRef = useRef<number | null>(null);
   
   const lastWeightUpdateRef = useRef<number>(0);
@@ -214,7 +215,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   const fetchData = useCallback(async () => {
-    isInitialLoad.current = true;
+    // Só bloqueia o save na carga INICIAL — fetches subsequentes não devem interferir
+    if (!hasInitialized.current) {
+      isInitialLoad.current = true;
+    }
     if (!supabase) {
       setLoading(false);
       isInitialLoad.current = false;
@@ -331,6 +335,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setLoading(false);
         setTimeout(() => {
             isInitialLoad.current = false;
+            hasInitialized.current = true;
         }, 50); 
     }
   }, []);
@@ -456,7 +461,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [fetchData]);
 
   useEffect(() => {
-    if (!isInitialLoad.current && session) {
+    if (hasInitialized.current && session) {
         fetchData();
     }
   }, [selectedDate]);
@@ -493,7 +498,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }
 
   useEffect(() => {
-    if (isInitialLoad.current || loading || !userData) {
+    // Só salva depois da carga inicial estar completa e com userData disponível
+    if (!hasInitialized.current || !userData) {
       return;
     }
 
@@ -522,12 +528,25 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               }
           }
 
+          const totalCalories = meals.reduce((acc, m) => acc + (m.calories || 0), 0);
+          const totalProtein  = meals.reduce((acc, m) => acc + (m.protein  || 0), 0);
+          const totalCarbs    = meals.reduce((acc, m) => acc + (m.carbs    || 0), 0);
+          const totalFat      = meals.reduce((acc, m) => acc + (m.fat      || 0), 0);
+          const totalFiber    = meals.reduce((acc, m) => acc + (m.fiber    || 0), 0);
+          const totalSodium   = meals.reduce((acc, m) => acc + (m.sodium   || 0), 0);
+
           const payload = {
               user_id: userData.id,
               date: selectedDateStr,
               meals: meals,
               quick_add_protein_grams: quickAddProtein,
-              water_liters: currentWater
+              water_liters: currentWater,
+              total_calories: Math.round(totalCalories),
+              total_protein:  parseFloat(totalProtein.toFixed(1)),
+              total_carbs:    parseFloat(totalCarbs.toFixed(1)),
+              total_fat:      parseFloat(totalFat.toFixed(1)),
+              total_fiber:    parseFloat(totalFiber.toFixed(1)),
+              total_sodium:   Math.round(totalSodium),
           };
 
           if (targetId) {
@@ -548,7 +567,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [meals, quickAddProtein, currentWater, userData, loading]);
+  }, [meals, quickAddProtein, currentWater, userData]);
 
   const updateStreak = async () => {
       if (!userData) return;

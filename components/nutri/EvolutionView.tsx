@@ -306,14 +306,23 @@ export const EvolutionView: React.FC<{ patient: any; onBack: () => void }> = ({ 
   }, [patient?.user_id]);
 
   const profile = patient?.profiles;
-  const initialWeight = profile?.start_weight || weightHistory[0]?.weight || 0;
-  const currentWeight = weightHistory[weightHistory.length - 1]?.weight || profile?.weight || 0;
-  const targetWeight = profile?.target_weight || 0;
+  // start_weight pode vir como string do banco — forçar número
+  const initialWeight = parseFloat(String(profile?.start_weight || weightHistory[0]?.weight || 0)) || 0;
+  const currentWeight = parseFloat(String(weightHistory[weightHistory.length - 1]?.weight || profile?.weight || 0)) || 0;
+  const targetWeight = parseFloat(String(profile?.target_weight || 0)) || 0;
   const totalLost = +(initialWeight - currentWeight).toFixed(1);
-  const pctOfGoal = Math.abs(initialWeight - targetWeight) > 0 ? Math.round((totalLost / (initialWeight - targetWeight)) * 100) : 0;
-  const startDate = profile?.created_at ? new Date(profile.created_at) : (weightHistory[0]?.date ? new Date(weightHistory[0].date) : new Date());
+  const goalDiff = initialWeight - targetWeight;
+  // Evita divisão por zero e --Infinity%
+  const pctOfGoal = Math.abs(goalDiff) > 0.01 ? Math.round((totalLost / goalDiff) * 100) : 0;
+  // Usa primeiro registro de peso como data de início (mais preciso que created_at)
+  const startDate = weightHistory[0]?.date
+    ? new Date(weightHistory[0].date)
+    : profile?.created_at
+    ? new Date(profile.created_at)
+    : new Date();
   const weeksFollowing = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 7)));
-  const avgPerWeek = +(totalLost / weeksFollowing).toFixed(2);
+  // Só mostra velocidade se houve perda real
+  const avgPerWeek = totalLost > 0 ? +(totalLost / weeksFollowing).toFixed(2) : 0;
 
   const chartData = useMemo(() => {
     let data = weightHistory;
@@ -321,11 +330,13 @@ export const EvolutionView: React.FC<{ patient: any; onBack: () => void }> = ({ 
       const days = period === '7D' ? 7 : period === '30D' ? 30 : period === '90D' ? 90 : 180;
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
-      data = weightHistory.filter((w) => new Date(w.date) >= cutoff);
+      const filtered = weightHistory.filter((w) => new Date(w.date) >= cutoff);
+      // Se o filtro do período excluir todos os dados, mostra tudo mesmo assim
+      data = filtered.length > 0 ? filtered : weightHistory;
     }
     return data.map((w) => ({
       date: formatBR(w.date),
-      peso: w.weight,
+      peso: parseFloat(String(w.weight)),
     }));
   }, [weightHistory, period]);
 
@@ -424,34 +435,34 @@ export const EvolutionView: React.FC<{ patient: any; onBack: () => void }> = ({ 
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard
-              icon={<TrendingDown className="w-5 h-5" strokeWidth={2.5} />}
-              iconBg="bg-emerald-50" iconColor="text-emerald-500"
+              icon={totalLost >= 0 ? <TrendingDown className="w-5 h-5" strokeWidth={2.5} /> : <TrendingUp className="w-5 h-5" strokeWidth={2.5} />}
+              iconBg={totalLost >= 0 ? "bg-emerald-50" : "bg-rose-50"} iconColor={totalLost >= 0 ? "text-emerald-500" : "text-rose-500"}
               label="Perda total"
-              value={`${totalLost} kg`}
-              hint={`De ${initialWeight} kg para ${currentWeight} kg`}
-              trend={{ value: `-${((totalLost / initialWeight) * 100).toFixed(1)}%`, positive: true }}
+              value={initialWeight > 0 ? `${totalLost} kg` : '—'}
+              hint={initialWeight > 0 ? `De ${initialWeight} kg para ${currentWeight} kg` : 'Sem peso inicial cadastrado'}
+              trend={initialWeight > 0 && totalLost !== 0 ? { value: `${totalLost >= 0 ? '-' : '+'}${Math.abs((totalLost / initialWeight) * 100).toFixed(1)}%`, positive: totalLost >= 0 } : undefined}
             />
             <KpiCard
               icon={<Target className="w-5 h-5" strokeWidth={2.5} />}
               iconBg="bg-blue-50" iconColor="text-blue-500"
               label="% do objetivo"
-              value={`${pctOfGoal}%`}
-              hint={`Meta: ${targetWeight} kg`}
+              value={targetWeight > 0 ? `${pctOfGoal}%` : '—'}
+              hint={targetWeight > 0 ? `Meta: ${targetWeight} kg` : 'Meta não definida'}
             />
             <KpiCard
               icon={<CalendarIcon className="w-5 h-5" strokeWidth={2.5} />}
               iconBg="bg-purple-50" iconColor="text-purple-500"
               label="Acompanhamento"
-              value={`${weeksFollowing} semanas`}
+              value={`${weeksFollowing} semana${weeksFollowing !== 1 ? 's' : ''}`}
               hint={`Desde ${startDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`}
             />
             <KpiCard
               icon={<Activity className="w-5 h-5" strokeWidth={2.5} />}
               iconBg="bg-amber-50" iconColor="text-amber-500"
               label="Velocidade média"
-              value={`${avgPerWeek} kg/sem`}
-              hint={avgPerWeek <= 0.7 ? 'Faixa saudável' : 'Acelerada'}
-              trend={{ value: avgPerWeek <= 0.7 ? 'OK' : 'Alta', positive: avgPerWeek <= 0.7 }}
+              value={avgPerWeek > 0 ? `${avgPerWeek} kg/sem` : '—'}
+              hint={avgPerWeek > 0 ? (avgPerWeek <= 0.7 ? 'Faixa saudável' : 'Acelerada') : 'Sem dados suficientes'}
+              trend={avgPerWeek > 0 ? { value: avgPerWeek <= 0.7 ? 'OK' : 'Alta', positive: avgPerWeek <= 0.7 } : undefined}
             />
           </div>
 

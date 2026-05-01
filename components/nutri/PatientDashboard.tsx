@@ -158,6 +158,135 @@ const BodyCompositionModal: React.FC<{
 };
 
 /* =========================
+   EDIT MACROS MODAL
+========================= */
+const EditMacrosModal: React.FC<{
+  patient: any;
+  nutritionistId: string | null;
+  onClose: () => void;
+  onSave: () => void;
+}> = ({ patient, nutritionistId, onClose, onSave }) => {
+  const [goals, setGoals] = useState({
+    calories: 2000,
+    protein_g: 150,
+    carbs_g: 150,
+    fat_g: 50,
+    water_ml: 3000
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('custom_goals')
+        .select('*')
+        .eq('user_id', patient.user_id)
+        .maybeSingle();
+
+      if (data) {
+        setGoals({
+          calories: data.calories || 2000,
+          protein_g: data.protein_g || 150,
+          carbs_g: data.carbs_g || 150,
+          fat_g: data.fat_g || 50,
+          water_ml: data.water_ml || 3000
+        });
+      }
+    })();
+  }, [patient.user_id]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await supabase.from('custom_goals').upsert([{
+        user_id: patient.user_id,
+        nutritionist_id: nutritionistId,
+        ...goals
+      }], { onConflict: 'user_id' });
+      onSave();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar metas.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fade-in font-sans">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl relative">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1C1C1E] sticky top-0 z-10">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Ajustar Macros</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-5">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Calorias (kcal)</label>
+              <input
+                type="number"
+                value={goals.calories}
+                onChange={(e) => setGoals({ ...goals, calories: Number(e.target.value) })}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-lg font-extrabold text-gray-900 dark:text-white outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/10 transition-all font-mono"
+              />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2">Proteínas (g)</label>
+                <input
+                  type="number"
+                  value={goals.protein_g}
+                  onChange={(e) => setGoals({ ...goals, protein_g: Number(e.target.value) })}
+                  className="w-full bg-blue-50/50 border border-blue-100 rounded-xl px-3 py-2 text-sm font-bold text-blue-700 outline-none focus:border-blue-500 transition-all text-center"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-wider mb-2">Carboidratos (g)</label>
+                <input
+                  type="number"
+                  value={goals.carbs_g}
+                  onChange={(e) => setGoals({ ...goals, carbs_g: Number(e.target.value) })}
+                  className="w-full bg-amber-50/50 border border-amber-100 rounded-xl px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-500 transition-all text-center"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">Gorduras (g)</label>
+                <input
+                  type="number"
+                  value={goals.fat_g}
+                  onChange={(e) => setGoals({ ...goals, fat_g: Number(e.target.value) })}
+                  className="w-full bg-rose-50/50 border border-rose-100 rounded-xl px-3 py-2 text-sm font-bold text-rose-700 outline-none focus:border-rose-500 transition-all text-center"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-cyan-500 uppercase tracking-widest mb-2 mt-2">Água (ml)</label>
+              <input
+                type="number"
+                value={goals.water_ml}
+                onChange={(e) => setGoals({ ...goals, water_ml: Number(e.target.value) })}
+                className="w-full bg-cyan-50/50 border border-cyan-100 rounded-xl px-4 py-3 text-lg font-bold text-cyan-700 outline-none focus:border-cyan-500 transition-all font-mono"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6 pt-2 pb-6 border-t border-transparent shrink-0">
+          <button onClick={handleSave} disabled={saving} className="w-full py-3.5 bg-[#007AFF] text-white font-bold rounded-xl hover:bg-[#0056b3] transition-colors shadow-sm disabled:opacity-60 flex justify-center items-center gap-2">
+            {saving ? 'Salvando...' : 'Salvar Metas'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* =========================
    MAIN DASHBOARD
 ========================= */
 
@@ -165,6 +294,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
   const [weightHistory, setWeightHistory] = useState<any[]>([]);
   const [timeframe, setTimeframe] = useState<'7D' | '30D' | '90D' | '6M' | 'Tudo'>('30D');
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
+  const [showEditMacros, setShowEditMacros] = useState(false);
   const [activeView, setActiveView] = useState<null | 'full_plan' | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
   const [nutritionistId, setNutritionistId] = useState<string | null>(null);
 
@@ -1028,7 +1158,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                     <span className="text-[11px] font-medium text-gray-500 mt-0.5">Criar plano alimentar</span>
                   </div>
                 </button>
-                <button className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-[#05CD99] hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left">
+                <button onClick={() => setShowEditMacros(true)} className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-[#05CD99] hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left">
                   <div className="w-10 h-10 rounded-xl bg-[#05CD99]/10 text-[#05CD99] flex items-center justify-center shrink-0">
                     <ActivitySquare className="w-5 h-5" />
                   </div>
@@ -1037,13 +1167,22 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                     <span className="text-[11px] font-medium text-gray-500 mt-0.5">Calorias, proteínas, etc.</span>
                   </div>
                 </button>
-                <button className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-red-400 hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left">
+                <button 
+                  onClick={() => {
+                    if (profile?.whatsapp) {
+                      const num = profile.whatsapp.replace(/\D/g, '');
+                      window.location.href = `https://wa.me/${num}`;
+                    } else {
+                      alert('Paciente não possui WhatsApp cadastrado.');
+                    }
+                  }}
+                  className="w-full flex items-center gap-4 p-3 rounded-2xl border border-gray-100 hover:border-red-400 hover:shadow-sm hover:bg-gray-50/50 transition-all group text-left">
                   <div className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0">
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-gray-900">Enviar orientação</span>
-                    <span className="text-[11px] font-medium text-gray-500 mt-0.5">Mensagem ou áudio</span>
+                    <span className="text-[11px] font-medium text-gray-500 mt-0.5">Mensagem via WhatsApp</span>
                   </div>
                 </button>
               </div>
@@ -1196,6 +1335,19 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
         <Sparkles className="w-4 h-4 text-white" />
         {latestPlan ? 'Editar plano' : 'Criar plano personalizado'}
       </button>
+
+      {/* Edit Macros Modal */}
+      {showEditMacros && (
+        <EditMacrosModal
+          patient={patient}
+          nutritionistId={nutritionistId}
+          onClose={() => setShowEditMacros(false)}
+          onSave={() => {
+            setShowEditMacros(false);
+            // In a real scenario we could trigger a refresh here, but updating local state or letting user refresh is fine too.
+          }}
+        />
+      )}
 
       {/* Anamnesis Full Screen Modal */}
       {showAnamnesisModal && patient.anamneses?.[0] && (

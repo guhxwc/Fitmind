@@ -95,6 +95,10 @@ export interface Meal {
   type?: 'Café da manhã' | 'Almoço' | 'Jantar' | 'Lanche';
   calories: number;
   protein: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  sodium?: number;
 }
 
 export interface FavoriteMeal {

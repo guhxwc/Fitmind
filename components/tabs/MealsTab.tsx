@@ -5,7 +5,7 @@ import { FlameIcon, DietIcon, AppleIcon, CoffeeIcon, LunchIcon, PlusIcon, LockIc
 import { StreakBadge } from '../core/StreakBadge';
 import type { Meal } from '../../types';
 import { ManualMealModal } from './ManualMealModal';
-import { CalorieCamModal } from './CalorieCamModal';
+import { SmartLogModal } from '../SmartLogModal';
 import { DietQuiz } from './DietQuiz';
 import { FastingView } from './FastingView';
 import { SubscriptionPage } from '../SubscriptionPage';
@@ -145,9 +145,9 @@ const TodayView: React.FC<{ onAddMeal: (meal: Omit<Meal, 'id' | 'time'>) => void
                 />
             )}
             {isCalorieCamOpen && (
-                <CalorieCamModal 
+                <SmartLogModal 
                     onClose={() => setIsCalorieCamOpen(false)}
-                    onAddMeal={onAddMeal}
+                    initialMode="camera"
                 />
             )}
             

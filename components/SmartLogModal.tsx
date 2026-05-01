@@ -5,11 +5,11 @@ import Portal from './core/Portal';
 import { SparklesIcon, CheckCircleIcon, MicrophoneIcon, KeyboardIcon, CameraIcon, XMarkIcon, ArrowPathIcon, ChevronLeftIcon, LockIcon } from './core/Icons';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
-import { CalorieCamModal } from './tabs/CalorieCamModal';
 import { ManualMealModal } from './tabs/ManualMealModal';
 import { FavoriteMealsModal } from './tabs/FavoriteMealsModal';
 import { GoogleGenAI } from "@google/genai";
 import { useScrollLock } from '../hooks/useScrollLock';
+import { CalorieCamCapture, ImageAnalyzingOverlay } from './tabs/CalorieCamCapture';
 
 interface SmartLogModalProps {
   onClose: () => void;
@@ -66,6 +66,9 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<number | null>(null);
+  
+  // Image Processing State
+  const [processingImageURL, setProcessingImageURL] = useState<string | null>(null);
 
   useEffect(() => {
     if (isRecording) {
@@ -126,10 +129,15 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     });
   };
 
-  const handleProcess = async (source: 'text' | 'audio') => {
+  const handleProcess = async (source: 'text' | 'audio' | 'image', imageFile?: File) => {
     if (source === 'text' && !input.trim()) return;
     if (source === 'audio' && !audioBlob) return;
+    if (source === 'image' && !imageFile) return;
     if (!userData) return;
+    
+    if (source === 'image' && imageFile) {
+      setProcessingImageURL(URL.createObjectURL(imageFile));
+    }
     
     setIsProcessing(true);
 
@@ -140,17 +148,25 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const model = "gemini-3-flash-preview";
 
-      const prompt = `
-        Você é um assistente de nutrição inteligente. O usuário vai descrever o que comeu.
-        Extraia a refeição e seus ingredientes, com quantidades em gramas (se não especificado, estime uma porção padrão de 100g ou 1 unidade).
-        Sugira um "nome" para a refeição inteira (ex: "Peito de Frango Grelhado com Arroz e Salada"). 
-        Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
-        
-        Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
-        Exemplo: se o usuário disse "Peito de frango grelhado na manteiga", as palavras-chave ideais seriam ["frango", "peito"].
-        Se disse "arroz branco", as palavras-chave são ["arroz", "branco"].
-        Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.
-      `;
+      const prompt = source === 'image' 
+        ? `Você é um assistente de nutrição inteligente. Analise esta imagem de uma refeição.
+           Extraia a refeição e seus ingredientes visíveis, estimando as quantidades em gramas (se não for possível, estime uma porção padrão de 100g ou 1 unidade).
+           Sugira um "nome" para a refeição inteira (ex: "Peito de Frango Grelhado com Arroz e Salada"). 
+           Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
+           
+           Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
+           Exemplo: se você viu "Peito de frango grelhado", as palavras-chave ideais seriam ["frango", "peito"].
+           Se você viu "arroz branco", as palavras-chave são ["arroz", "branco"].
+           Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.`
+        : `Você é um assistente de nutrição inteligente. O usuário vai descrever o que comeu.
+           Extraia a refeição e seus ingredientes, com quantidades em gramas (se não especificado, estime uma porção padrão de 100g ou 1 unidade).
+           Sugira um "nome" para a refeição inteira (ex: "Peito de Frango Grelhado com Arroz e Salada"). 
+           Identifique o tipo da refeição ('Café da manhã', 'Almoço', 'Jantar', 'Lanche').
+           
+           Para cada ingrediente, forneça uma lista com 1 a 3 palavras-chave principais e essenciais para a busca na tabela TACO brasileira. 
+           Exemplo: se o usuário disse "Peito de frango grelhado na manteiga", as palavras-chave ideais seriam ["frango", "peito"].
+           Se disse "arroz branco", as palavras-chave são ["arroz", "branco"].
+           Evite palavras como "com", "de", "sem", "grelhado", "assado", "cozido" a não ser que alterem drasticamente o alimento.`;
 
       const responseSchema = {
         type: "object",
@@ -187,7 +203,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
             responseSchema: responseSchema
           }
         });
-      } else {
+      } else if (source === 'audio') {
         const base64Audio = await blobToBase64(audioBlob!);
         response = await ai.models.generateContent({
           model: model,
@@ -209,6 +225,32 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
             responseSchema: responseSchema
           }
         });
+      } else if (source === 'image') {
+        const base64Image = await blobToBase64(imageFile!);
+        response = await ai.models.generateContent({
+          model: model,
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: imageFile!.type,
+                    data: base64Image
+                  }
+                }
+              ]
+            }
+          ],
+          config: { 
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+          }
+        });
+      }
+
+      if (!response) {
+        throw new Error("No response from AI");
       }
 
       const result = JSON.parse(response.text || '{}');
@@ -267,8 +309,8 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 protein: Number((Number(foundFood.protein || 0) * ratio).toFixed(1)),
                 carbs: Number((Number(foundFood.carbs || 0) * ratio).toFixed(1)),
                 fat: Number((Number(foundFood.fat || 0) * ratio).toFixed(1)),
-                fiber: 0,
-                sodium: 0
+                fiber: Number((Number(foundFood.fiber || 0) * ratio).toFixed(1)),
+                sodium: Math.round(Number(foundFood.sodium || 0) * ratio)
               };
             } else {
                return {
@@ -299,6 +341,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       addToast('Não entendi. Tente detalhar melhor.', 'error');
     } finally {
       setIsProcessing(false);
+      setProcessingImageURL(null);
     }
   };
 
@@ -313,12 +356,20 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     
     const totalKcal = reviewData.ingredients.reduce((acc, curr) => acc + curr.kcal, 0);
     const totalProtein = reviewData.ingredients.reduce((acc, curr) => acc + curr.protein, 0);
+    const totalCarbs = reviewData.ingredients.reduce((acc, curr) => acc + curr.carbs, 0);
+    const totalFat = reviewData.ingredients.reduce((acc, curr) => acc + curr.fat, 0);
+    const totalFiber = reviewData.ingredients.reduce((acc, curr) => acc + (curr.fiber || 0), 0);
+    const totalSodium = reviewData.ingredients.reduce((acc, curr) => acc + (curr.sodium || 0), 0);
     
     setMeals(prev => [...prev, {
       id: Date.now().toString(),
       name: reviewData.name,
       calories: totalKcal,
       protein: totalProtein,
+      carbs: totalCarbs,
+      fat: totalFat,
+      fiber: totalFiber,
+      sodium: totalSodium,
       type: reviewData.type as "Café da manhã" | "Almoço" | "Jantar" | "Lanche" | undefined,
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     }]);
@@ -421,7 +472,9 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 kcal: Math.round(Number(ing.baseFood.kcal || 0) * ratio),
                 protein: Number((Number(ing.baseFood.protein || 0) * ratio).toFixed(1)),
                 carbs: Number((Number(ing.baseFood.carbs || 0) * ratio).toFixed(1)),
-                fat: Number((Number(ing.baseFood.fat || 0) * ratio).toFixed(1))
+                fat: Number((Number(ing.baseFood.fat || 0) * ratio).toFixed(1)),
+                fiber: Number((Number(ing.baseFood.fiber || 0) * ratio).toFixed(1)),
+                sodium: Math.round(Number(ing.baseFood.sodium || 0) * ratio)
               };
             }
             return { ...ing, grams: numGrams };
@@ -442,16 +495,16 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     });
   };
 
+  if (isProcessing && processingImageURL) {
+    return <ImageAnalyzingOverlay imageUrl={processingImageURL} />;
+  }
+
   if (mode === 'camera') {
     return (
-      <CalorieCamModal 
-        onClose={onClose} 
-        initialMealType={initialMealType}
-        onAddMeal={(meal) => {
-          setMeals(prev => [...prev, { ...meal, id: Date.now().toString(), time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }]);
-          updateStreak();
-          addToast('Refeição adicionada!', 'success');
-          onClose();
+      <CalorieCamCapture 
+        onClose={initialMode === 'camera' ? onClose : () => setMode('menu')} 
+        onCapture={(file) => {
+          handleProcess('image', file);
         }} 
       />
     );
@@ -698,7 +751,8 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                           addToast("Recurso exclusivo para assinantes PRO", "info");
                         }
                       }}
-                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all relative overflow-hidden"
+                      disabled={isProcessing}
+                      className="flex items-center gap-4 p-5 bg-[#F4F5F7] dark:bg-gray-800 rounded-[20px] active:scale-[0.98] transition-all relative overflow-hidden disabled:opacity-50"
                     >
                       {!userData?.isPro && (
                         <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold flex items-center gap-1">
@@ -710,7 +764,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-gray-900 dark:text-white">CalorieCam</p>
-                        <p className="text-xs text-gray-500">Tire uma foto do seu prato</p>
+                        <p className="text-xs text-gray-500">{isProcessing ? 'Analisando imagem...' : 'Tire uma foto do seu prato'}</p>
                       </div>
                     </button>
                   </div>

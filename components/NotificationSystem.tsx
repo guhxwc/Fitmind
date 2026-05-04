@@ -9,7 +9,7 @@ import { WEEKDAYS } from '../constants';
 import Portal from './core/Portal';
 
 export const NotificationSystem: React.FC = () => {
-    const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData, targetMacros } = useAppContext();
+    const { userData, meals, currentWater, quickAddProtein, weightHistory, applicationHistory, setIsMealModalOpen, setIsWeightModalOpen, setInitialMode, weightMilestoneData, targetMacros, isNutritionist } = useAppContext();
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -56,6 +56,9 @@ export const NotificationSystem: React.FC = () => {
 
             // Do not show notifications on nutri panel
             if (location.pathname.startsWith('/painel-nutri')) return;
+
+            // Do not show notifications if user is nutri and hasn't selected a role yet
+            if (isNutritionist && !sessionStorage.getItem('nutri_role_choice')) return;
 
             // Don't show new notifications if one is already active or weight milestone is showing
             if (activeModal || activeToast || weightMilestoneData) return;
@@ -161,7 +164,7 @@ export const NotificationSystem: React.FC = () => {
         evaluate();
         const interval = setInterval(evaluate, 10000);
         return () => clearInterval(interval);
-    }, [userData, meals, currentWater, quickAddProtein, weightHistory, activeModal, activeToast, dismissedInSession, weightMilestoneData]);
+    }, [userData, meals, currentWater, quickAddProtein, weightHistory, activeModal, activeToast, dismissedInSession, weightMilestoneData, isNutritionist]);
 
     const handleAction = (notification: AppNotification, action: string) => {
         // Handle dismiss/snooze logic

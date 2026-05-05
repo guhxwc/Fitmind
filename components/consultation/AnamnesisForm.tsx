@@ -6,7 +6,7 @@ import { ChevronLeft, ArrowRight, CheckCircle2, Activity, Scale, Heart, Target, 
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 
-export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
+export const AnamnesisForm: React.FC<{ onSuccess?: () => void; onBack?: () => void }> = ({ onSuccess, onBack }) => {
   const navigate = useNavigate();
   const { userData, session, setConsultationStatus } = useAppContext();
   const [currentStep, setCurrentStep] = useState(1);
@@ -104,7 +104,11 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
       localStorage.setItem('fitmind_consultation_waiting', 'true');
       setShowSuccessModal(false);
       setConsultationStatus('anamnese_done');
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+          onSuccess();
+      } else {
+          navigate('/consultoria-premium');
+      }
   };
 
   const OptionCard = ({ icon: Icon, title, description, selected, onClick }: any) => (
@@ -332,13 +336,13 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
-      <div className="w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:border-x sm:border-gray-200 dark:sm:border-gray-900">
+    <div className="w-full bg-[#F2F2F7] dark:bg-black font-sans flex justify-center">
+      <div className="w-full max-w-[480px] bg-[#F2F2F7] dark:bg-black relative flex flex-col sm:border-x sm:border-gray-200 dark:sm:border-gray-900 min-h-full">
         
         {/* Transparent Nav Header */}
         <div className="px-4 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-[#F2F2F7]/80 dark:bg-black/80 backdrop-blur-xl z-50">
           <button 
-            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/consultation')}
+            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : (onBack ? onBack() : navigate('/consultoria-premium'))}
             className="w-10 h-10 flex flex-col items-center justify-center -ml-2 rounded-full active:opacity-60 transition-opacity"
           >
             <ChevronLeft className="w-7 h-7 text-[#007AFF]" strokeWidth={2.5} />
@@ -374,7 +378,7 @@ export const AnamnesisForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess 
               >
                   {getStepContent()}
                   
-                  <div className="mt-10 pb-16 sm:pb-12">
+                  <div className="mt-8 pb-8">
                      <button 
                         onClick={handleNext}
                         disabled={!isStepValid()}

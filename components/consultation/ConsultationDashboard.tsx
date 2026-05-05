@@ -7,7 +7,7 @@ import { useAppContext } from '../AppContext';
 import { 
   ChevronLeft, Utensils, Target, CalendarClock, 
   Flame, Droplet, Beef, Play, Sparkles, Activity, Lightbulb, MessageCircle, ChevronRight, FileText, Smartphone, HeartHandshake,
-  Clock, Lock, Check, TrendingDown
+  Clock, Lock, Check, TrendingDown, Coffee, Apple, Moon
 } from 'lucide-react';
 
 import { WeightChart } from './WeightChart';
@@ -18,6 +18,8 @@ import { PostAnamnesisModal } from './PostAnamnesisModal';
 import {
   materialsService, MATERIAL_TYPE_META, PatientMaterial, formatBytes,
 } from '../../services/materialsExamsService';
+
+import { ConsultationSettings } from './ConsultationSettings';
 
 const DR_ALLAN_PHOTO = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png";
 
@@ -33,7 +35,9 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
   const [activePlan, setActivePlan] = useState<any>(null);
+  const [dietPlan, setDietPlan] = useState<any>(null);
   const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [materials, setMaterials] = useState<PatientMaterial[]>([]);
 
   // Carrega materiais do paciente + realtime
@@ -93,6 +97,14 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         .limit(1)
         .maybeSingle();
 
+      const { data: dietData } = await supabase
+        .from('diet_plans')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       if (cancelled) return;
 
       if (data) {
@@ -104,6 +116,12 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         setActivePlan(null);
         setIsWaitingForPlan(status === 'anamnese_done');
       }
+
+      if (dietData) {
+        setDietPlan(dietData);
+      } else {
+        setDietPlan(null);
+      }
     };
 
     checkPlan();
@@ -114,6 +132,11 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'patient_plans', filter: `user_id=eq.${session.user.id}` },
+        () => checkPlan()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'diet_plans', filter: `user_id=eq.${session.user.id}` },
         () => checkPlan()
       )
       .subscribe();
@@ -186,15 +209,6 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
       }
   };
 
-  if (isWaitingForPlan) {
-    return (
-      <>
-        <PostAnamnesisModal isOpen={showAnamnesisModal} onConfirmScheduled={handleConfirmScheduled} onWhatsAppClick={handleWhatsAppClick} />
-        <ConsultationWaitingScreen onBack={() => navigate('/')} onChatClick={handleReadMessages} />
-      </>
-    );
-  }
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
@@ -204,6 +218,15 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         rootElement.scrollTop = 0;
     }
   }, []);
+
+  if (isWaitingForPlan) {
+    return (
+      <>
+        <PostAnamnesisModal isOpen={showAnamnesisModal} onConfirmScheduled={handleConfirmScheduled} onWhatsAppClick={handleWhatsAppClick} />
+        <ConsultationWaitingScreen onBack={() => navigate('/')} onChatClick={handleReadMessages} />
+      </>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -229,7 +252,12 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
             <ChevronLeft className="w-7 h-7 text-[#007AFF]" strokeWidth={2.5} />
           </button>
           <span className="font-semibold text-[17px] tracking-tight text-gray-900 dark:text-white">Dashboard Premium</span>
-          <div className="w-10" />
+          <button 
+             onClick={() => setShowSettings(true)}
+             className="w-10 h-10 flex items-center justify-center -mr-2 rounded-full active:opacity-60 transition-opacity text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          >
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
         </div>
 
         <motion.div 
@@ -569,62 +597,65 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
                 </div>
 
                 <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory -mx-2 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                  {/* Breakfast */}
-                  <div className="min-w-[240px] flex-1 bg-[#F0FDF4] dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-[24px] p-5 snap-center shrink-0">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Café da manhã</h4>
-                        <span className="text-[13px] text-gray-500 font-medium">07:00</span>
-                      </div>
-                      <div className="w-7 h-7 rounded-full border border-green-400 text-green-500 flex items-center justify-center shrink-0">
-                        <Check className="w-4 h-4 stroke-[3px]" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
-                        785 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
-                      </div>
-                      <span className="text-[13px] font-medium text-gray-500">3/3 alimentos</span>
-                    </div>
-                  </div>
+                  {dietPlan?.displayPlan?.meals?.length > 0 ? (
+                    dietPlan.displayPlan.meals.map((meal: any, idx: number) => {
+                      const mealKcal = (meal.items || []).reduce((acc: number, it: any) => acc + (it.kcal || 0), 0) || 0;
+                      const itemCount = meal.items?.length || 0;
+                      
+                      const nameStr = meal.name?.toLowerCase() || '';
+                      
+                      let Icon = Utensils;
+                      let bgClass = "bg-[#F8FAFC] dark:bg-gray-800/30";
+                      let borderClass = "border-gray-200 dark:border-gray-700/50";
+                      let iconBorderClass = "border-gray-300 dark:border-gray-600 text-gray-400";
+                      
+                      if (nameStr.includes('café') || nameStr.includes('cafe') || nameStr.includes('desjejum')) {
+                        Icon = Coffee;
+                        bgClass = "bg-[#F0FDF4] dark:bg-green-900/10";
+                        borderClass = "border-green-200 dark:border-green-900/30";
+                        iconBorderClass = "border-green-400 text-green-500";
+                      } else if (nameStr.includes('lanche')) {
+                        Icon = Apple;
+                        bgClass = "bg-[#FEFCE8] dark:bg-yellow-900/10";
+                        borderClass = "border-yellow-200 dark:border-yellow-900/30";
+                        iconBorderClass = "border-yellow-400 text-yellow-500";
+                      } else if (nameStr.includes('almoço') || nameStr.includes('jantar')) {
+                        Icon = Utensils;
+                        bgClass = "bg-[#FFF7ED] dark:bg-orange-900/10";
+                        borderClass = "border-orange-200/60 dark:border-orange-900/30";
+                        iconBorderClass = "border-orange-300 text-orange-400";
+                      } else if (nameStr.includes('ceia')) {
+                        Icon = Moon;
+                        bgClass = "bg-[#EFF6FF] dark:bg-blue-900/10";
+                        borderClass = "border-blue-200 dark:border-blue-900/30";
+                        iconBorderClass = "border-blue-300 text-blue-400";
+                      }
 
-                  {/* Lunch */}
-                  <div className="min-w-[240px] flex-1 bg-[#FFF7ED] dark:bg-orange-900/10 border border-orange-200/60 dark:border-orange-900/30 rounded-[24px] p-5 snap-center shrink-0">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Almoço</h4>
-                        <span className="text-[13px] text-gray-500 font-medium">12:30</span>
-                      </div>
-                      <div className="w-7 h-7 rounded-full border border-orange-300 text-orange-400 flex items-center justify-center shrink-0">
-                        <Clock className="w-4 h-4 stroke-[2.5]" />
-                      </div>
+                      return (
+                        <div key={idx} className={`min-w-[240px] flex-1 border rounded-[24px] p-5 snap-center shrink-0 ${bgClass} ${borderClass}`}>
+                          <div className="flex justify-between items-start mb-6">
+                            <div>
+                              <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">{meal.name}</h4>
+                              <span className="text-[13px] text-gray-500 font-medium">{meal.time || '00:00'}</span>
+                            </div>
+                            <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 ${iconBorderClass}`}>
+                              <Icon className="w-4 h-4 stroke-[2.5]" />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
+                              {Math.round(mealKcal)} <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
+                            </div>
+                            <span className="text-[13px] font-medium text-gray-500">{itemCount} alimentos</span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="min-w-[240px] flex-1 bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-[#2C2C2E] rounded-[24px] p-5 flex items-center justify-center text-center">
+                       <span className="text-[15px] font-medium text-gray-500">Nenhuma dieta cadastrada</span>
                     </div>
-                    <div>
-                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
-                        592 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
-                      </div>
-                      <span className="text-[13px] font-medium text-gray-500">0/4 alimentos</span>
-                    </div>
-                  </div>
-
-                  {/* Dinner */}
-                  <div className="min-w-[240px] flex-1 bg-[#F8FAFC] dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50 rounded-[24px] p-5 snap-center shrink-0">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h4 className="text-[17px] font-bold text-gray-900 dark:text-white leading-tight">Jantar</h4>
-                        <span className="text-[13px] text-gray-500 font-medium">19:00</span>
-                      </div>
-                      <div className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-600 text-gray-400 flex items-center justify-center shrink-0">
-                        <Clock className="w-4 h-4 stroke-[2.5]" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[24px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
-                        960 <span className="text-[13px] font-bold text-gray-500 tracking-normal">kcal</span>
-                      </div>
-                      <span className="text-[13px] font-medium text-gray-500">0/4 alimentos</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -700,6 +731,17 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
           </motion.div>
 
         </motion.div>
+
+        <AnimatePresence>
+           {showSettings && (
+               <ConsultationSettings 
+                   key="settings"
+                   onClose={() => setShowSettings(false)}
+                   consultationData={consultationData}
+                   onReload={onReload}
+               />
+           )}
+        </AnimatePresence>
       </div>
     </div>
   );

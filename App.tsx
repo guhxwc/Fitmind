@@ -89,6 +89,17 @@ const AppContent: React.FC = () => {
   const { addToast } = useToast();
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (session && profileExists && !contextLoading && !userData) {
+      console.warn("⚠️ Stuck in loading state! Forcing data fetch in 2s...");
+      timer = setTimeout(() => {
+        fetchData();
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [session, profileExists, contextLoading, userData, fetchData]);
+
+  useEffect(() => {
     if (!contextLoading && userData) {
       if (userData.isPro) {
         localStorage.removeItem('trigger_pro_tour');
@@ -143,6 +154,7 @@ const AppContent: React.FC = () => {
       } else {
         setSession(session);
         fetchProfile(session.user.id);
+        fetchData();
       }
     });
 
@@ -229,10 +241,14 @@ const AppContent: React.FC = () => {
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro explícito do Supabase em fetchProfile:", error);
+      }
       setProfileExists(!!data);
     } catch (err) {
       console.error("❌ Erro ao buscar perfil:", err);
+      // Evitar que o usuário fique em um carregamento infinito:
+      setProfileExists(false);
     }
   };
 
@@ -309,7 +325,7 @@ const AppContent: React.FC = () => {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/consultoria" element={<ConsultationRoute />} />
         <Route path="/consultoria-premium" element={<ConsultationDashboard />} />
-        <Route path="/anamnese" element={<AnamnesisForm />} />
+        <Route path="/anamnese" element={<AnamnesisForm editMode={true} />} />
         <Route path="/assinaturas" element={<ConsultationRoute initialStep={2} />} />
         <Route path="/referrals" element={session ? <ReferralDashboard /> : <Navigate to="/auth" />} />
         <Route path="/painel-nutri/*" element={session ? <NutriPanel onClose={() => navigate('/')} /> : <Navigate to="/auth" />} />
@@ -317,13 +333,17 @@ const AppContent: React.FC = () => {
         <Route path="/*" element={
           session ? (
             profileExists === null ? (
-              <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+              <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-black gap-4">
                 <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-medium">Buscando perfil...</p>
               </div>
             ) : profileExists ? (
               contextLoading || !userData ? (
-                <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+                <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-black gap-4">
                   <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+                  <p className="text-gray-500 font-medium">
+                     {contextLoading ? "Carregando dados..." : "Preparando sistema..."}
+                  </p>
                 </div>
               ) : (isNutritionist && nutriRoleChoice === null) ? (
                 <NutriRoleSelection

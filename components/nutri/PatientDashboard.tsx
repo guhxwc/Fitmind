@@ -15,6 +15,7 @@ import { MaterialsView } from './MaterialsView';
 import { ExamsView } from './ExamsView';
 import { PatientSettingsView } from './PatientSettingsView';
 import { FullPlanManager } from './FullPlanManager';
+import { PatientAnamneseView } from './PatientAnamneseView';
 import { alertsService, PatientAlert } from '../../services/alertsService';
 
 /* =========================
@@ -293,9 +294,8 @@ const EditMacrosModal: React.FC<{
 export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; chartData?: any[] }> = ({ patient, onBack }) => {
   const [weightHistory, setWeightHistory] = useState<any[]>([]);
   const [timeframe, setTimeframe] = useState<'7D' | '30D' | '90D' | '6M' | 'Tudo'>('30D');
-  const [showAnamnesisModal, setShowAnamnesisModal] = useState(false);
   const [showEditMacros, setShowEditMacros] = useState(false);
-  const [activeView, setActiveView] = useState<null | 'full_plan' | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings'>(null);
+  const [activeView, setActiveView] = useState<null | 'full_plan' | 'diet' | 'checkins' | 'evolution' | 'materials' | 'exams' | 'settings' | 'anamnese'>(null);
   const [nutritionistId, setNutritionistId] = useState<string | null>(null);
 
   // Busca id do nutri logado (uma vez)
@@ -354,7 +354,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
   }, [weightHistory, timeframe]);
 
   /* ----- Carrega todos os dados ----- */
-  const loadAll = async () => {
+  const loadAll = async (skipAlerts = false) => {
     try {
       const [
         profRes,
@@ -395,7 +395,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
       if (planRes.data) setLatestPlan(planRes.data);
 
       // Alertas IA (cache 20h)
-      if (profRes.data) {
+      if (profRes.data && !skipAlerts) {
         setAlertsLoading(true);
         // Prioriza metas customizadas, senão usa as do perfil
         const finalGoals = goalsRes.data ? {
@@ -435,13 +435,13 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
     const channel = supabase
       .channel(`patient-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'consultation_checkins', filter: `user_id=eq.${userId}` },
-        (payload) => setLatestCheckin(payload.new))
+        (payload) => { setLatestCheckin(payload.new); loadAll(true); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_records', filter: `user_id=eq.${userId}` },
-        () => loadAll())
+        () => loadAll(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_alerts', filter: `user_id=eq.${userId}` },
         (payload: any) => setAlerts((payload.new?.alerts as PatientAlert[]) || []))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_plans', filter: `user_id=eq.${userId}` },
-        () => loadAll())
+        () => loadAll(true))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -819,7 +819,7 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
                       <FileText className="w-6 h-6 text-[#007AFF]" />
                     </div>
                     <p className="text-[13px] font-bold text-gray-900 mb-4">Anamnese Preenchida</p>
-                    <button onClick={() => setShowAnamnesisModal(true)} className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-[13px] rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm w-[90%] justify-center -translate-y-1">
+                    <button onClick={() => setActiveView('anamnese')} className="px-5 py-2.5 bg-[#007AFF] text-white font-bold text-[13px] rounded-xl flex items-center gap-2 hover:bg-[#0056b3] transition-colors shadow-sm w-[90%] justify-center -translate-y-1">
                       Abrir Anamnese
                     </button>
                   </>
@@ -1349,81 +1349,12 @@ export const PatientDashboard: React.FC<{ patient: any; onBack: () => void; char
         />
       )}
 
-      {/* Anamnesis Full Screen Modal */}
-      {showAnamnesisModal && patient.anamneses?.[0] && (
-        <div className="fixed inset-0 z-[200] bg-white dark:bg-[#1C1C21] overflow-y-auto flex flex-col">
-          <div className="sticky top-0 bg-white/80 dark:bg-[#1C1C21]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between z-10">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setShowAnamnesisModal(false)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors">
-                <XIcon className="w-6 h-6" />
-              </button>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Anamnese do Paciente</h2>
-            </div>
-            <span className="bg-[#007AFF]/10 text-[#007AFF] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Respondida</span>
-          </div>
-
-          <div className="p-6 md:p-10 max-w-4xl mx-auto w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Dados Básicos</h3>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 space-y-4">
-                    <div><span className="text-gray-500 text-sm">Objetivo:</span> <p className="font-bold text-gray-900 dark:text-white text-lg capitalize">{patient.anamneses[0].goal || '--'}</p></div>
-                    <div><span className="text-gray-500 text-sm">Peso Atual:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{patient.anamneses[0].current_weight || '--'} kg</p></div>
-                    <div><span className="text-gray-500 text-sm">Altura:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{patient.anamneses[0].height || '--'} cm</p></div>
-                    <div><span className="text-gray-500 text-sm">Nível de Atividade:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{patient.anamneses[0].activity_level || '--'}</p></div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Restrições e Preferências</h3>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 space-y-4">
-                    <div><span className="text-gray-500 text-sm">Restrições Alimentares:</span>
-                      <p className="font-bold text-gray-900 dark:text-white">
-                        {patient.anamneses[0].food_restrictions && patient.anamneses[0].food_restrictions.length > 0
-                          ? patient.anamneses[0].food_restrictions.join(', ') : 'Nenhuma'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Rotina</h3>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 space-y-4">
-                    <div><span className="text-gray-500 text-sm">Horário que acorda / Qualidade do Sono:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{patient.anamneses[0].wake_up_time || patient.anamneses[0].sleep_time || '--'}</p></div>
-                    <div><span className="text-gray-500 text-sm">Nível de Estresse:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{patient.anamneses[0].main_difficulties || '--'}</p></div>
-                  </div>
-                </div>
-
-                {patient.anamneses[0].additional_info && (
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Informações Adicionais</h3>
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6 space-y-4">
-                      {(() => {
-                        try {
-                          const parsed = JSON.parse(patient.anamneses[0].additional_info);
-                          return (
-                            <>
-                              <div><span className="text-gray-500 text-sm">Idade/Sexo:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{parsed.age || '--'} anos / {parsed.gender || '--'}</p></div>
-                              <div><span className="text-gray-500 text-sm">Preferências (Gosta / Não Gosta):</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{parsed.dietaryPreferences || '--'} / {parsed.dislikes || '--'}</p></div>
-                              <div><span className="text-gray-500 text-sm">Histórico Médico:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{parsed.medicalHistory || '--'}</p></div>
-                              <div><span className="text-gray-500 text-sm">Uso de Medicamentos:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{parsed.medications || '--'}</p></div>
-                              <div><span className="text-gray-500 text-sm">Ingestão de Água:</span> <p className="font-bold text-gray-900 dark:text-white capitalize">{parsed.waterIntake || '--'}</p></div>
-                            </>
-                          );
-                        } catch (e) {
-                          return <p className="text-sm">Erro ao processar as informações adicionais.</p>;
-                        }
-                      })()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Anamnesis View Overlay */}
+      {activeView === 'anamnese' && (
+        <PatientAnamneseView
+          patient={patient}
+          onBack={() => setActiveView(null)}
+        />
       )}
     </div>
   );

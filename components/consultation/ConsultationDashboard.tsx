@@ -31,6 +31,7 @@ interface ConsultationDashboardProps {
 export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ status, onReload }) => {
   const navigate = useNavigate();
   const { session, userData, targetMacros } = useAppContext();
+  const [isCheckingPlan, setIsCheckingPlan] = useState(true);
   const [isWaitingForPlan, setIsWaitingForPlan] = useState(status === 'anamnese_done');
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [consultationData, setConsultationData] = useState<any>(null);
@@ -83,6 +84,7 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
   useEffect(() => {
     if (!session?.user?.id) {
       setIsWaitingForPlan(status === 'anamnese_done');
+      setIsCheckingPlan(false);
       return;
     }
     let cancelled = false;
@@ -122,6 +124,8 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
       } else {
         setDietPlan(null);
       }
+
+      setIsCheckingPlan(false);
     };
 
     checkPlan();
@@ -218,6 +222,14 @@ export const ConsultationDashboard: React.FC<ConsultationDashboardProps> = ({ st
         rootElement.scrollTop = 0;
     }
   }, []);
+
+  if (isCheckingPlan) {
+    return (
+      <div className="flex-1 w-full bg-[#F2F2F7] dark:bg-black font-sans flex items-center justify-center min-h-screen">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent animate-spin rounded-full"></div>
+      </div>
+    );
+  }
 
   if (isWaitingForPlan) {
     return (

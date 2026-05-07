@@ -46,7 +46,7 @@ export const alertsService = {
       const twentyHoursAgo = Date.now() - 20 * 60 * 60 * 1000;
       const lastGen = current.generatedAt ? new Date(current.generatedAt).getTime() : 0;
 
-      if (lastGen > twentyHoursAgo && current.alerts.length > 0) {
+      if (lastGen > twentyHoursAgo) {
         return current.alerts;
       }
 

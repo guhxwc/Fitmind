@@ -199,6 +199,7 @@ const Step1Data: React.FC<{ data: BasicData; setData: React.Dispatch<React.SetSt
   data,
   setData,
 }) => {
+  const [showMeasurements, setShowMeasurements] = useState(false);
   const set = (k: keyof BasicData, v: string) => setData((d) => ({ ...d, [k]: v }));
 
   // BMI/TMB calculados ao vivo
@@ -341,45 +342,55 @@ const Step1Data: React.FC<{ data: BasicData; setData: React.Dispatch<React.SetSt
       </div>
 
       {/* Medidas corporais */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[15px] font-bold text-gray-900">Medidas corporais</h3>
-          <div className="flex bg-gray-100 rounded-lg p-0.5">
-            {(['cm', 'pol'] as const).map((u) => (
-              <button
-                key={u}
-                onClick={() => set('measurementUnit', u as any)}
-                className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                  data.measurementUnit === u ? 'bg-[#007AFF] text-white shadow-sm' : 'text-gray-500'
-                }`}
-              >
-                {u}
-              </button>
+      {showMeasurements ? (
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[15px] font-bold text-gray-900">Medidas corporais</h3>
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
+              {(['cm', 'pol'] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => set('measurementUnit', u as any)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                    data.measurementUnit === u ? 'bg-[#007AFF] text-white shadow-sm' : 'text-gray-500'
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[
+              ['Cintura', 'waist'],
+              ['Abdômen', 'abdomen'],
+              ['Quadril', 'hip'],
+              ['Peito', 'chest'],
+              ['Braço', 'arm'],
+              ['Coxa', 'thigh'],
+              ['Panturrilha', 'calf'],
+              ['Pescoço', 'neck'],
+            ].map(([label, key]) => (
+              <Field
+                key={key}
+                label={label}
+                value={(data as any)[key]}
+                onChange={(v) => set(key as any, v)}
+                suffix={data.measurementUnit}
+                placeholder="0"
+              />
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            ['Cintura', 'waist'],
-            ['Abdômen', 'abdomen'],
-            ['Quadril', 'hip'],
-            ['Peito', 'chest'],
-            ['Braço', 'arm'],
-            ['Coxa', 'thigh'],
-            ['Panturrilha', 'calf'],
-            ['Pescoço', 'neck'],
-          ].map(([label, key]) => (
-            <Field
-              key={key}
-              label={label}
-              value={(data as any)[key]}
-              onChange={(v) => set(key as any, v)}
-              suffix={data.measurementUnit}
-              placeholder="0"
-            />
-          ))}
-        </div>
-      </div>
+      ) : (
+        <button
+          onClick={() => setShowMeasurements(true)}
+          className="w-full bg-white border border-dashed border-gray-300 rounded-2xl p-5 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-5 h-5 text-gray-400" />
+          Preencher medidas corporais
+        </button>
+      )}
 
       {/* Observações */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">

@@ -46,14 +46,14 @@ export const SuccessPage: React.FC = () => {
                         setIsPolling(false);
                         setStatusMsg('Consultoria ativada com sucesso!');
                         await fetchData(); // atualiza consultationStatus no contexto → BottomNav aparece
-                        setTimeout(() => navigate('/consultation', { replace: true }), 1500);
+                        setTimeout(() => finish(), 1500);
                         return;
                     }
                     if (!syncError && syncData?.isPro) {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Assinatura PRO ativada com sucesso!');
-                        setTimeout(() => navigate('/', { replace: true }), 2000);
+                        setTimeout(() => finish(), 2000);
                         return;
                     }
                 } catch (syncErr) {
@@ -74,7 +74,7 @@ export const SuccessPage: React.FC = () => {
                 setIsConfirmed(true);
                 setIsPolling(false);
                 setStatusMsg('Status PRO confirmado!');
-                setTimeout(() => navigate('/', { replace: true }), 2000);
+                setTimeout(() => finish(), 2000);
                 return;
             }
 
@@ -127,7 +127,7 @@ export const SuccessPage: React.FC = () => {
                     setIsConfirmed(true);
                     setIsPolling(false);
                     setStatusMsg('Assinatura confirmada com sucesso!');
-                    setTimeout(() => navigate('/', { replace: true }), 2000);
+                    setTimeout(() => finish(), 2000);
                     return;
                 }
                 
@@ -183,7 +183,7 @@ export const SuccessPage: React.FC = () => {
         }
 
         await fetchData();
-        navigate('/', { replace: true }); // PRO vai para home
+        navigate('/consultoria?ref=success', { replace: true }); // PRO vai para upsell
     };
 
     return (

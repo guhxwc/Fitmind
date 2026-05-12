@@ -91,13 +91,16 @@ serve(async (req) => {
       }
     }
 
+    const hasQueryParams = returnUrl.includes('?');
+    const separator = hasQueryParams ? '&' : '?';
+
     // 2. Criar a sessão de checkout
     const sessionConfig: any = {
       customer_email: email && email.trim() !== "" ? email : undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      success_url: `${returnUrl}?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${returnUrl.replace('/success', '')}?payment_canceled=true`,
+      success_url: `${returnUrl}${separator}payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${returnUrl.replace('/success', '')}${separator}payment_canceled=true`,
       client_reference_id: userId,
       metadata: metadata,
       allow_promotion_codes: true,

@@ -72,7 +72,7 @@ export const ConsultationUpsell: React.FC<ConsultationUpsellProps> = ({ onAccept
                      initial={{ y: 20, opacity: 0 }}
                      animate={{ y: 0, opacity: 1 }}
                      transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                     src="https://allanstachuk.my.canva.site/c-pia-de-presencial/_assets/media/a363b4bf95e991cec48ec623905cfc44.png"
+                     src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png"
                      alt="Dr. Allan Stachuk"
                      className="w-full h-auto object-contain object-bottom drop-shadow-[0_15px_35px_rgba(0,0,0,0.35)]"
                   />

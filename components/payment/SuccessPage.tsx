@@ -7,7 +7,7 @@ import { CheckCircleIcon, ChevronRightIcon, SparklesIcon } from '../core/Icons';
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { fetchData, session } = useAppContext();
+    const { fetchData, session, loading } = useAppContext();
     const [statusMsg, setStatusMsg] = useState('Ativando sua conta PRO...');
     const [isPolling, setIsPolling] = useState(true);
     const [isConfirmed, setIsConfirmed] = useState(false);
@@ -15,12 +15,13 @@ export const SuccessPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (loading) return; // Aguarda a sessão carregar no AppContext
         if (!session) {
             navigate('/auth', { replace: true });
             return;
         }
         activatePro();
-    }, [session]);
+    }, [session, loading]);
 
     const activatePro = async () => {
         if (!session) return;

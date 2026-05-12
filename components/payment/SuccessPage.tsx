@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 import { CheckCircleIcon, ChevronRightIcon, SparklesIcon } from '../core/Icons';
+import { track, AnalyticsEvent, setUserProperties } from '../../lib/analytics';
 
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
@@ -13,6 +14,13 @@ export const SuccessPage: React.FC = () => {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const isConsultation = searchParams.get('type') === 'consultation';
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+      track(AnalyticsEvent.paymentSuccessViewed, {
+        type: isConsultation ? 'consultation' : 'pro',
+        has_session_id: !!searchParams.get('session_id'),
+      });
+    }, []);
 
     useEffect(() => {
         if (loading) return; // Aguarda a sessão carregar no AppContext
@@ -46,6 +54,8 @@ export const SuccessPage: React.FC = () => {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Consultoria ativada com sucesso!');
+                        track('purchase_confirmed', { type: 'consultation' });
+                        setUserProperties({ subscription_status: 'active', has_consultation: true });
                         await fetchData(); // atualiza consultationStatus no contexto → BottomNav aparece
                         setTimeout(() => finish(), 1500);
                         return;

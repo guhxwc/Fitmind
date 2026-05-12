@@ -16,6 +16,7 @@ import {
   Shield, FileSignature, LogOut, Trash2, 
   ChevronRight, Moon, Share2, Copy, X, Users
 } from 'lucide-react';
+import { track, AnalyticsEvent } from '../../lib/analytics';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -321,6 +322,7 @@ export const SettingsTab: React.FC = () => {
     };
 
     const handleLogout = async () => {
+        track(AnalyticsEvent.logoutClicked);
         await supabase.auth.signOut();
         navigate('/auth');
     };
@@ -513,7 +515,7 @@ export const SettingsTab: React.FC = () => {
                         icon={<Moon className="w-5 h-5 text-indigo-500" />}
                         label="Modo Escuro" 
                         isEnabled={theme === 'dark'} 
-                        onToggle={toggleTheme} 
+                        onToggle={() => { track(AnalyticsEvent.themeToggled, { new_theme: theme === 'dark' ? 'light' : 'dark' }); toggleTheme(); }} 
                         isLast
                     />
                 </SettingsGroup>

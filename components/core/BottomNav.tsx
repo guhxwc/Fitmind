@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { HomeIcon, UtensilsIcon, FlameIcon, BarChartIcon, SettingsIcon, CalendarCheckIcon, DietIcon } from './Icons';
 import { MessageCircle } from 'lucide-react';
 import { useAppContext } from '../AppContext';
+import { track, AnalyticsEvent } from '../../lib/analytics';
 
 interface NavItemProps {
   to: string;
@@ -17,6 +18,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, label, icon, id }) => {
     <NavLink 
         to={to} 
         id={id}
+        onClick={() => track(AnalyticsEvent.tabSwitched, { to, label })}
         className={({ isActive }) => 
             `flex flex-col items-center justify-center flex-1 transition-all duration-300 ${
                 isActive 

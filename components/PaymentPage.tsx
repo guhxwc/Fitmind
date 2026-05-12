@@ -3,6 +3,7 @@ import { LockIcon, ShieldCheckIcon, ArrowPathIcon } from './core/Icons';
 import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 const STRIPE_PRICE_IDS = {
     monthly: 'price_1TLGPNQdX6ANfRVOQLX7PUUW',
@@ -33,6 +34,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         // PATCHED
         const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;
+        track(AnalyticsEvent.checkoutStarted, { plan: selectedPlan, has_affiliate: !!affiliateCode });
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
@@ -46,6 +48,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
         if (funcError) throw new Error(data?.error || funcError.message);
 
         if (data?.url) {
+            track('checkout_redirected_to_stripe', { plan: selectedPlan });
             window.location.href = data.url;
         } else {
             throw new Error("Erro ao gerar link de pagamento.");
@@ -53,6 +56,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
     } catch (e: any) {
         console.error("[Checkout] Erro:", e);
+        track(AnalyticsEvent.checkoutFailed, { plan: selectedPlan, error: e?.message });
         addToast(e.message || "Erro ao iniciar pagamento.", "error");
     } finally {
         setIsProcessing(false);

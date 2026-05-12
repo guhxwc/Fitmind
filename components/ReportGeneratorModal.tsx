@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import { useToast } from './ToastProvider';
 import { format, subMonths, isAfter, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 // Helper: desenha tabela simples sem jspdf-autotable
 function drawTable(doc: jsPDF, startY: number, headers: string[], rows: string[][]): number {
@@ -63,6 +64,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({ isOp
 
     const generatePDF = async (range: TimeRange) => {
         setIsGenerating(true);
+        track(AnalyticsEvent.reportGenerated, { range });
         try {
             const doc = new jsPDF();
             const now = new Date();

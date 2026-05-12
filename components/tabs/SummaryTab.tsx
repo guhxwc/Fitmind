@@ -245,10 +245,12 @@ export const SummaryTab: React.FC = () => {
 
   const handleAddProtein = () => {
       if (!userData.isPro && quickAddProtein >= 5) {
+          track(AnalyticsEvent.proFeatureBlocked, { feature: 'quick_protein_add' });
           setShowProModal(true);
           return;
       }
       setQuickAddProtein(p => p + 5);
+      track(AnalyticsEvent.quickProteinAdded, { grams_added: 5, total_grams: quickAddProtein + 5 });
   };
   const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 5));
   
@@ -555,10 +557,18 @@ export const SummaryTab: React.FC = () => {
                         </MiniControlButton>
                         <MiniControlButton onClick={() => {
                             if (!userData.isPro && currentWater >= 0.2) {
+                                track(AnalyticsEvent.proFeatureBlocked, { feature: 'water_log' });
                                 setShowProModal(true);
                                 return;
                             }
-                            setCurrentWater(w => parseFloat((w + 0.2).toFixed(1)));
+                            const newWater = parseFloat((currentWater + 0.2).toFixed(1));
+                            setCurrentWater(newWater);
+                            track(AnalyticsEvent.waterLogged, {
+                                added_l: 0.2,
+                                total_l: newWater,
+                                target_l: targetMacros?.water,
+                                percent_of_goal: targetMacros?.water ? Math.round((newWater / targetMacros.water) * 100) : null,
+                            });
                         }}>
                             <PlusIcon className="w-5 h-5" />
                         </MiniControlButton>
@@ -742,7 +752,13 @@ export const SummaryTab: React.FC = () => {
           <DatePickerModal
               initialDate={selectedDate}
               maxDate={new Date()}
-              onSelect={(date) => setSelectedDate(date)}
+              onSelect={(date) => {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const pickedStr = date.toISOString().split('T')[0];
+                const daysAgo = Math.round((new Date(todayStr).getTime() - new Date(pickedStr).getTime()) / 86400000);
+                track(AnalyticsEvent.calendarDateChanged, { date: pickedStr, days_ago: daysAgo, is_today: daysAgo === 0 });
+                setSelectedDate(date);
+              }}
               onClose={() => setIsDatePickerOpen(false)}
           />
       )}

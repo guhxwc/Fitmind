@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 interface Props {
   children?: ReactNode;
@@ -22,6 +23,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    track(AnalyticsEvent.errorBoundaryTriggered, {
+      error_message: error.message,
+      error_name: error.name,
+      stack: (error.stack || '').slice(0, 2000),
+      component_stack: (errorInfo.componentStack || '').slice(0, 2000),
+    });
   }
 
   private handleReload = () => {

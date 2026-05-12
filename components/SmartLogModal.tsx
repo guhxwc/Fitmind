@@ -10,6 +10,7 @@ import { FavoriteMealsModal } from './tabs/FavoriteMealsModal';
 import { GoogleGenAI } from "@google/genai";
 import { useScrollLock } from '../hooks/useScrollLock';
 import { CalorieCamCapture, ImageAnalyzingOverlay } from './tabs/CalorieCamCapture';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 interface SmartLogModalProps {
   onClose: () => void;
@@ -69,6 +70,18 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
   
   // Image Processing State
   const [processingImageURL, setProcessingImageURL] = useState<string | null>(null);
+
+  // Track qual modo o usuário escolheu (text/voice/camera/manual/favorites)
+  useEffect(() => {
+    if (mode !== 'menu') {
+      track(AnalyticsEvent.mealLogModeSelected, {
+        mode,
+        initial_mode: initialMode || null,
+        meal_type: initialMealType || null,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
     if (isRecording) {
@@ -351,13 +364,16 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
             notes: ''
           });
           setMode('review');
+          track(AnalyticsEvent.aiFoodSearchUsed, { source, ingredient_count: finalIngredients.length, success: true });
       } else {
           addToast('Não foi possível identificar ingredientes da refeição.', 'error');
+          track(AnalyticsEvent.mealLogFailed, { source, reason: 'no_ingredients_identified' });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       addToast('Não entendi. Tente detalhar melhor.', 'error');
+      track(AnalyticsEvent.mealLogFailed, { source, reason: 'ai_error', error: error?.message });
     } finally {
       setIsProcessing(false);
       setProcessingImageURL(null);
@@ -395,6 +411,14 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
     updateStreak();
     addToast('Refeição salva!', 'success');
+    track(AnalyticsEvent.mealLogged, {
+      source: 'smart_log_ai',
+      input_mode: mode === 'review' ? (initialMode || 'unknown') : mode,
+      meal_type: reviewData.type,
+      ingredient_count: reviewData.ingredients.length,
+      calories: Math.round(totalKcal),
+      protein_g: Math.round(totalProtein),
+    });
     onClose();
   };
 

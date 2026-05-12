@@ -3,6 +3,7 @@ import { Copy, CheckCircle2, Gift, Sparkles, Trophy, ChevronLeft, Share } from '
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 export const ReferralDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export const ReferralDashboard: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    track(AnalyticsEvent.referralDashboardViewed);
   }, []);
 
   const [referralCount, setReferralCount] = useState(0);
@@ -44,6 +46,7 @@ export const ReferralDashboard: React.FC = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    track(AnalyticsEvent.referralShareClicked, { method: 'copy_link' });
   };
 
   const handleShare = async () => {
@@ -54,6 +57,7 @@ export const ReferralDashboard: React.FC = () => {
           text: 'Comece sua jornada no FitMind comigo e ganhe benefícios exclusivos!',
           url: referralLink,
         });
+        track(AnalyticsEvent.referralShareClicked, { method: 'native_share' });
       } catch (err) {
         console.log('Erro ao compartilhar', err);
       }

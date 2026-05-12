@@ -28,6 +28,17 @@ import { SubscriptionPage } from '../SubscriptionPage';
 import { supabase } from '../../supabaseClient';
 
 import { useAppContext } from '../AppContext';
+import { track, AnalyticsEvent } from '../../lib/analytics';
+
+// Nomes amigáveis dos steps para o funil no PostHog. Ordem = array `steps` abaixo.
+const ONBOARDING_STEP_NAMES = [
+  'welcome','glp_status','medication','dose','craving_day','frequency',
+  'gender','age','measurements','start_date','start_weight','target_weight',
+  'weight_gap','pace','activity_level','success_graph','side_effects',
+  'motivation','social_proof','name','journey_duration','biggest_frustration',
+  'future_worry','one_thing','dream_outcome','monthly_investment',
+  'comparison','analyzing','final_plan',
+] as const;
 
 // Funnel Steps
 import { 
@@ -126,6 +137,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
         }
       }
       
+      // Track step view para funil PostHog
+      if (!isLoading) {
+        track(AnalyticsEvent.onboardingStepViewed, {
+          step_index: step,
+          step_name: ONBOARDING_STEP_NAMES[step] || `step_${step}`,
+          total_steps: TOTAL_STEPS,
+        });
+      }
+
       // Scroll to top on step change
       const root = document.getElementById('root');
       if (root) {
@@ -133,6 +153,30 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
       }
       window.scrollTo(0, 0);
   }, [step, initialStep, userData, userId, isLoading]);
+
+  // Fire once quando isLoading vira false
+  useEffect(() => {
+    if (!isLoading) track(AnalyticsEvent.onboardingStarted, { initial_step: step });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  // Detecta abandono do onboarding no F5 / fechar aba
+  useEffect(() => {
+    const handleUnload = () => {
+      if (step < ONBOARDING_STEP_NAMES.length - 1) {
+        track(AnalyticsEvent.onboardingAbandoned, {
+          step_index: step,
+          step_name: ONBOARDING_STEP_NAMES[step] || `step_${step}`,
+        });
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+    };
+  }, [step]);
 
   const nextStep = () => setStep((prev) => prev + 1);
   const prevStep = () => setStep((prev) => Math.max(0, prev - 1));

@@ -26,6 +26,8 @@ import { AnamnesisForm } from './components/consultation/AnamnesisForm';
 import { SubscriptionPage } from './components/SubscriptionPage';
 import { NutriPanel } from './components/nutri/NutriPanel'; // <-- Added NutriPanel import
 import { NutriRoleSelection } from './components/nutri/NutriRoleSelection';
+import { PostHogPageView } from './components/PostHogPageView';
+import { identifyUser, resetAnalytics, setUserProperties, track, AnalyticsEvent } from './lib/analytics';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -106,8 +108,23 @@ const AppContent: React.FC = () => {
         localStorage.removeItem('trial_results_dismissed');
         localStorage.removeItem('trial_final_plan_dismissed');
       }
+      setUserProperties({
+        is_pro: !!userData.isPro,
+        subscription_status: userData.subscriptionStatus || 'free',
+        plan: userData.isPro ? 'pro' : 'free',
+        glp_status: userData.glpStatus,
+        medication: userData.medication,
+        gender: userData.gender,
+        age: userData.age,
+        activity_level: userData.activityLevel,
+        streak: userData.streak,
+        is_nutritionist: isNutritionist,
+        height_cm: userData.height,
+        current_weight_kg: userData.weight,
+        target_weight_kg: userData.targetWeight,
+      });
     }
-  }, [userData, contextLoading]);
+  }, [userData, contextLoading, isNutritionist]);
 
   useEffect(() => {
     // Desativar a restauração automática de scroll do navegador
@@ -134,7 +151,13 @@ const AppContent: React.FC = () => {
         }
       } else {
         setSession(session);
-        if (session) fetchProfile(session.user.id);
+        if (session) {
+          identifyUser(session.user.id, {
+            email: session.user.email,
+            provider: session.user.app_metadata?.provider,
+          });
+          fetchProfile(session.user.id);
+        }
       }
     });
 
@@ -146,13 +169,21 @@ const AppContent: React.FC = () => {
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
-        // Limpa a escolha de papel para que o usuário veja a tela na próxima sessão
+        resetAnalytics(); // Limpa distinct_id — crítico em computadores compartilhados
         try {
           sessionStorage.removeItem('nutri_role_choice');
         } catch { /* ignore */ }
         setNutriRoleChoice(null);
       } else {
         setSession(session);
+        identifyUser(session.user.id, {
+          email: session.user.email,
+          provider: session.user.app_metadata?.provider,
+          referral_code: localStorage.getItem('affiliate_ref') || undefined,
+        });
+        if (_event === 'SIGNED_IN') {
+          track(AnalyticsEvent.loginCompleted, { provider: session.user.app_metadata?.provider });
+        }
         fetchProfile(session.user.id);
         fetchData();
       }
@@ -291,9 +322,18 @@ const AppContent: React.FC = () => {
         .upsert(profileData, { onConflict: 'id' });
       if (error) {
         console.error("Error saving profile:", error);
+        track(AnalyticsEvent.saveFailed, { context: 'onboarding_complete', error_code: error.code });
         return; // Early return to prevent navigation on error
       } else {
         console.log("✅ Profile salvo com sucesso no onboarding.");
+        track(AnalyticsEvent.onboardingCompleted, {
+          glp_status: userData.glpStatus,
+          medication: userData.medication,
+          activity_level: userData.activityLevel,
+          gender: userData.gender,
+          age: userData.age,
+          pace: userData.pace,
+        });
       }
       await fetchData();
       setProfileExists(true);
@@ -301,6 +341,7 @@ const AppContent: React.FC = () => {
       navigate('/');
     } catch (err) {
       console.error("Critical error during onboarding complete:", err);
+      track(AnalyticsEvent.saveFailed, { context: 'onboarding_complete', error: String(err) });
       return; // Early return to prevent navigation on error
     }
   };
@@ -316,6 +357,7 @@ const AppContent: React.FC = () => {
   return (
     <>
       <ScrollToTop />
+      <PostHogPageView />
       <NotificationSystem />
       <Routes>
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />

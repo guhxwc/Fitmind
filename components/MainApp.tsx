@@ -27,6 +27,7 @@ import { NotificationManager } from './NotificationManager';
 import { CelebrationManager } from './CelebrationManager';
 import { WeightMilestoneModal } from './WeightMilestoneModal';
 import { DietView } from './consultation/DietView';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 export const MainApp: React.FC = () => {
   const { isNutritionist, userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
@@ -96,8 +97,10 @@ export const MainApp: React.FC = () => {
   }, [location.pathname]);
 
   const handleFabAction = (action: 'application' | 'photo' | 'weight' | 'activity' | 'side_effect' | 'meal') => {
+      track('fab_action_clicked', { action });
       switch (action) {
           case 'meal':
+              track(AnalyticsEvent.mealLogStarted, { source: 'fab' });
               setIsMealModalOpen(true);
               break;
           case 'weight':
@@ -128,6 +131,12 @@ export const MainApp: React.FC = () => {
     updateStreak();
     setIsMealModalOpen(false);
     addToast("Refeição registrada!", "success");
+    track(AnalyticsEvent.mealLogged, {
+      meal_type: newMeal.type,
+      calories: newMeal.calories,
+      protein_g: newMeal.protein,
+      source: initialMode || 'unknown',
+    });
   };
 
   const handleAddWeight = async (newWeight: number) => {
@@ -222,12 +231,21 @@ export const MainApp: React.FC = () => {
           setIsWeightModalOpen(false);
           updateStreak();
           addToast("Peso registrado com sucesso!", "success");
-          
+          const deltaFromPrev = parseFloat((newWeight - prevWeight).toFixed(2));
+          track(AnalyticsEvent.weightLogged, {
+            weight_kg: newWeight,
+            previous_weight_kg: prevWeight,
+            delta_kg: deltaFromPrev,
+            delta_from_start_kg: parseFloat((newWeight - (userData.startWeight || prevWeight)).toFixed(2)),
+            target_weight_kg: userData.targetWeight,
+          });
           if (userData.isPro && newWeight !== prevWeight) {
               setWeightMilestoneData({ oldWeight: prevWeight, newWeight });
+              track(AnalyticsEvent.weightMilestoneHit, { old_weight_kg: prevWeight, new_weight_kg: newWeight, delta_kg: deltaFromPrev });
           }
       } catch (error: any) {
           console.error("Error saving weight:", error);
+          track(AnalyticsEvent.saveFailed, { context: 'weight', error: error.message });
           addToast("Erro ao salvar peso: " + (error.message || "Erro desconhecido"), "error");
       }
   };

@@ -4,6 +4,7 @@ import { useToast } from './ToastProvider';
 import { useAppContext } from './AppContext';
 import { motion, AnimatePresence } from "framer-motion";
 import { Syringe, Dumbbell, TrendingUp, Apple } from "lucide-react";
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 // A simple Google icon component
 const GoogleIcon = () => (
@@ -214,6 +215,7 @@ export const Auth: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    track(AnalyticsEvent.oauthStarted, { provider: 'google' });
 
     // Preserva o código de indicação no redirectTo para que sobreviva ao OAuth
     // O Google redireciona de volta para esta URL, onde o App.tsx vai capturá-lo
@@ -229,6 +231,7 @@ export const Auth: React.FC = () => {
       }
     });
     if (error) {
+      track(AnalyticsEvent.loginFailed, { provider: 'google', reason: error.message });
       setError(translateAuthError(error.message));
       setLoading(false);
     }
@@ -239,6 +242,7 @@ export const Auth: React.FC = () => {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    track(AnalyticsEvent.loginAttempted, { provider: 'email' });
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -246,6 +250,7 @@ export const Auth: React.FC = () => {
     });
 
     if (error) {
+      track(AnalyticsEvent.loginFailed, { provider: 'email', reason: error.message });
       setError(translateAuthError(error.message));
     }
     // O onAuthStateChange em App.tsx cuidará do resto
@@ -260,6 +265,7 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError(null);
     setMessage(null);
+    track(AnalyticsEvent.passwordResetRequested);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
@@ -278,6 +284,9 @@ export const Auth: React.FC = () => {
     setLoading(true);
     setError(null);
     setMessage(null);
+    track(AnalyticsEvent.signupStarted, {
+      has_referral: !!(localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref')),
+    });
 
     if (password !== confirmPassword) {
       setError("As senhas não coincidem.");
@@ -301,12 +310,17 @@ export const Auth: React.FC = () => {
 
     if (signUpError) {
       console.error("Erro no SignUp:", signUpError);
+      track(AnalyticsEvent.signupFailed, { reason: signUpError.message });
       setError(translateAuthError(signUpError.message));
       setLoading(false);
       return;
     }
 
     console.log("SignUp realizado com sucesso, aguardando confirmação.");
+    track(AnalyticsEvent.signupCompleted, {
+      provider: 'email',
+      has_referral: !!(localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref')),
+    });
     setView('verify_email');
     setLoading(false);
   };

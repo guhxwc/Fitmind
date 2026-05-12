@@ -1,10 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { PostHogProvider } from 'posthog-js/react';
 import App from './App';
 import { ToastProvider } from './components/ToastProvider';
 import { AppContextProvider } from './components/AppContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { initAnalytics, posthogClient, track, AnalyticsEvent } from './lib/analytics';
+
+// Initialize PostHog as early as possible so the very first events are not lost.
+initAnalytics();
 
 
 // ─── CAPTURA SÍNCRONA DO ?ref= ────────────────────────────────────────────────
@@ -24,6 +29,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
       const newSearch = params.toString() ? '?' + params.toString() : '';
       window.history.replaceState(null, '', window.location.pathname + newSearch + window.location.hash);
       console.log('[Referral] Código capturado e salvo:', code);
+      track(AnalyticsEvent.referralCodeCaptured, { referral_code: code, source: 'url_query' });
     }
   } catch(e) { /* não quebra o app */ }
 })();
@@ -38,13 +44,15 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
-        <ToastProvider>
-          <AppContextProvider>
-            <App />
-          </AppContextProvider>
-        </ToastProvider>
-      </BrowserRouter>
+      <PostHogProvider client={posthogClient}>
+        <BrowserRouter>
+          <ToastProvider>
+            <AppContextProvider>
+              <App />
+            </AppContextProvider>
+          </ToastProvider>
+        </BrowserRouter>
+      </PostHogProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

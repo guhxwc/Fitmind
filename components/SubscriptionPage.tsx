@@ -6,6 +6,7 @@ import { PreSubscriptionPage } from './PreSubscriptionPage';
 import Portal from './core/Portal';
 import type { UserData } from '../types';
 import { useAppContext } from './AppContext';
+import { track, AnalyticsEvent } from '../lib/analytics';
 
 interface SubscriptionPageProps {
   onClose: () => void;
@@ -66,6 +67,13 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [showCheckout, setShowCheckout] = useState(false);
   const { fetchData } = useAppContext();
+
+  useEffect(() => {
+    track(AnalyticsEvent.subscriptionPageViewed, {
+      default_plan: selectedPlan,
+      source: customUserData ? 'onboarding' : 'app',
+    });
+  }, []);
 
   // Preços base
   const baseAnnualPrice = 389.22;
@@ -140,14 +148,14 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             savings="-35% OFF"
                             extraTag={`R$ ${(annualPrice / 365).toFixed(2)}/dia`}
                             isSelected={selectedPlan === 'annual'}
-                            onClick={() => setSelectedPlan('annual')}
+                            onClick={() => { setSelectedPlan('annual'); track(AnalyticsEvent.subscriptionPlanSelected, { plan: 'annual' }); }}
                         />
                         <PlanOption 
                             title="Teste Grátis (14 dias)"
                             price="R$ 0,00 hoje"
                             subtext={`Depois ${formatPrice(monthlyPrice)}/mês`}
                             isSelected={selectedPlan === 'monthly'}
-                            onClick={() => setSelectedPlan('monthly')}
+                            onClick={() => { setSelectedPlan('monthly'); track(AnalyticsEvent.subscriptionPlanSelected, { plan: 'monthly' }); }}
                         />
                     </div>
 

@@ -17,7 +17,7 @@ export const TrialTestModal: React.FC<TrialTestModalProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   const notification = {
-    title: 'Seu teste grátis termina hoje! ⏳',
+    title: 'Sua assinatura chega ao fim em breve! ⏳',
     body: 'Não perca o acesso à sua evolução. Sabia que você pode ganhar 1 mês de FitMind PRO inteiramente grátis? Basta indicar um amigo que também usa medicação GLP-1.',
     primary: 'Ganhar 1 Mês Grátis',
     secondary: 'Agora não, obrigado',

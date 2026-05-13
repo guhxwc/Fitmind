@@ -106,13 +106,6 @@ serve(async (req) => {
       allow_promotion_codes: true,
     };
 
-    // Aplicar 14 dias de teste grátis se for o plano mensal
-    if (priceId === 'price_1TLGPNQdX6ANfRVOQLX7PUUW') {
-      sessionConfig.subscription_data = {
-        trial_period_days: 14,
-      };
-    }
-
     // Adicionar cupom se existir
     if (couponId) {
       sessionConfig.discounts = [{ coupon: couponId }];

@@ -86,7 +86,7 @@ export const LandingPage: React.FC = () => {
                     </button>
                     <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
                         <ShieldCheckIcon className="w-5 h-5 text-green-500" />
-                        14 dias grátis • Cancele quando quiser
+                        Acesso Imediato • Cancele quando quiser
                     </div>
                 </motion.div>
 

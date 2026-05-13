@@ -118,7 +118,7 @@ const ObjectionHandler: React.FC = () => (
         <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 text-center">
             <ShieldCheckIcon className="w-6 h-6 text-gray-900 dark:text-white mx-auto mb-3"/>
             <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">Garantia Blindada</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium">14 dias para testar. Cancele com 1 clique.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Cancele com 1 clique. Sem compromisso.</p>
         </div>
         <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 text-center">
             <CoffeeIcon className="w-6 h-6 text-gray-900 dark:text-white mx-auto mb-3"/>
@@ -334,7 +334,7 @@ export const PreSubscriptionPage: React.FC<PreSubscriptionPageProps> = ({ onCont
                 <div className="max-w-md mx-auto">
                     <div className="mb-4 text-center">
                         <span className="text-[10px] font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full uppercase tracking-wider whitespace-nowrap">
-                            Oferta de 14 Dias Grátis Termina Esse Mês
+                            Assine agora e transforme sua vida
                         </span>
                     </div>
                     <button 

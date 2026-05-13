@@ -18,8 +18,8 @@ const plans = [
     total: 'Por mês',
     highlight: '',
     savings: '',
-    priceId: 'price_1TP5QDQdX6ANfRVOyGh6llu7',
-    productId: 'prod_UNr8Fb9r6Gz1rz',
+    priceId: 'price_1TW0XUQdX6ANfRVOKkzqf9d2',
+    productId: 'prod_UV0Y4d9WzidayW',
     benefits: [
       'Avaliação inicial completa',
       'Plano alimentar personalizado',
@@ -36,8 +36,8 @@ const plans = [
     total: 'Total: R$ 561,00',
     highlight: 'MAIS ESCOLHIDO',
     savings: '',
-    priceId: 'price_1TP5V2QdX6ANfRVOGjPnYBf9',
-    productId: 'prod_UNrDfpi3C3OTUe',
+    priceId: 'price_1TW0XPQdX6ANfRVOfqREp7PG',
+    productId: 'prod_UV0YHFSn7eSHLp',
     benefits: [
       'Tudo do plano mensal',
       '3 meses de acompanhamento contínuo',
@@ -54,8 +54,8 @@ const plans = [
     total: 'Total: R$ 981,00',
     highlight: 'MAIOR ECONOMIA',
     savings: 'Você economiza R$ 201,00 comparado ao plano mensal.',
-    priceId: 'price_1TP5q4QdX6ANfRVOzzrn5Iwt',
-    productId: 'prod_UNrZlDZNB5MDGQ',
+    priceId: 'price_1TW0XIQdX6ANfRVO15Cw5S8J',
+    productId: 'prod_UV0YCmnHb1vL5O',
     benefits: [
       'Tudo do plano trimestral',
       '6 meses de acompanhamento premium',

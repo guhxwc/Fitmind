@@ -151,9 +151,9 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                             onClick={() => { setSelectedPlan('annual'); track(AnalyticsEvent.subscriptionPlanSelected, { plan: 'annual' }); }}
                         />
                         <PlanOption 
-                            title="Teste Grátis (14 dias)"
-                            price="R$ 0,00 hoje"
-                            subtext={`Depois ${formatPrice(monthlyPrice)}/mês`}
+                            title="Plano Mensal (30 dias)"
+                            price={formatPrice(monthlyPrice)}
+                            subtext="Recorrente Mensal"
                             isSelected={selectedPlan === 'monthly'}
                             onClick={() => { setSelectedPlan('monthly'); track(AnalyticsEvent.subscriptionPlanSelected, { plan: 'monthly' }); }}
                         />
@@ -194,7 +194,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({ onClose, onS
                         className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2 relative overflow-hidden group"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 translate-x-[-200%] animate-[shimmer_2s_infinite]"></div>
-                        {selectedPlan === 'monthly' ? 'Iniciar teste grátis de 14 dias' : 'Continuar'}
+                        {selectedPlan === 'monthly' ? 'Assinar plano mensal' : 'Continuar'}
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
                 </div>

@@ -117,7 +117,7 @@ export const TrialResultsScreen: React.FC<TrialResultsScreenProps> = ({ onClose 
                                 <StarIcon className="w-8 h-8 text-white" />
                             </div>
                             <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight">
-                                Seu período de teste<br/>chegou ao fim.
+                                Sua assinatura<br/>chegou ao fim.
                             </h1>
                         </div>
                     </div>

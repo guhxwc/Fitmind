@@ -6,8 +6,8 @@ import { useToast } from './ToastProvider';
 import { track, AnalyticsEvent } from '../lib/analytics';
 
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1TLGPNQdX6ANfRVOQLX7PUUW',
-    annual: 'price_1TLaEjQdX6ANfRVODeRwS05F'
+    monthly: 'price_1TW0XiQdX6ANfRVOK4D8qmHu',
+    annual: 'price_1TW0XWQdX6ANfRVOO7wcWH65'
 };
 
 interface PaymentPageProps {
@@ -77,7 +77,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 mb-8 text-left border border-gray-100 dark:border-gray-800">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Plano Selecionado</p>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind PRO' : 'Teste Grátis de 14 dias (FitMind PRO)'}
+                            {selectedPlan === 'annual' ? 'Assinatura Anual FitMind PRO' : 'Plano Mensal FitMind PRO'}
                         </p>
                     </div>
 

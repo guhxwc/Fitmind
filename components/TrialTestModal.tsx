@@ -18,8 +18,8 @@ export const TrialTestModal: React.FC<TrialTestModalProps> = ({ isOpen, onClose 
 
   const notification = {
     title: 'Sua assinatura chega ao fim em breve! ⏳',
-    body: 'Não perca o acesso à sua evolução. Sabia que você pode ganhar 1 mês de FitMind PRO inteiramente grátis? Basta indicar um amigo que também usa medicação GLP-1.',
-    primary: 'Ganhar 1 Mês Grátis',
+    body: 'Não perca o acesso à sua evolução. Sabia que você pode ganhar 1 mês de FitMind PRO como bônus? Basta indicar um amigo que também usa medicação GLP-1.',
+    primary: 'Ganhar 1 Mês de Bônus',
     secondary: 'Agora não, obrigado',
     icon: <Clock className="w-8 h-8 text-blue-500" />
   };

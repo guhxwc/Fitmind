@@ -95,10 +95,11 @@ serve(async (req) => {
     const separator = hasQueryParams ? '&' : '?';
 
     // 2. Criar a sessão de checkout
+    const price = await stripe.prices.retrieve(priceId);
     const sessionConfig: any = {
       customer_email: email && email.trim() !== "" ? email : undefined,
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
+      mode: price.type === 'recurring' ? 'subscription' : 'payment',
       success_url: `${returnUrl}${separator}payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl.replace('/success', '')}${separator}payment_canceled=true`,
       client_reference_id: userId,

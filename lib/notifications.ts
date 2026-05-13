@@ -264,7 +264,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     type: 'modal',
     priority: 6,
     title: 'Conhece alguém que usa Monjaro?',
-    body: 'Manda seu link exclusivo e vocês dois ganham 1 semana grátis. Você ajuda um amigo e economiza.',
+    body: 'Manda seu link exclusivo e vocês dois ganham bônus exclusivos. Você ajuda um amigo e economiza.',
     primaryAction: { label: 'Compartilhar link', action: 'share_referral' },
     secondaryAction: { label: 'Agora não', action: 'snooze_7d' },
     evaluateTrigger: (ctx) => ctx.isSubscriber && ctx.subscriberDays === 14,
@@ -284,7 +284,7 @@ export const NOTIFICATIONS: AppNotification[] = [
     type: 'modal',
     priority: 6,
     title: 'Seu resultado foi incrível essa semana!',
-    body: 'Que tal compartilhar o FitMind com alguém que também usa caneta? Seu link exclusivo dá 7 dias grátis pra pessoa.',
+    body: 'Que tal compartilhar o FitMind com alguém que também usa caneta? Seu link dá benefícios especiais para quem entrar pelo seu link.',
     primaryAction: { label: 'Compartilhar agora', action: 'share_referral' },
     secondaryAction: { label: 'Talvez depois', action: 'dismiss' },
     evaluateTrigger: (ctx) => ctx.weightDiff !== null && ctx.weightDiff < 0 && ctx.currentTime.getDay() === 5, // Example: trigger on Fridays if lost weight

@@ -48,11 +48,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, onClose
         if (index !== lastIndexObj.value) {
           if (lastIndexObj.value >= 0 && lastIndexObj.value < container.children.length) {
              const oldSpan = container.children[lastIndexObj.value].firstChild as HTMLElement;
-             if (oldSpan) oldSpan.className = "text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90";
+             if (oldSpan) oldSpan.className = "text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90 transition-all duration-150";
           }
           if (index >= 0 && index < container.children.length) {
              const newSpan = container.children[index].firstChild as HTMLElement;
-             if (newSpan) newSpan.className = "text-3xl font-bold text-black dark:text-white scale-110";
+             if (newSpan) newSpan.className = "text-3xl font-bold text-black dark:text-white scale-110 transition-all duration-150";
           }
           lastIndexObj.value = index;
         }
@@ -63,7 +63,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, onClose
       // Initial style setup
       if (lastIndexObj.value >= 0 && lastIndexObj.value < container.children.length) {
          const initialSpan = container.children[lastIndexObj.value].firstChild as HTMLElement;
-         if (initialSpan) initialSpan.className = "text-3xl font-bold text-black dark:text-white scale-110";
+         if (initialSpan) initialSpan.className = "text-3xl font-bold text-black dark:text-white scale-110 transition-all duration-150";
       }
 
       return update;
@@ -103,7 +103,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, onClose
         >
           {hoursList.map((h, i) => (
             <div key={i} className="h-12 flex items-center justify-center snap-center">
-              <span className="text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90">
+              <span className="text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90 transition-all duration-150">
                 {String(h).padStart(2, '0')}
               </span>
             </div>
@@ -119,7 +119,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, onClose
         >
           {minutesList.map((m, i) => (
             <div key={i} className="h-12 flex items-center justify-center snap-center">
-              <span className="text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90">
+              <span className="text-3xl font-medium text-gray-300 dark:text-gray-600 scale-90 transition-all duration-150">
                 {String(m).padStart(2, '0')}
               </span>
             </div>

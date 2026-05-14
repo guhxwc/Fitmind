@@ -18,40 +18,44 @@ const SelectModal: React.FC<{
     selectedValue: string;
     description?: string;
 }> = ({ title, options, onSelect, onClose, selectedValue, description }) => (
-    <div className="fixed inset-0 bg-black/60 z-[90] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] p-6 animate-slide-up max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
-                <button onClick={onClose} className="text-blue-500 font-semibold">Fechar</button>
-            </div>
-            {description && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-6 flex gap-3 items-start">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl">💡</span>
-                    </div>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 font-medium leading-relaxed">
-                        {description}
-                    </p>
+    <Portal>
+        <div className="fixed inset-0 bg-black/60 z-[90] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] p-6 pb-safe mb-0 pb-12 animate-slide-up max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
+                    <button onClick={onClose} className="text-blue-500 font-semibold p-2 -mr-2">Fechar</button>
                 </div>
-            )}
-            <div className="space-y-2 pb-8">
-                {options.map(opt => (
-                    <button 
-                        key={opt} 
-                        onClick={() => { onSelect(opt); onClose(); }}
-                        className={`w-full p-4 rounded-xl text-left font-semibold text-lg flex justify-between items-center ${
-                            selectedValue === opt 
-                            ? 'bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400' 
-                            : 'text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800'
-                        }`}
-                    >
-                        {opt}
-                        {selectedValue === opt && <span className="text-blue-500">✓</span>}
-                    </button>
-                ))}
+                <div className="overflow-y-auto flex-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {description && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-6 flex gap-3 items-start flex-shrink-0">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-xl">💡</span>
+                            </div>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 font-medium leading-relaxed">
+                                {description}
+                            </p>
+                        </div>
+                    )}
+                    <div className="space-y-2 pb-24">
+                        {options.map((opt, idx) => (
+                            <button 
+                                key={idx} 
+                                onClick={() => { onSelect(opt); onClose(); }}
+                                className={`w-full p-4 rounded-xl text-left font-semibold text-lg flex justify-between items-center ${
+                                    selectedValue === opt 
+                                    ? 'bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400' 
+                                    : 'text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800'
+                                }`}
+                            >
+                                {opt}
+                                {selectedValue === opt && <span className="text-blue-500">✓</span>}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </Portal>
 );
 
 const SettingRow: React.FC<{ 
@@ -125,7 +129,7 @@ export const TreatmentSettings: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black font-sans pb-20">
+        <div className="min-h-screen bg-gray-50 dark:bg-black font-sans pb-32">
             {/* Header */}
             <div className="sticky top-0 z-20 bg-gray-50/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
                 <div className="px-4 h-14 flex items-center justify-between">

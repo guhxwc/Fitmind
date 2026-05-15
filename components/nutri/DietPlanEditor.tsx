@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { calculateAutoGoals } from '../../lib/nutritionGoals';
+import { FoodSearchInput } from '../core/FoodSearchInput';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -146,14 +147,6 @@ const InlineInput: React.FC<{
 
 // ─── Food Database Logic ──────────────────────────────────────────────────────
 
-const MOCK_FOODS: any[] = [
-  { id: "m1",  name: "Arroz branco cozido",         category: "Cereais",     portion_size: 100, portion_unit: "g",     kcal: 128, protein: 2.5,  carbs: 28.1, fat: 0.2 },
-  { id: "m5",  name: "Peito de frango grelhado",    category: "Carnes",      portion_size: 100, portion_unit: "g",     kcal: 159, protein: 32.0, carbs: 0,    fat: 3.2 },
-  { id: "m9",  name: "Ovo inteiro cozido",          category: "Ovos",        portion_size: 50,  portion_unit: "g",     kcal: 78,  protein: 6.3,  carbs: 0.6,  fat: 5.3 },
-  { id: "m22", name: "Banana prata",                category: "Frutas",      portion_size: 100, portion_unit: "g",     kcal: 98,  protein: 1.3,  carbs: 26.0, fat: 0.1 },
-  { id: "m34", name: "Whey protein concentrado",    category: "Suplementos", portion_size: 30,  portion_unit: "g",     kcal: 120, protein: 24.0, carbs: 3.0,  fat: 1.5 },
-];
-
 const makeItemFromFood = (food: any, qty?: number): FoodItem => ({
   id: uid(),
   food_id: food.id,
@@ -169,293 +162,16 @@ const makeItemFromFood = (food: any, qty?: number): FoodItem => ({
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 
-const FoodCreateForm: React.FC<{ initialName: string; onCreate: (f: any) => void; onCancel: () => void }> = ({ initialName, onCreate, onCancel }) => {
-  const [form, setForm] = useState({
-    name: initialName,
-    portion_size: 100,
-    portion_unit: 'g',
-    kcal: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0
-  });
-
-  const isValid = form.name.trim().length > 0 && form.portion_size > 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="p-5 space-y-4"
-    >
-      <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Novo Alimento</h3>
-        <button onClick={onCancel} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Nome do Alimento</label>
-          <input
-            autoFocus
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            className="w-full bg-gray-50 dark:bg-[#2C2C2E] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[14px] outline-none transition-all"
-            placeholder="Ex: Granola Caseira"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Portação Base</label>
-            <div className="flex bg-gray-50 dark:bg-[#2C2C2E] rounded-xl overflow-hidden px-3 border border-transparent focus-within:border-blue-500 transition-all">
-              <input
-                type="number"
-                value={form.portion_size === 0 ? '' : form.portion_size}
-                onChange={e => setForm({ ...form, portion_size: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                placeholder="0"
-                className="w-full bg-transparent py-2.5 text-[14px] outline-none"
-              />
-              <select 
-                value={form.portion_unit}
-                onChange={e => setForm({ ...form, portion_unit: e.target.value })}
-                className="bg-transparent text-[12px] font-bold text-blue-500 outline-none"
-              >
-                <option value="g">g</option>
-                <option value="ml">ml</option>
-                <option value="un">un</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">Calorias (kcal)</label>
-            <input
-              type="number"
-              value={form.kcal === 0 ? '' : form.kcal}
-              onChange={e => setForm({ ...form, kcal: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-              placeholder="0"
-              className="w-full bg-gray-50 dark:bg-[#2C2C2E] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[14px] outline-none transition-all"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-[11px] font-bold text-blue-500 uppercase tracking-widest block mb-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Prot (g)
-            </label>
-            <input
-              type="number"
-              value={form.protein === 0 ? '' : form.protein}
-              onChange={e => setForm({ ...form, protein: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-              placeholder="0"
-              className="w-full bg-blue-50/30 dark:bg-blue-500/5 border border-transparent focus:border-blue-500 rounded-xl px-3 py-2 text-[13px] outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-teal-500 uppercase tracking-widest block mb-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-500" /> Carb (g)
-            </label>
-            <input
-              type="number"
-              value={form.carbs === 0 ? '' : form.carbs}
-              onChange={e => setForm({ ...form, carbs: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-              placeholder="0"
-              className="w-full bg-teal-50/30 dark:bg-teal-500/5 border border-transparent focus:border-teal-500 rounded-xl px-3 py-2 text-[13px] outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-amber-500 uppercase tracking-widest block mb-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Gord (g)
-            </label>
-            <input
-              type="number"
-              value={form.fat === 0 ? '' : form.fat}
-              onChange={e => setForm({ ...form, fat: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-              placeholder="0"
-              className="w-full bg-amber-50/30 dark:bg-amber-500/5 border border-transparent focus:border-amber-500 rounded-xl px-3 py-2 text-[13px] outline-none transition-all"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-2 flex gap-2">
-        <button
-          onClick={onCancel}
-          className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-[#2C2C2E] transition-all"
-        >
-          Cancelar
-        </button>
-        <button
-          disabled={!isValid}
-          onClick={() => onCreate({ id: uid(), ...form })}
-          className="flex-[2] py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-xl text-[13px] font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
-        >
-          <CheckCircle className="w-4 h-4" /> Adicionar ao Plano
-        </button>
-      </div>
-    </motion.div>
-  );
-};
-
-const FoodSearch: React.FC<{ onPick: (f: any) => void; onClose: () => void }> = ({ onPick, onClose }) => {
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let active = true;
-    const fetchFoods = async () => {
-      if (isCreating) return;
-      const cleanQ = q.trim();
-      
-      setLoading(true);
-      try {
-        let data: any[] | null = null;
-        let error: any = null;
-
-        if (cleanQ) {
-          // Busca inteligente com ranking por relevância
-          const res = await supabase.rpc('search_foods', { p_query: cleanQ, p_limit: 20 });
-          data = res.data;
-          error = res.error;
-        } else {
-          // Sem query: lista alfabética com is_common no topo
-          const res = await supabase.from('foods').select('*')
-            .order('is_common', { ascending: false })
-            .order('name')
-            .limit(20);
-          data = res.data;
-          error = res.error;
-        }
-
-        if (active) {
-          if (!error && data && data.length > 0) {
-            setResults(data);
-          } else {
-            // Se não houver resultados no banco ou der erro, filtra do mock apenas para não ficar vazio no demo
-            const filteredMock = MOCK_FOODS.filter(f => 
-              f.name.toLowerCase().includes(cleanQ.toLowerCase()) || 
-              cleanQ === ""
-            );
-            setResults(filteredMock);
-          }
-        }
-      } catch (err) {
-        console.error("Search error:", err);
-        if (active) setResults(MOCK_FOODS.filter(f => f.name.toLowerCase().includes(cleanQ.toLowerCase())));
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    const t = setTimeout(fetchFoods, 300);
-    return () => {
-      active = false;
-      clearTimeout(t);
-    };
-  }, [q, isCreating]);
-
-  if (isCreating) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute top-full left-0 mt-2 w-full max-w-md bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-[#2C2C2E] rounded-2xl shadow-2xl z-[150] overflow-hidden"
-      >
-        <FoodCreateForm initialName={q} onCreate={onPick} onCancel={() => setIsCreating(false)} />
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="absolute top-full left-0 mt-2 w-full max-w-md bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-[#2C2C2E] rounded-2xl shadow-2xl z-[150] overflow-hidden"
-    >
-      <div className="p-3 border-b border-gray-100 dark:border-[#2C2C2E] flex items-center gap-2">
-        <Search className="w-4 h-4 text-gray-400" />
-        <input
-          autoFocus
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="Buscar no banco de alimentos..."
-          className="flex-1 bg-transparent outline-none text-[14px]"
-        />
-        <X onClick={onClose} className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
-      </div>
-      <div className="max-h-60 overflow-y-auto overflow-x-hidden">
-        {loading && (
-          <div className="p-8 text-center">
-            <Loader2 className="w-6 h-6 text-blue-500 animate-spin mx-auto mb-2" />
-            <div className="text-[12px] text-gray-400">Buscando na base TACO...</div>
-          </div>
-        )}
-        {!loading && results.length === 0 && q.trim().length > 0 && (
-          <div className="p-8 text-center">
-            <div className="text-gray-400 text-[13px] mb-4">Nenhum alimento encontrado para "{q}"</div>
-            <button
-              onClick={() => setIsCreating(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold shadow-lg shadow-blue-500/20 transition-all"
-            >
-              <Plus className="w-4 h-4" /> Criar "{q}" agora
-            </button>
-          </div>
-        )}
-        {!loading && (results.length > 0 || q.trim() === "") && (
-          <>
-            {results.map(f => (
-              <button
-                key={f.id}
-                onClick={() => onPick(f)}
-                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#2C2C2E] flex items-center justify-between group transition-colors"
-              >
-                <div className="min-w-0 flex-1 pr-4">
-                  <div className="text-[14px] font-medium truncate flex items-center gap-2">
-                    {f.name}
-                  </div>
-                  <div className="text-[11px] text-gray-400">{f.category}</div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-[13px] font-semibold">{r(f.kcal)} kcal</div>
-                  <div className="text-[11px] text-gray-400">/{f.portion_size}{f.portion_unit}</div>
-                </div>
-              </button>
-            ))}
-            {q.trim().length > 0 && (
-              <button
-                onClick={() => setIsCreating(true)}
-                className="w-full text-left px-4 py-3 border-t border-gray-100 dark:border-[#2C2C2E] hover:bg-blue-50 dark:hover:bg-blue-500/5 text-blue-500 flex items-center gap-2 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="text-[13px] font-bold">Não encontrou? Criar novo alimento</span>
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
-
 const MealCard: React.FC<{
   meal: Meal;
   onUpdate: (m: Meal) => void;
   onRemove: () => void;
   onDuplicate: () => void;
 }> = ({ meal, onUpdate, onRemove, onDuplicate }) => {
-  const [showSearch, setShowSearch] = useState(false);
   const totals = mealTotals(meal);
 
-  const addItem = (food: any) => {
-    onUpdate({ ...meal, items: [...meal.items, makeItemFromFood(food)] });
-    setShowSearch(false);
+  const addItem = (food: any, grams: number) => {
+    onUpdate({ ...meal, items: [...meal.items, makeItemFromFood(food, grams)] });
   };
 
   const updateItem = (id: string, next: FoodItem) => {
@@ -467,7 +183,7 @@ const MealCard: React.FC<{
   };
 
   return (
-    <div id={`meal-${meal.id}`} className={`bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-[#2C2C2E] rounded-[24px] shadow-sm hover:shadow-md transition-all relative ${showSearch ? 'z-[160]' : 'z-auto'}`}>
+    <div id={`meal-${meal.id}`} className={`bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-[#2C2C2E] rounded-[24px] shadow-sm hover:shadow-md transition-all relative z-auto`}>
       <div className="p-4 sm:p-5 border-b border-gray-50 dark:border-[#2C2C2E] flex flex-wrap items-center justify-between gap-4 rounded-t-[24px]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
@@ -558,16 +274,13 @@ const MealCard: React.FC<{
 
       <div className="p-4 sm:p-5 bg-gray-50/30 dark:bg-transparent border-t border-gray-50 dark:border-[#2C2C2E] relative rounded-b-[24px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-[300px]">
-            <button
-              onClick={() => setShowSearch(true)}
-              className="flex items-center gap-2 text-[13px] font-semibold text-blue-500 hover:text-blue-600 bg-white dark:bg-[#2C2C2E] dark:hover:bg-[#3C3C3E] px-4 py-2 rounded-xl border border-gray-100 dark:border-transparent transition-all"
-            >
-              <Plus className="w-4 h-4" /> Adicionar alimento
-            </button>
-            <AnimatePresence>
-              {showSearch && <FoodSearch onPick={addItem} onClose={() => setShowSearch(false)} />}
-            </AnimatePresence>
+          <div className="relative flex-1 max-w-[400px]">
+            <FoodSearchInput
+              onSelect={addItem}
+              context="diet_plan"
+              placeholder="Buscar alimento..."
+              defaultGrams={100}
+            />
           </div>
           
           <div className="flex items-center gap-6">

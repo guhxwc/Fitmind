@@ -5,6 +5,7 @@ import { useToast } from '../../ToastProvider';
 import { DietPlan, DietDay, DietMeal, DietIngredient, Weekday, DietQuizAnswers } from '../../../types';
 import { dietService } from '../../../services/dietService';
 import { foodDatabaseService, FoodItem } from '../../../services/foodDatabaseService';
+import { FoodSearchInput } from '../../core/FoodSearchInput';
 import { ChevronRight, RefreshCw, X, Sparkles, Flame, Utensils, Calendar, ChevronLeft } from 'lucide-react';
 import { DietQuiz } from '../DietQuiz';
 import Portal from '../../core/Portal';
@@ -305,7 +306,7 @@ export const DietPlanView: React.FC = () => {
       }
       setManualSearchLoading(true);
       try {
-          const results = await foodDatabaseService.searchFood(query);
+          const results = await foodDatabaseService.searchFoodSimple(query);
           setManualSearchResults(results);
       } catch (err) {
           console.error(err);
@@ -695,40 +696,30 @@ export const DietPlanView: React.FC = () => {
                                 </div>
 
                                 <div className="relative mb-4">
-                                    <input 
-                                        type="text" 
-                                        value={manualSearchQuery}
-                                        onChange={(e) => handleManualSearch(e.target.value)}
-                                        placeholder="Buscar alimento..." 
-                                        className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all"
+                                    <FoodSearchInput
+                                        context="diet_plan"
                                         autoFocus
+                                        defaultGrams={100}
+                                        placeholder="Buscar alimento..."
+                                        onSelect={(item, selectedGrams) => {
+                                            if (!swappingIngredient) return;
+                                            const ratio = selectedGrams / (item.portion_size || 100);
+                                            const swapResult = {
+                                                id: `swap_${Date.now()}`,
+                                                name: item.name,
+                                                amount: `${selectedGrams}g`,
+                                                calories: Math.round(item.kcal * ratio),
+                                                protein: Math.round(item.protein * ratio)
+                                            };
+                                            confirmSwap(swapResult);
+                                            
+                                            const toast = document.createElement('div');
+                                            toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full font-bold text-sm z-50 animate-pop-in shadow-xl';
+                                            toast.innerHTML = 'Item substituído com sucesso! 🥘';
+                                            document.body.appendChild(toast);
+                                            setTimeout(() => toast.remove(), 3000);
+                                        }}
                                     />
-                                    {manualSearchLoading && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
-                                    {manualSearchResults.length > 0 ? (
-                                        manualSearchResults.map(item => (
-                                            <button 
-                                                key={item.id}
-                                                onClick={() => confirmManualSwap(item)}
-                                                className="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-blue-500 dark:hover:border-blue-500 transition-all bg-white dark:bg-gray-900 active:scale-[0.98] shadow-sm"
-                                            >
-                                                <p className="font-bold text-gray-900 dark:text-white text-sm mb-1">{item.name}</p>
-                                                <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 font-medium">
-                                                    <span>Base de dados TACO</span>
-                                                    <span className="text-orange-500 bg-orange-50 dark:bg-orange-900/20 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-800 uppercase">{item.kcal} kcal/100g</span>
-                                                    <span className="text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase">{item.protein}g prot/100g</span>
-                                                </div>
-                                            </button>
-                                        ))
-                                    ) : manualSearchQuery.length >= 2 && !manualSearchLoading ? (
-                                        <p className="text-center text-xs text-gray-400 py-8">Nenhum alimento encontrado.</p>
-                                    ) : (
-                                        <p className="text-center text-xs text-gray-400 py-8">Digite para buscar...</p>
-                                    )}
                                 </div>
                             </div>
                         )}

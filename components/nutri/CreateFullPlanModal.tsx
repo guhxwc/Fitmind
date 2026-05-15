@@ -511,185 +511,39 @@ const MealEditModal: React.FC<{
 };
 
 /* ============================================================
-   FOOD SEARCH (busca alimento na tabela TACO)
+   FOOD SEARCH (busca alimento)
 ============================================================ */
 
-type AppFood = Food;
+import { FoodSearchInput } from '../core/FoodSearchInput';
 
 const FoodSearch: React.FC<{ onPick: (food: MealFood) => void }> = ({ onPick }) => {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<AppFood[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [pickedFood, setPickedFood] = useState<AppFood | null>(null);
-  const [amount, setAmount] = useState<string>('100');
-
-  // debounce
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    const t = setTimeout(async () => {
-      try {
-        const { data, error } = await supabase.rpc('search_foods', {
-          p_query: query.trim(),
-          p_limit: 12,
-        });
-        if (error) throw error;
-        setResults((data as AppFood[]) || []);
-      } catch (err) {
-        console.error('[FoodSearch] erro:', err);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  const handleConfirm = () => {
-    if (!pickedFood) return;
-    const amt = Number((amount || '0').replace(',', '.')) || 0;
-    if (amt <= 0) return;
-    const ratio = amt / pickedFood.portion_size;
-    onPick({
-      id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      food_id: pickedFood.id as any, // ID string vindo de foods
-      food_name: pickedFood.name,
-      amount_g: amt,
-      calories: Math.round(Number(pickedFood.kcal) * ratio),
-      protein: Math.round(Number(pickedFood.protein) * ratio * 10) / 10,
-      carbs: Math.round(Number(pickedFood.carbs) * ratio * 10) / 10,
-      fats: Math.round(Number(pickedFood.fat) * ratio * 10) / 10,
-      cal_per_100: Number(pickedFood.kcal) / (pickedFood.portion_size / 100),
-      protein_per_100: Number(pickedFood.protein) / (pickedFood.portion_size / 100),
-      carbs_per_100: Number(pickedFood.carbs) / (pickedFood.portion_size / 100),
-      fats_per_100: Number(pickedFood.fat) / (pickedFood.portion_size / 100),
-    });
-    // Reset
-    setPickedFood(null);
-    setQuery('');
-    setAmount('100');
-    setResults([]);
-    setOpen(false);
-  };
-
-  // Preview macros pra quantidade atual
-  const preview = useMemo(() => {
-    if (!pickedFood) return null;
-    const amt = Number((amount || '0').replace(',', '.')) || 0;
-    const ratio = amt / pickedFood.portion_size;
-    return {
-      cal: Math.round(Number(pickedFood.kcal) * ratio),
-      p: Math.round(Number(pickedFood.protein) * ratio * 10) / 10,
-      c: Math.round(Number(pickedFood.carbs) * ratio * 10) / 10,
-      f: Math.round(Number(pickedFood.fat) * ratio * 10) / 10,
-    };
-  }, [pickedFood, amount]);
-
   return (
     <div className="relative">
       <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-2">Adicionar alimentos</p>
-
-      {/* Estado: alimento escolhido — mostra preview e quantidade */}
-      {pickedFood ? (
-        <div className="bg-[#007AFF]/[0.04] border border-[#007AFF]/20 rounded-xl p-3 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold text-gray-900 truncate">{pickedFood.name}</p>
-              <p className="text-[10px] text-gray-500 font-medium">
-                Por {pickedFood.portion_size}{pickedFood.portion_unit}: {Number(pickedFood.kcal)} kcal • P {Number(pickedFood.protein)}g • C {Number(pickedFood.carbs)}g • G {Number(pickedFood.fat)}g
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setPickedFood(null)}
-              className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-white shrink-0"
-              title="Trocar alimento"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="text-[11px] font-bold text-gray-600 shrink-0">Quantidade:</label>
-            <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#007AFF]">
-              <input
-                type="number"
-                min={1}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-[80px] text-[13px] font-bold text-gray-900 text-right outline-none px-3 py-2 bg-transparent"
-                autoFocus
-              />
-              <span className="text-[11px] font-bold text-gray-500 pr-3">{pickedFood.portion_unit}</span>
-            </div>
-            {preview && (
-              <span className="text-[11px] text-gray-600 font-semibold">
-                = {preview.cal} kcal • P {preview.p}g • C {preview.c}g • G {preview.f}g
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleConfirm}
-            className="w-full bg-[#007AFF] text-white text-[13px] font-bold py-2.5 rounded-xl hover:bg-[#0056b3] transition-colors flex items-center justify-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" strokeWidth={3} /> Adicionar à refeição
-          </button>
-        </div>
-      ) : (
-        // Estado: input de busca
-        <div className="relative">
-          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl focus-within:border-[#007AFF] focus-within:ring-2 focus-within:ring-[#007AFF]/10 transition-all">
-            <Search className="w-4 h-4 text-gray-400 ml-3 shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setOpen(true);
-              }}
-              onFocus={() => setOpen(true)}
-              placeholder="Pesquise um alimento (ex: arroz, frango...)"
-              className="flex-1 bg-transparent px-2.5 py-2.5 text-[13px] font-medium text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal"
-            />
-            {loading && <Loader2 className="w-4 h-4 text-[#007AFF] mr-3 animate-spin shrink-0" />}
-          </div>
-
-          {open && query.trim() && (
-            <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.15)] max-h-[280px] overflow-y-auto">
-              {!loading && results.length === 0 && (
-                <p className="px-3 py-4 text-[12px] text-gray-400 text-center font-medium">Nenhum alimento encontrado.</p>
-              )}
-              {results.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => {
-                    setPickedFood(r);
-                    setAmount(String(r.portion_size)); // Initialize amount to portion size
-                    setOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-b-0 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-bold text-gray-900 truncate flex items-center gap-2">
-                       {r.name}
-                    </p>
-                    <p className="text-[10px] text-gray-500 font-medium truncate">
-                      {r.category || '—'} • {Number(r.kcal)} kcal/{r.portion_size}{r.portion_unit}
-                    </p>
-                  </div>
-                  <Plus className="w-4 h-4 text-[#007AFF] shrink-0" strokeWidth={3} />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="relative">
+        <FoodSearchInput
+          onSelect={(food, grams) => {
+            const ratio = grams / (food.portion_size || 100);
+            onPick({
+              id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              food_id: (food as any).off_id ? (food as any).off_id : food.id,
+              food_name: food.name,
+              amount_g: grams,
+              calories: Math.round(Number(food.kcal) * ratio),
+              protein: Math.round(Number(food.protein) * ratio * 10) / 10,
+              carbs: Math.round(Number(food.carbs) * ratio * 10) / 10,
+              fats: Math.round(Number(food.fat) * ratio * 10) / 10,
+              cal_per_100: Number(food.kcal) / ((food.portion_size || 100) / 100),
+              protein_per_100: Number(food.protein) / ((food.portion_size || 100) / 100),
+              carbs_per_100: Number(food.carbs) / ((food.portion_size || 100) / 100),
+              fats_per_100: Number(food.fat) / ((food.portion_size || 100) / 100),
+            });
+          }}
+          context="diet_plan"
+          placeholder="Pesquise um alimento (ex: arroz, frango...)"
+          defaultGrams={100}
+        />
+      </div>
     </div>
   );
 };

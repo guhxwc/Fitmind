@@ -9,6 +9,9 @@ import { ManualMealModal } from './tabs/ManualMealModal';
 import { FavoriteMealsModal } from './tabs/FavoriteMealsModal';
 import { GoogleGenAI } from "@google/genai";
 import { useScrollLock } from '../hooks/useScrollLock';
+import { useFoodSearch } from '../hooks/useFoodSearch';
+import { foodDatabaseService } from '../services/foodDatabaseService';
+import { FoodSearchInput } from './core/FoodSearchInput';
 import { CalorieCamCapture, ImageAnalyzingOverlay } from './tabs/CalorieCamCapture';
 import { track, AnalyticsEvent } from '../lib/analytics';
 
@@ -48,6 +51,7 @@ export interface ReviewIngredient {
 
 export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMealType, initialMode }) => {
   const { userData, setMeals, updateStreak, setCurrentWater, setWeightHistory, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
+  const { searchBestMatch, selectFood, search } = useFoodSearch({ context: 'meal_log', autoCache: true });
   const { addToast } = useToast();
   const [mode, setMode] = useState<LogMode>(initialMode || 'menu');
   const [input, setInput] = useState('');
@@ -284,75 +288,25 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       
       if (result.ingredients && result.ingredients.length > 0) {
           const ingredientPromises = result.ingredients.map(async (ing: any) => {
-            let foundFood: BaseFood | null = null;
+            const foodItem = await searchBestMatch(
+              ing.name,
+              ing.search_keywords || [],
+              ing.estimated_macros,
+              ing.grams,
+            );
 
-            // Estratégia: tenta cada keyword (em ordem) usando RPC search_foods,
-            // que ranqueia por relevância (match exato > prefixo > palavra inteira > substring,
-            // com boost pra alimentos comuns e penalidade pra "Alimentos preparados").
-            const tryRpcSearch = async (term: string): Promise<BaseFood | null> => {
-              const cleaned = term.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
-              if (cleaned.length < 2) return null;
-              const { data } = await supabase.rpc('search_foods', { p_query: cleaned, p_limit: 1 });
-              return (data && data.length > 0) ? (data[0] as BaseFood) : null;
+            return {
+              id: Math.random().toString(),
+              baseFood: foodItem.source !== 'manual' ? foodItem : null,
+              name: foodItem.name,
+              grams: ing.grams,
+              kcal: foodItem.kcal,
+              protein: foodItem.protein,
+              carbs: foodItem.carbs,
+              fat: foodItem.fat,
+              fiber: foodItem.fiber ?? 0,
+              sodium: foodItem.sodium ?? 0,
             };
-
-            // 1. Tenta com o nome COMPLETO sugerido pela IA ou com todas as keywords juntas primeiro
-            const fullTerm = ing.name || (ing.search_keywords ? ing.search_keywords.join(' ') : '');
-            if (fullTerm) {
-              foundFood = await tryRpcSearch(fullTerm);
-            }
-
-            // 2. Tenta com cada keyword individualmente apenas se não achou nada (Fallback)
-            if (!foundFood && ing.search_keywords && ing.search_keywords.length > 0) {
-              for (const keyword of ing.search_keywords) {
-                // Pula se a keyword sozinha for muito curta ou igual ao termo completo já tentado
-                if (keyword.length < 3 || keyword.toLowerCase() === fullTerm.toLowerCase()) continue;
-                foundFood = await tryRpcSearch(keyword);
-                if (foundFood) break;
-              }
-            }
-
-            // 3. Fallback: primeira palavra do nome do ingrediente
-            if (!foundFood) {
-              const nameFirstWord = ing.name?.split(' ')[0] || '';
-              if (nameFirstWord.length > 2 && nameFirstWord.toLowerCase() !== fullTerm.toLowerCase()) {
-                foundFood = await tryRpcSearch(nameFirstWord);
-              }
-            }
-
-            // 3. Último recurso: nome completo do ingrediente
-            if (!foundFood && ing.name) {
-              foundFood = await tryRpcSearch(ing.name);
-            }
-
-            if (foundFood) {
-              const ratio = ing.grams / (foundFood.portion_size || 100);
-              return {
-                id: Math.random().toString(),
-                baseFood: foundFood,
-                name: foundFood.name,
-                grams: ing.grams,
-                kcal: Math.round(Number(foundFood.kcal || 0) * ratio),
-                protein: Number((Number(foundFood.protein || 0) * ratio).toFixed(1)),
-                carbs: Number((Number(foundFood.carbs || 0) * ratio).toFixed(1)),
-                fat: Number((Number(foundFood.fat || 0) * ratio).toFixed(1)),
-                fiber: Number((Number(foundFood.fiber || 0) * ratio).toFixed(1)),
-                sodium: Math.round(Number(foundFood.sodium || 0) * ratio)
-              };
-            } else {
-               return {
-                id: Math.random().toString(),
-                baseFood: null,
-                name: ing.name,
-                grams: ing.grams,
-                kcal: Math.round(Number(ing.estimated_macros?.kcal || 0)),
-                protein: Number(Number(ing.estimated_macros?.protein || 0).toFixed(1)),
-                carbs: Number(Number(ing.estimated_macros?.carbs || 0).toFixed(1)),
-                fat: Number(Number(ing.estimated_macros?.fat || 0).toFixed(1)),
-                fiber: Number(Number(ing.estimated_macros?.fiber || 0).toFixed(1)),
-                sodium: Math.round(Number(ing.estimated_macros?.sodium || 0))
-              };
-            }
           });
 
           const finalIngredients = await Promise.all(ingredientPromises);
@@ -425,38 +379,46 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
   const searchAndUpdateIngredient = async (id: string, name: string, grams: number) => {
     if (name.trim().length < 2) return;
     try {
-      const cleaned = name.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
-      const { data } = await supabase.rpc('search_foods', { p_query: cleaned, p_limit: 1 });
-      if (data && data.length > 0) {
-        const foundFood = data[0] as BaseFood;
-        const ratio = (grams || 0) / (foundFood.portion_size || 100);
-        
-        setReviewData(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            ingredients: prev.ingredients.map(ing => {
-              if (ing.id === id) {
-                 return {
-                   ...ing,
-                   baseFood: foundFood,
-                   kcal: Math.round(Number(foundFood.kcal || 0) * ratio),
-                   protein: Number((Number(foundFood.protein || 0) * ratio).toFixed(1)),
-                   carbs: Number((Number(foundFood.carbs || 0) * ratio).toFixed(1)),
-                   fat: Number((Number(foundFood.fat || 0) * ratio).toFixed(1)),
-                   fiber: Number((Number(foundFood.fiber || 0) * ratio).toFixed(1)),
-                   sodium: Math.round(Number(foundFood.sodium || 0) * ratio),
-                   name: foundFood.name,
-                 };
-              }
-              return ing;
-            })
-          };
-        });
-        addToast(`${foundFood.name} encontrado!`, 'success');
-      } else {
-        addToast(`Não encontramos "${name}"`, 'error');
+      await search(name);
+      const { local, off } = await foodDatabaseService.searchFood(name, { limit: 1, includeOFF: true });
+      
+      let found: any = null;
+      if (local.length > 0) {
+          found = local[0];
+      } else if (off.length > 0) {
+          found = await foodDatabaseService.cacheOFFFood(off[0], userData?.id);
       }
+
+      if (!found) {
+        addToast(`Não encontramos "${name}"`, 'error');
+        return;
+      }
+
+      found = foodDatabaseService.calcForPortion(found, grams);
+
+      setReviewData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ingredients: prev.ingredients.map(ing => {
+            if (ing.id === id) {
+              return {
+                ...ing,
+                baseFood: found as unknown as BaseFood,
+                kcal: found.kcal,
+                protein: found.protein,
+                carbs: found.carbs,
+                fat: found.fat,
+                fiber: found.fiber ?? 0,
+                sodium: found.sodium ?? 0,
+                name: found.name,
+              };
+            }
+            return ing;
+          }),
+        };
+      });
+      addToast(`${found.name} atualizado!`, 'success');
     } catch (err) {
       console.error(err);
     }
@@ -677,12 +639,30 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                       </div>
                     ))}
                   </div>
-                  <button 
-                     onClick={handleAddNewIngredient}
-                     className="mt-4 p-4 w-full bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 text-sm font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                     + Adicionar ingrediente
-                  </button>
+                  <div className="mt-4">
+                    <FoodSearchInput
+                      onSelect={(food, grams) => {
+                        const ratio = grams / (food.portion_size || 100);
+                        const newIng: ReviewIngredient = {
+                          id: Math.random().toString(),
+                          baseFood: food as unknown as BaseFood,
+                          name: food.name,
+                          grams,
+                          kcal: Math.round(Number(food.kcal) * ratio),
+                          protein: Number((Number(food.protein) * ratio).toFixed(1)),
+                          carbs: Number((Number(food.carbs) * ratio).toFixed(1)),
+                          fat: Number((Number(food.fat) * ratio).toFixed(1)),
+                          fiber: Number((Number(food.fiber || 0) * ratio).toFixed(1)),
+                          sodium: Math.round(Number(food.sodium || 0) * ratio),
+                        };
+                        setReviewData(prev => prev ? { ...prev, ingredients: [...prev.ingredients, newIng] } : prev);
+                        addToast(`${food.name} adicionado!`, 'success');
+                      }}
+                      context="meal_log"
+                      placeholder="+ Buscar e adicionar ingrediente..."
+                      defaultGrams={100}
+                    />
+                  </div>
                 </div>
 
                 {/* Observações */}

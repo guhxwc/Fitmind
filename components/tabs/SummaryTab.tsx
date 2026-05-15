@@ -14,6 +14,7 @@ import { SideEffectModal } from './SideEffectModal';
 import { RegisterWeightModal } from '../RegisterWeightModal';
 import { DatePickerModal } from '../core/DatePickerModal';
 import type { Meal, SideEffect, SideEffectEntry } from '../../types';
+import { track, AnalyticsEvent } from '../../lib/analytics';
 import { UserCircleIcon, ChatBubbleIcon } from '../core/Icons';
 
 const DonutCard: React.FC<{ 

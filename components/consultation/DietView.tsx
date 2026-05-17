@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
 import { ChevronLeft, ChevronRight, MoreHorizontal, Sun, Moon, Utensils, ShoppingBag, Check, Bookmark, Sparkles, Clock, Flame, Droplet, Info, Plus, Coffee, Apple } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { generateContent } from '../../services/geminiClientService';
 
 export const DietView: React.FC = () => {
   const navigate = useNavigate();
@@ -66,26 +66,25 @@ export const DietView: React.FC = () => {
       if (!diet || !diet.displayPlan) return;
       setGeneratingList(true);
       try {
-          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
           const prompt = `Analise este plano de dieta e extraia todos os alimentos necessários. Retorne uma lista de compras otimizada e categorizada (ex: Hortifruti, Açougue, Laticínios, Mercearia).\nPlano: ${JSON.stringify(diet.displayPlan)}`;
           
-          const response = await ai.models.generateContent({
+          const response = await generateContent({
               model: 'gemini-3-flash-preview',
               contents: prompt,
               config: {
                   responseMimeType: "application/json",
                   responseSchema: {
-                      type: Type.ARRAY,
+                      type: "ARRAY",
                       items: {
-                          type: Type.OBJECT,
+                          type: "OBJECT",
                           properties: {
-                              category: { type: Type.STRING },
+                              category: { type: "STRING" },
                               items: {
-                                  type: Type.ARRAY,
+                                  type: "ARRAY",
                                   items: {
-                                      type: Type.OBJECT,
+                                      type: "OBJECT",
                                       properties: {
-                                          name: { type: Type.STRING }
+                                          name: { type: "STRING" }
                                       }
                                   }
                               }

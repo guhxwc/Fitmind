@@ -217,8 +217,20 @@ export const foodDatabaseService = {
 
     if (!res.ok) return [];
 
-    const data = await res.json() as { products?: any[] };
-    const products = data.products || [];
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('[foodDatabase] Resposta OFF não é JSON:', contentType);
+      return [];
+    }
+
+    let data;
+    try {
+      data = await res.json() as { products?: any[] };
+    } catch (err) {
+      console.error('[foodDatabase] Erro ao fazer parse do JSON da OFF:', err);
+      return [];
+    }
+    const products = data?.products || [];
 
     const normalized = products
       .map((p) => this.normalizeOffProduct(p))
@@ -340,20 +352,39 @@ export const foodDatabaseService = {
         return offResultToFoodItem(food);
       }
 
-      // Salva via Edge Function (usa service_role para escrever)
-      const result = await callEdgeFunction({ food_to_cache: food });
-      const newId = (result as unknown as { cached_id: string }).cached_id;
+      // Salva via RPC direto no banco
+      const { data: newId, error } = await supabase.rpc('cache_off_food', {
+        p_off_id: food.off_id,
+        p_name: food.name,
+        p_category: food.category || 'Outros',
+        p_kcal: food.kcal || 0,
+        p_protein: food.protein || 0,
+        p_carbs: food.carbs || 0,
+        p_fat: food.fat || 0,
+        p_fiber: food.fiber || 0,
+        p_sodium: food.sodium || 0,
+        p_calcium: food.calcium || 0,
+        p_portion_size: food.portion_size || 100,
+        p_portion_unit: food.portion_unit || 'g',
+        p_search_terms: food.search_terms || '',
+        p_off_data: food.off_data || {}
+      });
+
+      if (error) {
+        console.error('[foodDatabase] Erro supabase RPC cache_off_food:', error);
+      }
 
       // Log
       if (userId && newId) {
-        await supabase.from('food_search_log').insert({
+        // Tenta inserir no log, ignorando erro caso falhe
+        supabase.from('food_search_log').insert({
           user_id: userId,
           query: food.name,
           source: 'off',
           result_id: newId,
           result_name: food.name,
           context: 'selection',
-        });
+        }).then();
       }
 
       return { ...offResultToFoodItem(food), id: newId || food.id || `off_${food.off_id}` };

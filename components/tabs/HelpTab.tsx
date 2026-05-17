@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GoogleGenAI, Chat } from "@google/genai";
+
+import { generateContent } from '../../services/geminiClientService';
 
 interface Message {
     role: 'user' | 'model';
@@ -58,7 +59,6 @@ export const HelpTab: React.FC = () => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const chatRef = useRef<Chat | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -72,23 +72,26 @@ export const HelpTab: React.FC = () => {
         if (!input.trim() || isLoading) return;
 
         const userMessage: Message = { role: 'user', content: input };
-        setMessages(prev => [...prev, userMessage]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
         setInput('');
         setIsLoading(true);
 
         try {
-            if (!chatRef.current) {
-                const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-                chatRef.current = ai.chats.create({
-                    model: 'gemini-3-flash-preview',
-                    config: {
-                      systemInstruction: "Você é o 'Assistente FitMind', um chatbot amigável e prestativo, especialista no aplicativo FitMind. Sua única função é responder perguntas sobre como usar o aplicativo FitMind, seus recursos (como CalorieCam, planos de dieta e treino com IA, registro de aplicações), a assinatura PRO, e solucionar problemas comuns. Use **negrito** para destacar nomes de recursos ou ações importantes. Seja conciso, claro e use um tom encorajador. NÃO responda a perguntas que não sejam sobre o aplicativo FitMind. Se perguntarem algo fora do escopo, gentilmente redirecione a conversa de volta para o app.",
-                    },
-                });
-            }
-            
-            const response = await chatRef.current.sendMessage({ message: userMessage.content });
-            const modelMessage: Message = { role: 'model', content: response.text || '' };
+            const contents = updatedMessages.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            }));
+
+            const data = await generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: contents,
+                config: {
+                    systemInstruction: "Você é o 'Assistente FitMind', um chatbot amigável e prestativo, especialista no aplicativo FitMind. Sua única função é responder perguntas sobre como usar o aplicativo FitMind, seus recursos (como CalorieCam, planos de dieta e treino com IA, registro de aplicações), a assinatura PRO, e solucionar problemas comuns. Use **negrito** para destacar nomes de recursos ou ações importantes. Seja conciso, claro e use um tom encorajador. NÃO responda a perguntas que não sejam sobre o aplicativo FitMind. Se perguntarem algo fora do escopo, gentilmente redirecione a conversa de volta para o app.",
+                }
+            });
+
+            const modelMessage: Message = { role: 'model', content: data.text || '' };
             setMessages(prev => [...prev, modelMessage]);
 
         } catch (error) {

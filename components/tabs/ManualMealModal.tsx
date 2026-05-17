@@ -3,6 +3,7 @@ import type { Meal } from '../../types';
 import { PlusIcon } from '../core/Icons';
 import Portal from '../core/Portal';
 import { useScrollLock } from '../../hooks/useScrollLock';
+import { FoodSearchInput } from '../core/FoodSearchInput';
 
 interface ManualMealModalProps {
   onClose: () => void;
@@ -18,7 +19,8 @@ const InputField: React.FC<{
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   unit?: string;
   placeholder?: string;
-}> = ({ label, type, value, onChange, unit, placeholder }) => (
+  disabled?: boolean;
+}> = ({ label, type, value, onChange, unit, placeholder, disabled }) => (
     <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
         <div className="relative mt-1">
@@ -27,7 +29,8 @@ const InputField: React.FC<{
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                disabled={disabled}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-black dark:focus:ring-white bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
             />
             {unit && <span className="absolute inset-y-0 right-3 flex items-center text-gray-500 dark:text-gray-400">{unit}</span>}
         </div>
@@ -38,6 +41,8 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
   const [name, setName] = useState(initialName);
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
+  const [carbs, setCarbs] = useState('');
+  const [fat, setFat] = useState('');
   const [mealType, setMealType] = useState(initialMealType || 'Almoço');
 
   useScrollLock(true);
@@ -46,20 +51,33 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
 
   const handleSave = () => {
     const caloriesNum = parseInt(calories, 10);
-    const proteinNum = parseInt(protein, 10);
+    const proteinNum = parseInt(protein, 10) || 0;
+    const carbsNum = parseInt(carbs, 10) || 0;
+    const fatNum = parseInt(fat, 10) || 0;
     
-    if (name.trim() && !isNaN(caloriesNum) && !isNaN(proteinNum) && caloriesNum > 0 && proteinNum >= 0) {
+    if (name.trim() && !isNaN(caloriesNum) && caloriesNum > 0) {
       onAddMeal({
         name: name.trim(),
         calories: caloriesNum,
         protein: proteinNum,
+        carbs: carbsNum,
+        fat: fatNum,
         type: mealType as any,
       });
       onClose();
     }
   };
 
-  const canSave = name.trim() !== '' && calories !== '' && protein !== '';
+  const handleFoodSelect = (food: any, grams: number) => {
+    const ratio = grams / (food.portion_size || 100);
+    setName(`${food.name} (${grams}g)`);
+    setCalories(Math.round(food.kcal * ratio).toString());
+    setProtein((Math.round(food.protein * ratio * 10) / 10).toString());
+    setCarbs((Math.round(food.carbs * ratio * 10) / 10).toString());
+    setFat((Math.round(food.fat * ratio * 10) / 10).toString());
+  };
+
+  const canSave = name.trim() !== '' && calories !== '';
 
   return (
     <Portal>
@@ -94,6 +112,25 @@ export const ManualMealModal: React.FC<ManualMealModalProps> = ({ onClose, onAdd
                       ))}
                   </div>
               </div>
+
+              <div>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Buscar Alimento (Open Food Facts)</label>
+                  <FoodSearchInput
+                      onSelect={handleFoodSelect}
+                      context="meal_log"
+                      placeholder="Buscar para preencher automático..."
+                  />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white dark:bg-black px-3 text-xs font-medium text-gray-500 uppercase tracking-widest">Ou insira manualmente</span>
+                </div>
+              </div>
+
               <InputField 
                   label="Nome da Refeição"
                   type="text"

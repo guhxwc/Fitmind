@@ -7,7 +7,7 @@ import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { ManualMealModal } from './tabs/ManualMealModal';
 import { FavoriteMealsModal } from './tabs/FavoriteMealsModal';
-import { GoogleGenAI } from "@google/genai";
+import { generateContent } from '../services/geminiClientService';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { useFoodSearch } from '../hooks/useFoodSearch';
 import { foodDatabaseService } from '../services/foodDatabaseService';
@@ -162,7 +162,6 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
       const now = new Date();
       const currentTimeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const model = "gemini-3-flash-preview";
 
       const prompt = source === 'image' 
@@ -226,7 +225,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
 
       let response;
       if (source === 'text') {
-        response = await ai.models.generateContent({
+        response = await generateContent({
           model: model,
           contents: `${prompt}\n\nEntrada do usuário: "${input}"`,
           config: { 
@@ -236,7 +235,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
         });
       } else if (source === 'audio') {
         const base64Audio = await blobToBase64(audioBlob!);
-        response = await ai.models.generateContent({
+        response = await generateContent({
           model: model,
           contents: [
             {
@@ -258,7 +257,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
         });
       } else if (source === 'image') {
         const base64Image = await blobToBase64(imageFile!);
-        response = await ai.models.generateContent({
+        response = await generateContent({
           model: model,
           contents: [
             {

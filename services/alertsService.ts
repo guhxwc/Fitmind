@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from "../supabaseClient";
+import { generateContent } from "./geminiClientService";
 
 export interface PatientAlert {
   title: string;
@@ -165,8 +165,6 @@ export const alertsService = {
         },
       };
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-
       const prompt = `Você é um assistente clínico analisando o progresso de um paciente em acompanhamento nutricional.
 Analise o snapshot abaixo e identifique OS 3 MAIORES RISCOS / ALERTAS atuais que o nutricionista deveria ver.
 Seja específico e acionável. Se o paciente estiver bem numa métrica, NÃO liste um alerta para ela.
@@ -183,24 +181,24 @@ Regras:
 
 Retorne APENAS um JSON válido.`;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.OBJECT,
+            type: "OBJECT",
             properties: {
               alerts: {
-                type: Type.ARRAY,
+                type: "ARRAY",
                 items: {
-                  type: Type.OBJECT,
+                  type: "OBJECT",
                   properties: {
-                    title: { type: Type.STRING },
-                    subtitle: { type: Type.STRING },
-                    severity: { type: Type.STRING, enum: ["high", "medium", "low"] },
+                    title: { type: "STRING" },
+                    subtitle: { type: "STRING" },
+                    severity: { type: "STRING", enum: ["high", "medium", "low"] },
                     icon: {
-                      type: Type.STRING,
+                      type: "STRING",
                       enum: ["weight", "protein", "water", "energy", "hunger", "general"],
                     },
                   },

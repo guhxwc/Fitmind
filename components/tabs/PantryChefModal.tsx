@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { RefrigeratorIcon, SparklesIcon, ArrowPathIcon } from '../core/Icons';
 import Portal from '../core/Portal';
 import type { Recipe } from './recipesData';
+import { generateContent } from '../../services/geminiClientService';
 
 interface PantryChefModalProps {
   onClose: () => void;
@@ -21,23 +21,21 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
     setError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-      
       const schema = {
-        type: Type.OBJECT,
+        type: 'OBJECT',
         properties: {
-          id: { type: Type.STRING },
-          name: { type: Type.STRING },
-          description: { type: Type.STRING },
-          ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-          instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-          category: { type: Type.STRING, enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] },
-          prepTime: { type: Type.STRING },
-          difficulty: { type: Type.STRING, enum: ['Fácil', 'Médio', 'Difícil'] },
-          calories: { type: Type.NUMBER },
-          protein: { type: Type.NUMBER },
-          rating: { type: Type.NUMBER },
+          id: { type: 'STRING' },
+          name: { type: 'STRING' },
+          description: { type: 'STRING' },
+          ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
+          instructions: { type: 'ARRAY', items: { type: 'STRING' } },
+          tags: { type: 'ARRAY', items: { type: 'STRING' } },
+          category: { type: 'STRING', enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] },
+          prepTime: { type: 'STRING' },
+          difficulty: { type: 'STRING', enum: ['Fácil', 'Médio', 'Difícil'] },
+          calories: { type: 'NUMBER' },
+          protein: { type: 'NUMBER' },
+          rating: { type: 'NUMBER' },
         },
         required: ['name', 'ingredients', 'instructions', 'calories', 'protein', 'prepTime'],
       };
@@ -51,7 +49,7 @@ export const PantryChefModal: React.FC<PantryChefModalProps> = ({ onClose, onSel
         Retorne a resposta estritamente em JSON.
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {

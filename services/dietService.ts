@@ -1,11 +1,10 @@
 
-import { GoogleGenAI } from "@google/genai";
 import type { UserData, DietQuizAnswers, DietPlan, DietDay, DietMeal, DietIngredient } from '../types';
+import { generateContent } from "./geminiClientService";
 
 export const dietService = {
   async generateDietPlan(user: UserData, preferences: DietQuizAnswers): Promise<DietPlan> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
       const model = "gemini-3.1-pro-preview";
 
       const prompt = `
@@ -77,7 +76,7 @@ export const dietService = {
         }
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: model,
         contents: prompt,
         config: {
@@ -121,9 +120,6 @@ export const dietService = {
 
   async swapIngredient(currentIngredient: DietIngredient, customPreference?: string): Promise<DietIngredient[]> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
-      const model = "gemini-3.1-pro-preview";
-
       const prefText = customPreference ? `Preferência/Restrição do usuário: ${customPreference}` : '';
 
       const prompt = `
@@ -150,8 +146,8 @@ export const dietService = {
         }
       `;
 
-      const response = await ai.models.generateContent({
-          model: model,
+      const response = await generateContent({
+          model: "gemini-3.1-pro-preview",
           contents: prompt,
           config: { responseMimeType: "application/json" }
       });

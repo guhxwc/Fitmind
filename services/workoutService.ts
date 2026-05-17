@@ -1,10 +1,9 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import type { WorkoutQuizAnswers, WorkoutPlan } from "../types";
+import { generateContent } from "./geminiClientService";
 
 export const workoutService = {
   generateWorkoutPlan: async (answers: WorkoutQuizAnswers): Promise<WorkoutPlan> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
     const prompt = `
       Você é um Personal Trainer de elite especializado em musculação e condicionamento físico.
       Crie um plano de treino personalizado baseado nas seguintes informações do usuário:
@@ -41,29 +40,29 @@ export const workoutService = {
     `;
 
     try {
-      const response = await ai.models.generateContent({
+      const response = await generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.ARRAY,
+            type: "ARRAY",
             items: {
-              type: Type.OBJECT,
+              type: "OBJECT",
               properties: {
-                day: { type: Type.NUMBER },
-                focus: { type: Type.STRING },
-                estimatedTime: { type: Type.NUMBER },
+                day: { type: "NUMBER" },
+                focus: { type: "STRING" },
+                estimatedTime: { type: "NUMBER" },
                 exercises: {
-                  type: Type.ARRAY,
+                  type: "ARRAY",
                   items: {
-                    type: Type.OBJECT,
+                    type: "OBJECT",
                     properties: {
-                      name: { type: Type.STRING },
-                      sets: { type: Type.STRING },
-                      reps: { type: Type.STRING },
-                      rest: { type: Type.STRING },
-                      muscleGroups: { type: Type.ARRAY, items: { type: Type.STRING } }
+                      name: { type: "STRING" },
+                      sets: { type: "STRING" },
+                      reps: { type: "STRING" },
+                      rest: { type: "STRING" },
+                      muscleGroups: { type: "ARRAY", items: { type: "STRING" } }
                     },
                     required: ["name", "sets", "reps", "rest", "muscleGroups"]
                   }

@@ -1,12 +1,59 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../AppContext';
 import Portal from './Portal';
+import { supabase } from '../../supabaseClient';
 
 export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
     const { userData } = useAppContext();
     const [showModal, setShowModal] = useState(false);
+    const [weekHistory, setWeekHistory] = useState<Record<number, boolean>>({});
     
+    useEffect(() => {
+        if (!showModal || !userData) return;
+
+        const fetchHistory = async () => {
+            const today = new Date();
+            const offsetLocal = today.getTimezoneOffset() * 60000;
+            const todayLocal = new Date(today.getTime() - offsetLocal);
+            const currentDayOfWeek = todayLocal.getDay(); 
+            
+            // Calcula o início da semana (Domingo) localmente
+            const startOfWeek = new Date(todayLocal);
+            startOfWeek.setDate(todayLocal.getDate() - currentDayOfWeek);
+            const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+            const { data, error } = await supabase
+                .from('streak_history')
+                .select('activity_date')
+                .eq('user_id', userData.id)
+                .gte('activity_date', startOfWeekStr);
+
+            if (!error && data) {
+                const historyMap: Record<number, boolean> = {};
+                data.forEach(row => {
+                    // Adiciona tempo no meio do dia para evitar bug de fuso horário voltando 1 dia
+                    const dateObj = new Date(row.activity_date + 'T12:00:00'); 
+                    historyMap[dateObj.getDay()] = true;
+                });
+                
+                // Se a activity mais recente foi hoje de acordo com o profiles local, marca hoje
+                const todayStr = todayLocal.toISOString().split('T')[0];
+                const lastLocalActivityStr = userData.lastActivityDate 
+                    ? new Date(new Date(userData.lastActivityDate).getTime() - offsetLocal).toISOString().split('T')[0]
+                    : null;
+                    
+                if (lastLocalActivityStr === todayStr) {
+                    historyMap[currentDayOfWeek] = true;
+                }
+
+                setWeekHistory(historyMap);
+            }
+        };
+
+        fetchHistory();
+    }, [showModal, userData]);
+
     if (!userData) return null;
 
     const hasStreak = userData.streak > 0;
@@ -90,19 +137,27 @@ export const StreakBadge: React.FC<{className?: string}> = ({ className }) => {
                             {/* Componente dos Dias da Semana */}
                             <div className="flex justify-between w-full mt-8 mb-2 px-1 z-10">
                                 {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => {
-                                    const today = new Date().getDay();
-                                    const isToday = idx === today;
+                                    const today = new Date();
+                                    const offsetLocal = today.getTimezoneOffset() * 60000;
+                                    const todayLocal = new Date(today.getTime() - offsetLocal);
+                                    const isToday = idx === todayLocal.getDay();
+                                    const hasLogged = weekHistory[idx];
+                                    
                                     return (
                                         <div key={idx} className="flex flex-col items-center gap-3 relative">
-                                            <span className={`text-xs font-bold ${isToday ? 'text-orange-500' : 'text-gray-400'}`}>{day}</span>
+                                            <span className={`text-xs font-bold ${isToday ? 'text-orange-500' : (hasLogged ? 'text-orange-400' : 'text-gray-400')}`}>{day}</span>
                                             <div className="relative">
-                                                {isToday && <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-25"></div>}
+                                                {isToday && !hasLogged && <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-25"></div>}
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 ${
-                                                    isToday 
-                                                        ? 'bg-orange-50 border-2 border-dashed border-orange-400' 
-                                                        : 'bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700'
+                                                    hasLogged
+                                                        ? 'bg-orange-500 text-white shadow-sm'
+                                                        : isToday 
+                                                            ? 'bg-orange-50 border-2 border-dashed border-orange-400' 
+                                                            : 'bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700'
                                                 }`}>
-                                                    {isToday && <div className="w-2 h-2 rounded-full bg-orange-300"></div>}
+                                                    {hasLogged 
+                                                        ? <div className="w-2 h-2 rounded-full bg-white"></div>
+                                                        : isToday && <div className="w-2 h-2 rounded-full bg-orange-300"></div>}
                                                 </div>
                                             </div>
                                         </div>

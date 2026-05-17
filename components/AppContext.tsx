@@ -588,6 +588,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!userData) return;
       
       const today = new Date();
+      // Adjust to local date string to match user's day
+      const offsetLocal = today.getTimezoneOffset() * 60000;
+      const todayLocal = new Date(today.getTime() - offsetLocal);
+      const todayStr = todayLocal.toISOString().split('T')[0];
+      
       const lastActivity = userData.lastActivityDate ? new Date(userData.lastActivityDate) : null;
       
       let newStreak = userData.streak;
@@ -595,15 +600,22 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!lastActivity) {
           newStreak = 1;
       } else {
-          const diffTime = Math.abs(today.getTime() - lastActivity.getTime());
+          const lastActivityLocal = new Date(lastActivity.getTime() - offsetLocal);
+          const lastActivityStr = lastActivityLocal.toISOString().split('T')[0];
+          
+          if (lastActivityStr === todayStr) {
+              return; // Já atualizou hoje
+          }
+          
+          const todayDateOnly = new Date(todayStr);
+          const lastDateOnly = new Date(lastActivityStr);
+          const diffTime = Math.abs(todayDateOnly.getTime() - lastDateOnly.getTime());
           const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           
-          if (diffDays === 0) {
-              return; 
-          } else if (diffDays === 1) {
+          if (diffDays === 1) {
               newStreak += 1;
           } else {
-              newStreak = 1;
+              newStreak = 1; // Quebrou o streak
           }
       }
       
@@ -613,6 +625,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           streak: newStreak, 
           last_activity_date: today.toISOString() 
       }).eq('id', userData.id);
+
+      // Salva no histórico de streak
+      await supabase.from('streak_history').upsert({
+          user_id: userData.id,
+          activity_date: todayStr
+      }, { onConflict: 'user_id, activity_date' });
   };
 
   const setUserDataWithTimestamp: React.Dispatch<React.SetStateAction<UserData | null>> = (value) => {

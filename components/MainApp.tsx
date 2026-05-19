@@ -263,6 +263,7 @@ export const MainApp: React.FC = () => {
             if (idx >= 0) { const newArr = [...prev]; newArr[idx] = data; return newArr; }
             return [data, ...prev];
         });
+        updateStreak();
         setIsSideEffectModalOpen(false);
         addToast("Sintomas registrados.", "success");
     }

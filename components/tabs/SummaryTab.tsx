@@ -251,6 +251,7 @@ export const SummaryTab: React.FC = () => {
           return;
       }
       setQuickAddProtein(p => p + 5);
+      updateStreak();
       track(AnalyticsEvent.quickProteinAdded, { grams_added: 5, total_grams: quickAddProtein + 5 });
   };
   const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 5));
@@ -307,6 +308,7 @@ export const SummaryTab: React.FC = () => {
             if (idx >= 0) { const newArr = [...prev]; newArr[idx] = data; return newArr; }
             return [data, ...prev];
         });
+        updateStreak();
         setIsSideEffectModalOpen(false);
     }
     if (error) console.error("Error saving side effects:", error);
@@ -412,6 +414,20 @@ export const SummaryTab: React.FC = () => {
 
   const dailyRecords = useMemo(() => {
       const recs = [
+          ...meals.map(m => {
+              const [hours = "0", minutes = "0"] = (m.time || "00:00").split(':');
+              const mealDate = new Date(selectedDate);
+              mealDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+              return {
+                  id: `meal-${m.id}`,
+                  type: 'meal',
+                  title: String(m.name || 'Refeição'),
+                  subtitle: `${m.calories} kcal`,
+                  time: m.time || 'Sem hora',
+                  timestamp: mealDate.getTime()
+              };
+          }),
           ...applicationHistory.filter(a => a.date.startsWith(todayStr)).map(a => ({
               id: `app-${a.id}`,
               type: 'application',
@@ -446,7 +462,7 @@ export const SummaryTab: React.FC = () => {
           }))
       ];
       return recs.sort((a, b) => b.timestamp - a.timestamp);
-  }, [applicationHistory, weightHistory, sideEffects, workoutHistory, todayStr]);
+  }, [applicationHistory, weightHistory, sideEffects, workoutHistory, todayStr, meals, selectedDate]);
 
   return (
     <div className="px-5 space-y-6 animate-fade-in relative">
@@ -564,6 +580,7 @@ export const SummaryTab: React.FC = () => {
                             }
                             const newWater = parseFloat((currentWater + 0.2).toFixed(1));
                             setCurrentWater(newWater);
+                            updateStreak();
                             track(AnalyticsEvent.waterLogged, {
                                 added_l: 0.2,
                                 total_l: newWater,
@@ -725,6 +742,7 @@ export const SummaryTab: React.FC = () => {
                                   record.type === 'application' ? <SyringeIcon className="w-5 h-5"/> :
                                   record.type === 'weight' ? <ScaleIcon className="w-5 h-5"/> :
                                   record.type === 'workout' ? <DumbbellIcon className="w-5 h-5"/> :
+                                  record.type === 'meal' ? <UtensilsIcon className="w-5 h-5"/> :
                                   <WavesIcon className="w-5 h-5"/>
                               }
                               title={record.title}
@@ -734,6 +752,7 @@ export const SummaryTab: React.FC = () => {
                                   record.type === 'application' ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' :
                                   record.type === 'weight' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' :
                                   record.type === 'workout' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' :
+                                  record.type === 'meal' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' :
                                   'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
                               }
                           />

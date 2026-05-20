@@ -9,6 +9,8 @@ import { FoodSearchInput } from '../../core/FoodSearchInput';
 import { ChevronRight, RefreshCw, X, Sparkles, Flame, Utensils, Calendar, ChevronLeft } from 'lucide-react';
 import { DietQuiz } from '../DietQuiz';
 import Portal from '../../core/Portal';
+import { LockedDietDayCard } from './LockedDietDayCard';
+import { DietFooterCTA } from './DietFooterCTA';
 
 const DaySelector: React.FC<{ selectedDay: Weekday, onSelect: (day: Weekday) => void }> = ({ selectedDay, onSelect }) => {
   const days: Weekday[] = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
@@ -456,6 +458,11 @@ export const DietPlanView: React.FC = () => {
 
   const currentDayData = displayDietPlan.days.find(d => d.day === selectedDay);
 
+  const daysOfWeek: Weekday[] = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+  const selectedDayIndex = daysOfWeek.indexOf(selectedDay);
+  const isNewSubscriber = !userData?.proStartDate || new Date(userData?.proStartDate) >= new Date('2026-05-21');
+  const shouldLimit = !hasNutriPlan && isNewSubscriber;
+
   const totalDayCalories = currentDayData?.meals.reduce((sum, meal) => 
     sum + meal.ingredients.reduce((mSum, ing) => mSum + (ing.calories || 0), 0)
   , 0) || 0;
@@ -531,14 +538,21 @@ export const DietPlanView: React.FC = () => {
                
                {currentDayData.meals.length > 0 ? (
                    <div className="space-y-4">
-                       {currentDayData.meals.map(meal => (
-                        <MealCard 
-                            key={meal.id} 
-                            meal={meal} 
-                            onSwapIngredient={handleSwapIngredient} 
-                            disableSwap={hasNutriPlan}
-                        />
-                       ))}
+                       {shouldLimit && selectedDayIndex >= 3 ? (
+                           <LockedDietDayCard dayName={selectedDay} dayIndex={selectedDayIndex} />
+                       ) : (
+                           <>
+                               {currentDayData.meals.map(meal => (
+                                <MealCard 
+                                    key={meal.id} 
+                                    meal={meal} 
+                                    onSwapIngredient={handleSwapIngredient} 
+                                    disableSwap={hasNutriPlan}
+                                />
+                               ))}
+                               {!hasNutriPlan && <DietFooterCTA />}
+                           </>
+                       )}
                    </div>
                ) : (
                    <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-gray-900/40 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-800">

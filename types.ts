@@ -78,6 +78,7 @@ export interface UserData {
   lastActivityDate: string | null;
   isPro?: boolean;
   subscriptionStatus?: SubscriptionStatus;
+  proStartDate?: string;
 }
 
 export interface Lead {

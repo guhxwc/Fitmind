@@ -14,9 +14,11 @@ import {
   Scale, Ruler, Cake, User, Wallet, Gift, Bell, 
   Globe, Star, Lightbulb, Mail, CreditCard, 
   Shield, FileSignature, LogOut, Trash2, 
-  ChevronRight, Moon, Share2, Copy, X, Users
+  ChevronRight, Moon, Share2, Copy, X, Users,
+  FlaskConical
 } from 'lucide-react';
 import { track, AnalyticsEvent } from '../../lib/analytics';
+import { UpsellTestPanel } from './UpsellTestPanel';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -238,6 +240,7 @@ export const SettingsTab: React.FC = () => {
     const [showUpsellPreview, setShowUpsellPreview] = useState(false);
     const [copied, setCopied] = useState(false);
     const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
+    const [showTestPanel, setShowTestPanel] = useState(false);
 
     React.useEffect(() => {
         window.scrollTo(0, 0);
@@ -381,6 +384,10 @@ export const SettingsTab: React.FC = () => {
         }
     };
 
+    if (showTestPanel) {
+        return <UpsellTestPanel onBack={() => setShowTestPanel(false)} />;
+    }
+
     return (
         <div className="bg-[#F5F5F7] dark:bg-black min-h-screen pb-24 animate-fade-in">
             <header className="pt-12 pb-6 px-5 flex justify-center items-center sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-md z-10">
@@ -521,6 +528,11 @@ export const SettingsTab: React.FC = () => {
                 </SettingsGroup>
 
                 <SettingsGroup title="Suporte">
+                    <SettingsItem 
+                        icon={<FlaskConical className="w-5 h-5 text-emerald-500" />}
+                        label="Testar notificações (dev)" 
+                        onClick={() => setShowTestPanel(true)} 
+                    />
                     <SettingsItem 
                         icon={<Star className="w-5 h-5 text-purple-500" />}
                         label="Consultoria VIP 1x1" 

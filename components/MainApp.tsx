@@ -28,9 +28,11 @@ import { CelebrationManager } from './CelebrationManager';
 import { WeightMilestoneModal } from './WeightMilestoneModal';
 import { DietView } from './consultation/DietView';
 import { track, AnalyticsEvent } from '../lib/analytics';
+import { useUpsell } from './UpsellProvider';
 
 export const MainApp: React.FC = () => {
   const { isNutritionist, userData, session, loading, setMeals, updateStreak, setWeightHistory, setSideEffects, setProgressPhotos, sideEffects, fetchData, isMealModalOpen, setIsMealModalOpen, isWeightModalOpen, setIsWeightModalOpen, isSideEffectModalOpen, setIsSideEffectModalOpen, initialMealType, setInitialMealType, initialMode, setInitialMode, setUserData, calculateGoals, setWeightMilestoneData } = useAppContext();
+  const { triggerUpsell } = useUpsell();
   const navigate = useNavigate();
   const location = useLocation();
   const { addToast } = useToast();
@@ -266,6 +268,33 @@ export const MainApp: React.FC = () => {
         updateStreak();
         setIsSideEffectModalOpen(false);
         addToast("Sintomas registrados.", "success");
+
+        // Check for side_effect trigger
+        const targetNames = ['nausea', 'náusea', 'fadiga', 'tontura', 'tonturas'];
+        const hasHighIntensitySideEffect = entry.effects.some(e => {
+          const nameLower = String(e.name).toLowerCase();
+          const matchesName = targetNames.some(t => nameLower.includes(t));
+          const intensityVal = e.intensity;
+          const matchesIntensity = intensityVal === 'Severo' || intensityVal === 'Moderado' || (typeof intensityVal === 'number' && intensityVal >= 4) || (typeof intensityVal === 'string' && parseInt(intensityVal) >= 4);
+          return matchesName && matchesIntensity;
+        });
+
+        if (hasHighIntensitySideEffect) {
+          const lastSideEffectTrigger = localStorage.getItem('fitmind_upsell_sideeffect_last');
+          let shouldTriggerSE = true;
+          if (lastSideEffectTrigger) {
+            const diffDays = (Date.now() - new Date(lastSideEffectTrigger).getTime()) / (1000 * 60 * 60 * 24);
+            if (diffDays < 14) {
+              shouldTriggerSE = false;
+            }
+          }
+          if (shouldTriggerSE) {
+            localStorage.setItem('fitmind_upsell_sideeffect_last', new Date().toISOString());
+            setTimeout(() => {
+              triggerUpsell('side_effect');
+            }, 800);
+          }
+        }
     }
     if (error) console.error("Error saving side effects:", error);
   };

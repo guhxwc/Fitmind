@@ -19,6 +19,7 @@ import { useToast } from './components/ToastProvider';
 import { NotificationSystem } from './components/NotificationSystem';
 import { TrialResultsScreen } from './components/TrialResultsScreen';
 import { StepFinalPlan } from './components/onboarding/StepFinalPlan';
+import { UpsellProvider } from './components/UpsellProvider';
 
 import { ConsultationRoute } from './components/payment/ConsultationRoute';
 import { ConsultationDashboard } from './components/consultation/ConsultationDashboard';
@@ -359,7 +360,8 @@ const AppContent: React.FC = () => {
       <ScrollToTop />
       <PostHogPageView />
       <NotificationSystem />
-      <Routes>
+      <UpsellProvider>
+        <Routes>
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/terms" element={<TermsPage />} />
@@ -445,6 +447,7 @@ const AppContent: React.FC = () => {
         
         <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
       </Routes>
+      </UpsellProvider>
     </>
   );
 };

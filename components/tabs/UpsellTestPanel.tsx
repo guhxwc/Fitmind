@@ -89,7 +89,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
     updateStorageLogs();
 
     const toast = document.createElement('div');
-    toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full font-bold text-xs uppercase z-50 shadow-xl animate-fade-in';
+    toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-xs uppercase z-50 shadow-xl animate-fade-in';
     toast.innerText = 'Storage de Upsell limpo com sucesso!';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2500);
@@ -108,7 +108,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
         <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-950 dark:hover:text-white transition-colors">
           <ChevronLeft size={20} />
         </button>
-        <span className="font-extrabold text-[15px] uppercase tracking-widest text-emerald-500">
+        <span className="font-extrabold text-[15px] uppercase tracking-widest text-blue-500">
           Laboratório Upsell
         </span>
         <div className="w-8" /> {/* Spacer */}
@@ -116,7 +116,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
 
       <div className="p-4 space-y-6 flex-grow pb-16">
         {/* Warning Badge */}
-        <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-990/10 border border-yellow-250/30 rounded-2xl text-yellow-800 dark:text-yellow-400">
+        <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200/35 rounded-2xl text-yellow-800 dark:text-yellow-400">
           <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
             <p className="font-bold">Painel de Diagnóstico do Desenvolvedor</p>
@@ -129,7 +129,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
         {/* Global Controls */}
         <section className="bg-white dark:bg-[#1C1C1E] p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
           <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-emerald-500" />
+            <Sliders className="w-4 h-4 text-blue-500" />
             Configuração Geral
           </h3>
 
@@ -140,7 +140,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
             </div>
             <button
               onClick={handleToggleTestMode}
-              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${testModeEnabled ? 'bg-emerald-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}
+              className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${testModeEnabled ? 'bg-blue-500 justify-end' : 'bg-gray-300 dark:bg-gray-700 justify-start'}`}
             >
               <span className="w-4 h-4 bg-white rounded-full shadow-sm" />
             </button>
@@ -170,14 +170,14 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
               >
                 <div className="pr-4 space-y-1">
                   <p className="font-bold text-[14px] flex items-center gap-1.5 text-gray-900 dark:text-white">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                    <Sparkles className="w-3.5 h-3.5 text-blue-500" />
                     {t.label}
                   </p>
                   <p className="text-[11px] text-gray-400 leading-normal max-w-sm">
                     {t.description}
                   </p>
                 </div>
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-xl group-active:scale-95 transition-transform">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-xl group-active:scale-95 transition-transform">
                   <Play className="w-4 h-4 fill-current" />
                 </div>
               </div>
@@ -194,7 +194,7 @@ export const UpsellTestPanel: React.FC<UpsellTestPanelProps> = ({ onBack }) => {
             {Object.entries(storageLogs).map(([k, v]) => (
               <div key={k} className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-800/10 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-850/10 px-1 rounded transition-colors">
                 <span className="text-gray-400">{k}</span>
-                <span className={`font-semibold ${v !== 'null' ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-600'}`}>{v}</span>
+                <span className={`font-semibold ${v !== 'null' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'}`}>{v}</span>
               </div>
             ))}
           </div>

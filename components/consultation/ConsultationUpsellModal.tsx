@@ -110,13 +110,13 @@ export const ConsultationUpsellModal: React.FC<ConsultationUpsellModalProps> = (
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.94 }}
           transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-          className="relative w-full max-w-sm rounded-[24px] bg-[#1C1C1E]/88 border-[0.5px] border-white/8 backdrop-blur-[40px] px-6 py-7 shadow-2xl flex flex-col pointer-events-auto overflow-hidden text-center justify-center"
+          className="relative w-full max-w-sm rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-white/10 px-6 py-7 shadow-2xl flex flex-col pointer-events-auto overflow-hidden text-center justify-center"
           id="upsell_modal_container"
         >
           {/* Close Button */}
           <button
             onClick={handleDismiss}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/4 hover:bg-white/8 text-white/55 hover:text-white transition-colors duration-200"
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-50 hover:bg-gray-100 dark:bg-white/4 dark:hover:bg-white/8 text-gray-400 dark:text-white/55 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
             aria-label="Dispensar"
             id="upsell_close_btn"
           >
@@ -125,29 +125,29 @@ export const ConsultationUpsellModal: React.FC<ConsultationUpsellModalProps> = (
 
           {/* Premium Header Accent */}
           <div className="flex justify-center mb-4">
-            <div className="px-3 py-1 rounded-full bg-white/4 border-[0.5px] border-white/8">
-              <span className="text-[10px] font-bold text-emerald-400 tracking-[0.12em] uppercase font-mono">
+            <div className="px-3 py-1 rounded-full bg-blue-50 dark:bg-white/4 border border-blue-100 dark:border-white/8">
+              <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400 tracking-[0.12em] uppercase font-mono">
                 Consultoria Premium
               </span>
             </div>
           </div>
 
           {/* Title and Subtitle */}
-          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-white leading-tight mb-2">
+          <h2 className="text-2xl font-bold tracking-[-0.02em] text-gray-900 dark:text-white leading-tight mb-2">
             {copy.title}
           </h2>
-          <p className="text-[14px] text-white/70 tracking-[-0.015em] leading-relaxed mb-6 px-1">
+          <p className="text-[14px] text-gray-500 dark:text-white/70 tracking-[-0.015em] leading-relaxed mb-6 px-1">
             {copy.subtitle}
           </p>
 
           {/* Value Highlights */}
           <div className="space-y-3 mb-7 text-left w-full mx-auto" id="upsell_highlights">
             {copy.highlights.map((highlight, index) => (
-              <div key={index} className="flex items-center gap-3 bg-white/[0.03] hover:bg-white/[0.05] rounded-xl px-4 py-3 border border-white/[0.04] transition-colors">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                  <Check size={12} className="text-[#34d399]" />
+              <div key={index} className="flex items-center gap-3 bg-gray-50 dark:bg-white/[0.03] hover:bg-gray-100/50 dark:hover:bg-white/[0.05] rounded-xl px-4 py-3 border border-gray-100 dark:border-white/[0.04] transition-colors">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                  <Check size={12} className="text-blue-500 dark:text-blue-400" />
                 </div>
-                <span className="text-[13px] text-white/85 font-medium tracking-normal">
+                <span className="text-[13px] text-gray-700 dark:text-white/85 font-medium tracking-normal">
                   {highlight}
                 </span>
               </div>
@@ -160,8 +160,8 @@ export const ConsultationUpsellModal: React.FC<ConsultationUpsellModalProps> = (
               onClick={handlePrimaryClick}
               className="w-full py-4 rounded-xl text-[15px] font-semibold text-white transition-transform active:scale-[0.98]"
               style={{
-                background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.25)'
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.25)'
               }}
               id="upsell_primary_btn"
             >
@@ -169,7 +169,7 @@ export const ConsultationUpsellModal: React.FC<ConsultationUpsellModalProps> = (
             </button>
             <button
               onClick={handleDismiss}
-              className="w-full py-3 rounded-xl text-[14px] font-medium text-white/55 hover:text-white transition-colors active:scale-[0.98]"
+              className="w-full py-3 rounded-xl text-[14px] font-medium text-gray-400 dark:text-white/55 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-[0.98]"
               id="upsell_secondary_btn"
             >
               {copy.secondary}

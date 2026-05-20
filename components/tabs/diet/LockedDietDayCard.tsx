@@ -24,7 +24,7 @@ export const LockedDietDayCard: React.FC<LockedDietDayCardProps> = ({ dayName, d
       id={`locked_diet_day_${dayIndex}`}
     >
       {/* Background radial soft gradient for premium glow */}
-      <div className="absolute -right-20 -bottom-20 w-44 h-44 bg-emerald-500/10 dark:bg-emerald-400/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -right-20 -bottom-20 w-44 h-44 bg-blue-500/10 dark:bg-blue-400/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -42,9 +42,9 @@ export const LockedDietDayCard: React.FC<LockedDietDayCardProps> = ({ dayName, d
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100/50 dark:border-emerald-500/25 px-3 py-1.5 rounded-full">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-100/50 dark:border-blue-500/25 px-3 py-1.5 rounded-full">
+          <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
             Premium
           </span>
         </div>

@@ -181,38 +181,61 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       };
   };
 
-  const formatProfileToUserData = (profile: any): UserData => ({
-      id: profile.id,
-      whatsapp: profile.whatsapp,
-      name: profile.name || DEFAULT_USER_DATA.name,
-      gender: profile.gender || DEFAULT_USER_DATA.gender,
-      age: profile.age || DEFAULT_USER_DATA.age,
-      birthDate: profile.birth_date,
-      height: profile.height || DEFAULT_USER_DATA.height,
-      weight: profile.weight || DEFAULT_USER_DATA.weight,
-      targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
-      startWeight: profile.start_weight || DEFAULT_USER_DATA.startWeight,
-      startWeightDate: profile.start_weight_date || undefined,
-      activityLevel: profile.activity_level || DEFAULT_USER_DATA.activityLevel,
-      glpStatus: profile.glp_status || DEFAULT_USER_DATA.glpStatus,
-      applicationFrequency: profile.application_frequency || DEFAULT_USER_DATA.applicationFrequency,
-      pace: profile.pace || DEFAULT_USER_DATA.pace,
-      motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
-      mainSideEffect: profile.main_side_effect || undefined,
-      medication: profile.medication || DEFAULT_USER_DATA.medication,
-      medicationReminder: profile.medication_reminder || DEFAULT_USER_DATA.medicationReminder,
-      notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
-      goals: profile.goals || DEFAULT_USER_DATA.goals,
-      streak: profile.streak || 0,
-      lastActivityDate: profile.last_activity_date || null,
-      isPro: profile.is_pro || false, // CRÍTICO: Mapeamento is_pro -> isPro
-      subscriptionStatus: profile.subscription_status || 'free',
-      journeyDuration: profile.journey_duration,
-      biggestFrustration: profile.biggest_frustration,
-      futureWorry: profile.future_worry,
-      monthlyInvestment: profile.monthly_investment,
-      lastWeightGoalUpdate: profile.last_weight_goal_update || profile.weight,
-  });
+  const formatProfileToUserData = (profile: any): UserData => {
+      let currentStreak = profile.streak || 0;
+      
+      if (profile.last_activity_date) {
+          const today = new Date();
+          const offsetLocal = today.getTimezoneOffset() * 60000;
+          const todayLocal = new Date(today.getTime() - offsetLocal);
+          const todayStr = todayLocal.toISOString().split('T')[0];
+          
+          const lastActivityLocal = new Date(new Date(profile.last_activity_date).getTime() - offsetLocal);
+          const lastActivityStr = lastActivityLocal.toISOString().split('T')[0];
+          
+          const todayDateOnly = new Date(todayStr);
+          const lastDateOnly = new Date(lastActivityStr);
+          const diffTime = Math.abs(todayDateOnly.getTime() - lastDateOnly.getTime());
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays > 1) {
+              currentStreak = 0;
+          }
+      }
+
+      return {
+          id: profile.id,
+          whatsapp: profile.whatsapp,
+          name: profile.name || DEFAULT_USER_DATA.name,
+          gender: profile.gender || DEFAULT_USER_DATA.gender,
+          age: profile.age || DEFAULT_USER_DATA.age,
+          birthDate: profile.birth_date,
+          height: profile.height || DEFAULT_USER_DATA.height,
+          weight: profile.weight || DEFAULT_USER_DATA.weight,
+          targetWeight: profile.target_weight || DEFAULT_USER_DATA.targetWeight,
+          startWeight: profile.start_weight || DEFAULT_USER_DATA.startWeight,
+          startWeightDate: profile.start_weight_date || undefined,
+          activityLevel: profile.activity_level || DEFAULT_USER_DATA.activityLevel,
+          glpStatus: profile.glp_status || DEFAULT_USER_DATA.glpStatus,
+          applicationFrequency: profile.application_frequency || DEFAULT_USER_DATA.applicationFrequency,
+          pace: profile.pace || DEFAULT_USER_DATA.pace,
+          motivation: profile.motivation || DEFAULT_USER_DATA.motivation,
+          mainSideEffect: profile.main_side_effect || undefined,
+          medication: profile.medication || DEFAULT_USER_DATA.medication,
+          medicationReminder: profile.medication_reminder || DEFAULT_USER_DATA.medicationReminder,
+          notifications: profile.notifications || DEFAULT_USER_DATA.notifications,
+          goals: profile.goals || DEFAULT_USER_DATA.goals,
+          streak: currentStreak,
+          lastActivityDate: profile.last_activity_date || null,
+          isPro: profile.is_pro || false, // CRÍTICO: Mapeamento is_pro -> isPro
+          subscriptionStatus: profile.subscription_status || 'free',
+          journeyDuration: profile.journey_duration,
+          biggestFrustration: profile.biggest_frustration,
+          futureWorry: profile.future_worry,
+          monthlyInvestment: profile.monthly_investment,
+          lastWeightGoalUpdate: profile.last_weight_goal_update || profile.weight,
+      };
+  };
 
   const fetchData = useCallback(async () => {
     // Só bloqueia o save na carga INICIAL — fetches subsequentes não devem interferir

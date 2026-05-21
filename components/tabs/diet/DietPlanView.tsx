@@ -461,7 +461,8 @@ export const DietPlanView: React.FC = () => {
   const daysOfWeek: Weekday[] = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
   const selectedDayIndex = daysOfWeek.indexOf(selectedDay);
   const isNewSubscriber = !userData?.proStartDate || new Date(userData?.proStartDate) >= new Date('2026-05-21');
-  const shouldLimit = !hasNutriPlan && isNewSubscriber;
+  const isConsultationActive = ['pending', 'anamnese_done', 'active'].includes(consultationStatus || '');
+  const shouldLimit = !hasNutriPlan && isNewSubscriber && !isConsultationActive;
 
   const totalDayCalories = currentDayData?.meals.reduce((sum, meal) => 
     sum + meal.ingredients.reduce((mSum, ing) => mSum + (ing.calories || 0), 0)
@@ -550,7 +551,7 @@ export const DietPlanView: React.FC = () => {
                                     disableSwap={hasNutriPlan}
                                 />
                                ))}
-                               {!hasNutriPlan && <DietFooterCTA />}
+                               {!hasNutriPlan && !isConsultationActive && <DietFooterCTA />}
                            </>
                        )}
                    </div>

@@ -24,13 +24,13 @@ const DaySelector: React.FC<{ selectedDay: Weekday, onSelect: (day: Weekday) => 
           <button
             key={day}
             onClick={() => onSelect(day)}
-            className={`flex-shrink-0 flex flex-col items-center justify-center w-[4.8rem] h-20 rounded-[24px] transition-all duration-300 snap-center ${
+            className={`flex-shrink-0 flex flex-col items-center justify-center w-[4.8rem] h-20 rounded-[24px] transition-all duration-300 snap-center cursor-pointer ${
               isSelected 
-                ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/10 dark:shadow-white/5 scale-105 z-10' 
-                : 'bg-white dark:bg-gray-800/40 text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm'
+                ? 'bg-blue-500 text-white shadow-xl shadow-blue-500/20 scale-105 z-10 font-bold' 
+                : 'bg-white dark:bg-gray-800/40 text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-gray-800/50 backdrop-blur-sm hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
-            <span className="text-[10px] font-bold tracking-[0.1em] mb-1 opacity-60">{shortDays[index]}</span>
+            <span className={`text-[10px] font-bold tracking-[0.1em] mb-1 ${isSelected ? 'text-white/80' : 'text-gray-400/80'}`}>{shortDays[index]}</span>
             <span className="text-lg font-bold">{index + 1}</span>
           </button>
         );
@@ -472,10 +472,10 @@ export const DietPlanView: React.FC = () => {
   , 0) || 0;
 
   return (
-    <div className="space-y-8 pb-40 animate-fade-in">
+    <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 space-y-8 pb-40 animate-fade-in">
       {/* Header Section */}
-      <div className="px-1">
-        <div className="flex justify-between items-start mb-6">
+      <div className="space-y-6">
+        <div className="flex justify-between items-start mb-2">
             <div>
               <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tighter">
                   {hasNutriPlan ? (nutriDietPlan?.title || "Plano do Nutricionista") : "Cardápio"}
@@ -521,7 +521,7 @@ export const DietPlanView: React.FC = () => {
       </div>
 
       {currentDayData ? (
-        <div className="space-y-8 px-1">
+        <div className="space-y-6">
            <div className="space-y-5">
                <div className="flex items-center justify-between px-2">
                    <h3 className="font-extrabold text-gray-900 dark:text-white text-xl tracking-tight">Refeições</h3>

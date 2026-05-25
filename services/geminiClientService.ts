@@ -17,7 +17,12 @@ export async function generateContent(options: {
     });
 
     if (!response.ok) {
-        throw new Error('Falha na resposta da API Gemini: ' + response.statusText);
+        let errMsg = response.statusText;
+        try {
+            const data = await response.json();
+            if (data && data.error) errMsg = data.error;
+        } catch(e) {}
+        throw new Error('Falha na resposta da API Gemini: ' + errMsg);
     }
 
     return await response.json();

@@ -131,19 +131,62 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
     }
   };
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
+  const compressImageToBase64 = (fileOrBlob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result.split(',')[1]);
-        } else {
-          reject(new Error("Failed to convert blob to base64"));
+      const isImage = fileOrBlob.type.startsWith('image/');
+      if (!isImage) {
+        // If audio or something else, use standard reader
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result.split(',')[1]);
+          } else {
+            reject(new Error("Failed to convert blob to base64"));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(fileOrBlob);
+        return;
+      }
+
+      // If image, compress it using Canvas
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_SIZE = 800; // max width/height
+
+        if (width > height && width > MAX_SIZE) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        } else if (height > width && height > MAX_SIZE) {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
         }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error("Failed to get canvas context"));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Use JPEG at 0.7 quality to ensure small base64 size for Groq/Vercel
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl.split(',')[1]);
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+      img.onerror = () => reject(new Error("Failed to load image for compression"));
+      img.src = URL.createObjectURL(fileOrBlob);
     });
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return compressImageToBase64(blob);
   };
 
   const handleProcess = async (source: 'text' | 'audio' | 'image', imageFile?: File) => {
@@ -265,7 +308,7 @@ export const SmartLogModal: React.FC<SmartLogModalProps> = ({ onClose, initialMe
                 { text: prompt },
                 {
                   inlineData: {
-                    mimeType: imageFile!.type,
+                    mimeType: 'image/jpeg',
                     data: base64Image
                   }
                 }

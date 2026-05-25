@@ -91,7 +91,7 @@ async function startServer() {
     }
 
     if (hasImage) {
-      mappedModel = "llama-3.2-11b-vision-preview";
+      mappedModel = "meta-llama/llama-4-scout-17b-16e-instruct";
     }
 
     // Match JSON output requirements

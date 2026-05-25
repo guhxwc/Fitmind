@@ -60,19 +60,65 @@ export default async function handler(req: any, res: any) {
         } else if (Array.isArray(c.parts)) {
           const hasInlineData = c.parts.some((p: any) => p.inlineData);
           if (hasInlineData) {
-            hasImage = true;
             const contentArray: any[] = [];
+            let hasImageInPart = false;
+            let audioText = "";
+            let regularText = "";
+            
             for (const p of c.parts) {
               if (p.text) {
+                regularText += p.text + "\n";
                 contentArray.push({ type: "text", text: p.text });
               } else if (p.inlineData) {
-                contentArray.push({ 
-                  type: "image_url", 
-                  image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` }
-                });
+                if (p.inlineData.mimeType.startsWith("audio/")) {
+                   // Transcribe audio using Groq Whisper
+                   const buffer = Buffer.from(p.inlineData.data, 'base64');
+                   const blob = new Blob([buffer], { type: p.inlineData.mimeType });
+                   const formData = new FormData();
+                   let ext = "webm";
+                   if (p.inlineData.mimeType.includes("mp3")) ext = "mp3";
+                   else if (p.inlineData.mimeType.includes("ogg")) ext = "ogg";
+                   else if (p.inlineData.mimeType.includes("wav")) ext = "wav";
+                   else if (p.inlineData.mimeType.includes("m4a")) ext = "m4a";
+
+                   formData.append("file", blob, `audio.${ext}`);
+                   formData.append("model", "whisper-large-v3");
+
+                   const audioRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+                       method: "POST",
+                       headers: {
+                           "Authorization": `Bearer ${apiKey}`,
+                       },
+                       body: formData as any
+                   });
+
+                   if (audioRes.ok) {
+                      const audioResult = await audioRes.json();
+                      audioText += `\n[Transcrição do Áudio]: "${audioResult.text}"\n`;
+                   } else {
+                      const err = await audioRes.text();
+                      console.error("Whisper error:", err);
+                      audioText += `\n[Erro na transcrição do áudio: ${err}]\n`;
+                   }
+                } else if (p.inlineData.mimeType.startsWith("image/")) {
+                  hasImageInPart = true;
+                  hasImage = true;
+                  contentArray.push({ 
+                    type: "image_url", 
+                    image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` }
+                  });
+                }
               }
             }
-            messages.push({ role, content: contentArray });
+            
+            if (hasImageInPart) {
+              if (audioText) {
+                 contentArray.push({ type: "text", text: audioText });
+              }
+              messages.push({ role, content: contentArray });
+            } else {
+              messages.push({ role, content: regularText + audioText });
+            }
           } else {
             messages.push({ role, content: c.parts.map((p: any) => p.text || "").join("\n") });
           }
@@ -103,18 +149,12 @@ export default async function handler(req: any, res: any) {
     };
 
     if (isJsonMode) {
-      if (!mappedModel.includes("vision")) {
-        payload.response_format = { type: "json_object" };
-      }
-      const hasJsonInPrompt = messages.some(msg => msg.content && typeof msg.content === 'string' && msg.content.toLowerCase().includes("json"));
+      payload.response_format = { type: "json_object" };
+      const hasJsonInPrompt = messages.some(msg => msg.content.toLowerCase().includes("json"));
       if (!hasJsonInPrompt) {
         const lastMsg = messages[messages.length - 1];
         if (lastMsg) {
-          if (typeof lastMsg.content === 'string') {
-            lastMsg.content += "\nRespond ONLY in valid raw JSON format.";
-          } else if (Array.isArray(lastMsg.content)) {
-            lastMsg.content.push({ type: "text", text: "\nRespond ONLY in valid raw JSON format." });
-          }
+          lastMsg.content += "\nRespond ONLY in valid raw JSON format.";
         }
       }
     }

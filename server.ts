@@ -107,12 +107,18 @@ async function startServer() {
     };
 
     if (isJsonMode) {
-      payload.response_format = { type: "json_object" };
-      const hasJsonInPrompt = messages.some(msg => msg.content.toLowerCase().includes("json"));
+      if (!mappedModel.includes("vision")) {
+        payload.response_format = { type: "json_object" };
+      }
+      const hasJsonInPrompt = messages.some(msg => msg.content && typeof msg.content === 'string' && msg.content.toLowerCase().includes("json"));
       if (!hasJsonInPrompt) {
         const lastMsg = messages[messages.length - 1];
         if (lastMsg) {
-          lastMsg.content += "\nRespond ONLY in valid raw JSON format.";
+          if (typeof lastMsg.content === 'string') {
+            lastMsg.content += "\nRespond ONLY in valid raw JSON format.";
+          } else if (Array.isArray(lastMsg.content)) {
+            lastMsg.content.push({ type: "text", text: "\nRespond ONLY in valid raw JSON format." });
+          }
         }
       }
     }

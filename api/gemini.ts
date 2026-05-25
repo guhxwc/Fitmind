@@ -37,7 +37,13 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    if (config?.responseSchema) {
+       messages.push({ role: "system", content: `You must return your response in the following JSON schema format: ${JSON.stringify(config.responseSchema)}` });
+    }
+
     // Convert contents payload (supports string or Gemini parts array)
+    let hasImage = false;
+
     if (typeof contents === "string") {
       messages.push({ role: "user", content: contents });
     } else if (Array.isArray(contents)) {
@@ -49,21 +55,39 @@ export default async function handler(req: any, res: any) {
           role = "user";
         }
 
-        let contentStr = "";
         if (typeof c.parts === "string") {
-          contentStr = c.parts;
+          messages.push({ role, content: c.parts });
         } else if (Array.isArray(c.parts)) {
-          contentStr = c.parts.map((p: any) => p.text || "").join("\n");
+          const hasInlineData = c.parts.some((p: any) => p.inlineData);
+          if (hasInlineData) {
+            hasImage = true;
+            const contentArray: any[] = [];
+            for (const p of c.parts) {
+              if (p.text) {
+                contentArray.push({ type: "text", text: p.text });
+              } else if (p.inlineData) {
+                contentArray.push({ 
+                  type: "image_url", 
+                  image_url: { url: `data:${p.inlineData.mimeType};base64,${p.inlineData.data}` }
+                });
+              }
+            }
+            messages.push({ role, content: contentArray });
+          } else {
+            messages.push({ role, content: c.parts.map((p: any) => p.text || "").join("\n") });
+          }
         } else if (c.content) {
-          contentStr = typeof c.content === "string" ? c.content : JSON.stringify(c.content);
+          messages.push({ role, content: typeof c.content === "string" ? c.content : JSON.stringify(c.content) });
         } else {
-          contentStr = JSON.stringify(c);
+          messages.push({ role, content: JSON.stringify(c) });
         }
-
-        messages.push({ role, content: contentStr });
       }
     } else if (contents) {
       messages.push({ role: "user", content: JSON.stringify(contents) });
+    }
+
+    if (hasImage) {
+      mappedModel = "llama-3.2-11b-vision-preview";
     }
 
     // Match JSON output requirements
@@ -104,7 +128,14 @@ export default async function handler(req: any, res: any) {
     }
 
     const result = await response.json();
-    const textContent = result.choices?.[0]?.message?.content || "";
+    let textContent = result.choices?.[0]?.message?.content || "";
+    
+    // Strip markdown JSON block formatting if present, as models often wrap json format
+    if (textContent.startsWith("```json")) {
+      textContent = textContent.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+    } else if (textContent.startsWith("```")) {
+      textContent = textContent.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
+    }
 
     return res.status(200).json({
       text: textContent

@@ -103,30 +103,13 @@ export function useFoodSearch(options: UseFoodSearchOptions = {}) {
     const trySearch = async (term: string): Promise<FoodItem | null> => {
       const cleaned = term.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
       if (cleaned.length < 2) return null;
-      
-      const { local, off } = await foodDatabaseService.searchFood(cleaned, {
+      const { local } = await foodDatabaseService.searchFood(cleaned, {
         limit: 1,
         context,
         userId: userData?.id,
-        includeOFF: true, // Habilita a busca inteligente OFF!
+        includeOFF: false, // IA usa só local (mais rápido)
       });
-      
-      if (local && local.length > 0) {
-        return local[0];
-      }
-      
-      if (off && off.length > 0) {
-        try {
-          // Cacheia o alimento da OFF em background/on-the-fly para salvá-lo localmente
-          const cached = await foodDatabaseService.cacheOFFFood(off[0], userData?.id);
-          return cached;
-        } catch (e) {
-          console.warn("[trySearch] Erro ao cachear alimento OFF na busca inteligente:", e);
-          return foodDatabaseService.offToFoodItem(off[0]);
-        }
-      }
-      
-      return null;
+      return local.length > 0 ? local[0] : null;
     };
 
     let found: FoodItem | null = null;
@@ -134,15 +117,7 @@ export function useFoodSearch(options: UseFoodSearchOptions = {}) {
     // 1. Nome completo
     found = await trySearch(name);
 
-    // 2. Keywords juntas (ex: se keywords=["frango", "peito"], busca "frango peito")
-    if (!found && keywords && keywords.length > 1) {
-      const jointKeywords = keywords.filter(kw => kw.trim().length >= 2).join(' ');
-      if (jointKeywords.trim().length >= 3) {
-        found = await trySearch(jointKeywords);
-      }
-    }
-
-    // 3. Keywords individuais
+    // 2. Keywords individuais
     if (!found) {
       for (const kw of keywords) {
         if (kw.length >= 3) {
@@ -152,7 +127,7 @@ export function useFoodSearch(options: UseFoodSearchOptions = {}) {
       }
     }
 
-    // 4. Primeira palavra do nome
+    // 3. Primeira palavra do nome
     if (!found) {
       const firstWord = name.split(' ')[0];
       if (firstWord.length > 2) found = await trySearch(firstWord);

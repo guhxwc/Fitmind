@@ -149,11 +149,12 @@ export default async function handler(req: any, res: any) {
     };
 
     if (isJsonMode) {
+      payload.response_format = { type: "json_object" };
       const hasJsonInPrompt = messages.some(msg => msg.content.toLowerCase().includes("json"));
       if (!hasJsonInPrompt) {
         const lastMsg = messages[messages.length - 1];
         if (lastMsg) {
-          lastMsg.content += "\nRespond ONLY in valid raw JSON format. Do not include markdown formatting or reasoning text.";
+          lastMsg.content += "\nRespond ONLY in valid raw JSON format.";
         }
       }
     }
@@ -175,32 +176,11 @@ export default async function handler(req: any, res: any) {
     const result = await response.json();
     let textContent = result.choices?.[0]?.message?.content || "";
     
-    // Attempt to extract JSON from markdown code blocks if present
-    const codeBlockMatch = textContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    if (codeBlockMatch) {
-      textContent = codeBlockMatch[1].trim();
-    } else {
-      // If no code block, it might still have leading/trailing text. 
-      // Try to find the first '{' or '[' and last '}' or ']'
-      const startObj = textContent.indexOf('{');
-      const startArr = textContent.indexOf('[');
-      const endObj = textContent.lastIndexOf('}');
-      const endArr = textContent.lastIndexOf(']');
-      
-      let startIdx = -1;
-      let endIdx = -1;
-      
-      if (startObj !== -1 && (startArr === -1 || startObj < startArr)) {
-         startIdx = startObj;
-         endIdx = endObj;
-      } else if (startArr !== -1) {
-         startIdx = startArr;
-         endIdx = endArr;
-      }
-      
-      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-         textContent = textContent.substring(startIdx, endIdx + 1);
-      }
+    // Strip markdown JSON block formatting if present, as models often wrap json format
+    if (textContent.startsWith("```json")) {
+      textContent = textContent.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+    } else if (textContent.startsWith("```")) {
+      textContent = textContent.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
     }
 
     return res.status(200).json({

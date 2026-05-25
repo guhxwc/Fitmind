@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { track, AnalyticsEvent } from '../../lib/analytics';
 import { UpsellTestPanel } from './UpsellTestPanel';
+import { SupportModal } from '../settings/SupportModal';
 
 const SettingsGroup: React.FC<{ title?: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="mb-6">
@@ -241,6 +242,7 @@ export const SettingsTab: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [unit, setUnit] = useState<'metric' | 'imperial'>('metric');
     const [showTestPanel, setShowTestPanel] = useState(false);
+    const [showSupportModal, setShowSupportModal] = useState(false);
 
     React.useEffect(() => {
         window.scrollTo(0, 0);
@@ -551,7 +553,7 @@ export const SettingsTab: React.FC = () => {
                     <SettingsItem 
                         icon={<Mail className="w-5 h-5 text-red-500" />}
                         label="Fale com o Suporte" 
-                        onClick={() => window.location.href = "mailto:support@fitmind.app"} 
+                        onClick={() => setShowSupportModal(true)} 
                         isLast
                     />
                 </SettingsGroup>
@@ -600,6 +602,11 @@ export const SettingsTab: React.FC = () => {
             <TrialTestModal 
                 isOpen={showTrialTest} 
                 onClose={() => setShowTrialTest(false)} 
+            />
+
+            <SupportModal 
+                isOpen={showSupportModal} 
+                onClose={() => setShowSupportModal(false)} 
             />
 
             {editModal.isOpen && (

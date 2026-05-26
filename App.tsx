@@ -29,6 +29,7 @@ import { NutriPanel } from './components/nutri/NutriPanel'; // <-- Added NutriPa
 import { NutriRoleSelection } from './components/nutri/NutriRoleSelection';
 import { PostHogPageView } from './components/PostHogPageView';
 import { identifyUser, resetAnalytics, setUserProperties, track, AnalyticsEvent } from './lib/analytics';
+import { LandingPage } from './components/LandingPage';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -441,7 +442,7 @@ const AppContent: React.FC = () => {
               <OnboardingFlow onComplete={handleOnboardingComplete} />
             )
           ) : (
-            <Navigate to="/auth" />
+            <LandingPage />
           )
         } />
         

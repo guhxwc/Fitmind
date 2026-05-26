@@ -117,7 +117,7 @@ export const LandingPage: React.FC = () => {
     }, []);
 
     const goAuth = () => navigate('/auth');
-    const goConsult = () => navigate('/assinaturas');
+    const goConsult = goAuth;
 
     return (
         <div className="fm-landing">
@@ -130,7 +130,7 @@ export const LandingPage: React.FC = () => {
                     <div className="fm-nav-links">
                         <a href="#recursos">Recursos</a>
                         <a href="#como-funciona">Como funciona</a>
-                        <a href="#nutricionista">Consulta</a>
+                        <a onClick={goAuth} style={{ cursor: 'pointer' }}>Consulta</a>
                         <a href="#faq">FAQ</a>
                     </div>
                     <div className="fm-nav-cta">

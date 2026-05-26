@@ -782,6 +782,16 @@
   .fm-landing .fm-strip-inner { padding: 22px 22px; gap: 18px; }
   .fm-landing .fm-strip-item { font-size: 15px; }
 }
+@media (max-width: 768px) {
+  .fm-landing .fm-strip-inner {
+    animation: fmPulseSoft 4s ease-in-out infinite;
+  }
+}
+@keyframes fmPulseSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 @media (max-width: 480px) {
   .fm-landing .fm-container { padding: 0 18px; }
   .fm-landing .fm-nav-inner { padding: 10px 18px; }
@@ -795,7 +805,7 @@
   .fm-landing .fm-floating-card { display: none !important; }
   .fm-landing .fm-h1 { font-size: clamp(32px, 9vw, 44px); }
   .fm-landing .fm-hero-actions .fm-btn-lg { width: 100%; }
-  .fm-landing .fm-pitch-card-crn, .fm-landing .fm-pitch-card-name { transform: scale(0.85); }
-  .fm-landing .fm-pitch-card-crn { right: -50px; }
+  .fm-landing .fm-pitch-card-name { transform: scale(0.85); }
+  .fm-landing .fm-pitch-card-crn { right: -50px; transform: scale(0.7); }
   .fm-landing .fm-pitch-card-name { left: -16px; }
 }

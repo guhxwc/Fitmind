@@ -602,10 +602,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       } catch (error) {
           console.error("Error saving daily record:", error);
       }
-    }, 1500);
+    }, 600);
 
     // SEM cleanup aqui — o timeout é gerenciado pelo cancelamento no início do effect
-  }, [meals, quickAddProtein, currentWater, userData]);
+  }, [meals, quickAddProtein, currentWater]);
 
   const updateStreak = async () => {
       if (!userData) return;

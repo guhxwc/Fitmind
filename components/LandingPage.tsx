@@ -135,7 +135,7 @@ export const LandingPage: React.FC = () => {
                     </div>
                     <div className="fm-nav-cta">
                         <button className="fm-link" onClick={goAuth}>Entrar</button>
-                        <button className="fm-btn fm-btn-primary fm-btn-sm" onClick={goAuth}>Criar meu plano grátis</button>
+                        <button className="fm-btn fm-btn-primary fm-btn-sm" onClick={goAuth}>Começar agora</button>
                     </div>
                 </div>
             </nav>

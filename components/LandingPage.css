@@ -155,12 +155,12 @@
 .fm-landing .fm-pitch.in-view .fm-pitch-feature:nth-child(3) { transition-delay: .65s; }
 
 .fm-landing .fm-floating-card {
-  transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(var(--scroll-y, 0));
+  transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(var(--scroll-y, 0)) scale(var(--scale, 1));
   animation: fmFloatCard 4s ease-in-out infinite;
 }
 @keyframes fmFloatCard {
-  0%, 100% { transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(var(--scroll-y, 0)); }
-  50% { transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(calc(var(--scroll-y, 0px) - 8px)); }
+  0%, 100% { transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(var(--scroll-y, 0)) scale(var(--scale, 1)); }
+  50% { transform: rotate(calc(var(--rot, 0deg) + var(--scroll-rot, 0deg))) translateY(calc(var(--scroll-y, 0px) - 8px)) scale(var(--scale, 1)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -785,13 +785,18 @@
 @media (max-width: 480px) {
   .fm-landing .fm-container { padding: 0 18px; }
   .fm-landing .fm-nav-inner { padding: 10px 18px; }
+  .fm-landing .fm-nav-cta { gap: 10px; }
   .fm-landing .fm-logo img { height: 28px; }
-  .fm-landing .fm-btn-sm { padding: 8px 14px; font-size: 13px; }
+  .fm-landing .fm-btn-sm { padding: 8px 12px; font-size: 13px; }
   .fm-landing .fm-hero-phone-wrap { padding: 0 10px; min-height: 500px; }
   .fm-landing .fm-phone-frame { width: 270px; height: 560px; padding: 10px; border-radius: 42px; }
   .fm-landing .fm-phone-notch { width: 84px; height: 24px; top: 16px; }
   .fm-landing .fm-phone-screen { border-radius: 34px; }
-  .fm-landing .fm-floating-card { display: none; }
+  .fm-landing .fm-floating-card {
+    --scale: 0.8;
+  }
+  .fm-landing .fm-floating-card:nth-child(3) { left: -5% !important; top: 12% !important; }
+  .fm-landing .fm-floating-card:nth-child(4) { right: -5% !important; bottom: 20% !important; left: auto !important; }
   .fm-landing .fm-h1 { font-size: clamp(32px, 9vw, 44px); }
   .fm-landing .fm-hero-actions .fm-btn-lg { width: 100%; }
   .fm-landing .fm-pitch-card-crn, .fm-landing .fm-pitch-card-name { transform: scale(0.85); }

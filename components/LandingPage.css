@@ -479,8 +479,8 @@
 .fm-landing .sumDonutIcon { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
 .fm-landing .sumDonutChart { position: relative; display: flex; align-items: center; justify-content: center; }
 .fm-landing .sumDonutCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.fm-landing .sumDonutValue { font-size: 16px; font-weight: 800; color: #0A0A0F; letter-spacing: -0.03em; line-height: 1; }
-.fm-landing .sumDonutGoal { font-size: 7px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.fm-landing .sumDonutValue { font-size: 14px; font-weight: 800; color: #0A0A0F; letter-spacing: -0.03em; line-height: 1; }
+.fm-landing .sumDonutGoal { font-size: 6.5px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
 .fm-landing .sumDonutBtns { display: flex; gap: 4px; margin-top: 2px; }
 .fm-landing .sumDonutBtn { flex: 1; height: 22px; background: #F2F2F7; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #0A0A0F; border: none; }
 .fm-landing .sumWeightCard { background: white; border-radius: 22px; padding: 14px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
@@ -792,11 +792,7 @@
   .fm-landing .fm-phone-frame { width: 270px; height: 560px; padding: 10px; border-radius: 42px; }
   .fm-landing .fm-phone-notch { width: 84px; height: 24px; top: 16px; }
   .fm-landing .fm-phone-screen { border-radius: 34px; }
-  .fm-landing .fm-floating-card {
-    --scale: 0.8;
-  }
-  .fm-landing .fm-floating-card:nth-child(3) { left: -5% !important; top: 12% !important; }
-  .fm-landing .fm-floating-card:nth-child(4) { right: -5% !important; bottom: 20% !important; left: auto !important; }
+  .fm-landing .fm-floating-card { display: none !important; }
   .fm-landing .fm-h1 { font-size: clamp(32px, 9vw, 44px); }
   .fm-landing .fm-hero-actions .fm-btn-lg { width: 100%; }
   .fm-landing .fm-pitch-card-crn, .fm-landing .fm-pitch-card-name { transform: scale(0.85); }

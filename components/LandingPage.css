@@ -759,6 +759,7 @@
   .fm-landing .fm-h1 { font-size: clamp(36px, 9vw, 56px); letter-spacing: -0.03em; }
   .fm-landing .fm-lede { font-size: 16px; }
   .fm-landing .fm-btn-lg { padding: 14px 24px; font-size: 15px; }
+  .fm-landing .fm-hero-trust { display: none; }
   .fm-landing .fm-section { padding: 60px 0; }
   .fm-landing .fm-h2 { font-size: clamp(26px, 7vw, 36px); }
   .fm-landing .fm-section-head { margin-bottom: 40px; }
@@ -784,7 +785,6 @@
 @media (max-width: 480px) {
   .fm-landing .fm-container { padding: 0 18px; }
   .fm-landing .fm-nav-inner { padding: 10px 18px; }
-  .fm-landing .fm-nav-cta .fm-link { display: none; }
   .fm-landing .fm-logo img { height: 28px; }
   .fm-landing .fm-btn-sm { padding: 8px 14px; font-size: 13px; }
   .fm-landing .fm-hero-phone-wrap { padding: 0 10px; min-height: 500px; }

@@ -257,4 +257,5 @@ export interface Food {
   popularity_base?: number;
   usage_count?: number;
   relevance_score?: number;
+  search_terms?: string;
 }

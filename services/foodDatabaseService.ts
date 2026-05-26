@@ -71,6 +71,7 @@ function rowToFoodItem(row: Record<string, unknown>): FoodItem {
     popularity_base: row.popularity_base as number | undefined,
     usage_count:     row.usage_count as number | undefined,
     relevance_score: row.relevance_score as number | undefined,
+    search_terms:    row.search_terms as string | undefined,
     source:          (row.source as 'local' | 'off_cache' | 'manual') ?? 'local',
     off_id:          row.off_id as string | undefined,
   };
@@ -151,17 +152,62 @@ export const foodDatabaseService = {
       return { local: (data || []).map(rowToFoodItem), off: [] };
     }
 
+    // ── Score Inteligente Local ─────────────────────────────────────────────
+    const calculateScore = (food: FoodItem | OFFResult, term: string) => {
+      const q = term.toLowerCase();
+      const n = food.name.toLowerCase();
+      const st = food.search_terms ? food.search_terms.toLowerCase() : '';
+      
+      let score = 0;
+      if (n === q) score += 100;
+      else if (n.startsWith(q)) score += 50;
+      else if (n.includes(` ${q} `)) score += 30;
+      else if (n.includes(q)) score += 10;
+      
+      const words = q.split(/\s+/);
+      let matchCount = 0;
+      for (const w of words) {
+        if (w.length > 2) {
+           if (n.includes(w)) {
+               score += 15;
+               matchCount++;
+           } else if (st && st.includes(w)) {
+               score += 10;
+               matchCount++;
+           }
+        }
+      }
+      if (matchCount >= words.length && words.length > 1) {
+         score += 20;
+      }
+      return score;
+    };
+
     // ── Tenta via Edge Function (tem fallback para OFF) ─────────────────────
     try {
       const result = await callEdgeFunction({
         query: term,
-        limit,
+        limit: Math.max(limit * 2, 40), // get more to rank correctly
         context,
         user_id: userId,
       });
 
-      const local = (result.results || []).map(r => rowToFoodItem(r as unknown as Record<string, unknown>));
-      const off   = includeOFF ? (result.off_results || []) : [];
+      let local = (result.results || []).map(r => rowToFoodItem(r as unknown as Record<string, unknown>));
+      let off   = includeOFF ? (result.off_results || []) : [];
+
+      // Aplicar scoring inteligente
+      local.forEach(l => {
+         let score = calculateScore(l, term);
+         if (l.popularity_base) score += l.popularity_base / 20;
+         if (l.usage_count) score += Math.min(l.usage_count * 5, 50);
+         l.relevance_score = (l.relevance_score || 0) + score;
+      });
+      local = local.sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0)).slice(0, limit);
+
+      off.forEach(o => {
+         (o as any)._score = calculateScore(o, term);
+      });
+      off = off.sort((a: any, b: any) => (b._score || 0) - (a._score || 0)).slice(0, limit);
 
       return { local, off };
     } catch (edgeErr) {
@@ -170,7 +216,7 @@ export const foodDatabaseService = {
       // Fallback direto para RPC local
       const { data, error } = await supabase.rpc('search_foods', {
         p_query: term,
-        p_limit: limit,
+        p_limit: limit * 2,
       });
 
       if (error) {
@@ -178,16 +224,30 @@ export const foodDatabaseService = {
         return { local: [], off: [] };
       }
 
-      const local = (data || []).map(rowToFoodItem);
+      let local = (data || []).map(rowToFoodItem);
+      
+      local.forEach(l => {
+         let score = calculateScore(l, term);
+         if (l.popularity_base) score += l.popularity_base / 20;
+         if (l.usage_count) score += Math.min(l.usage_count * 5, 50);
+         l.relevance_score = (l.relevance_score || 0) + score;
+      });
+      local = local.sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0)).slice(0, limit);
+      
       let off: OFFResult[] = [];
 
       // Faz a busca OFF diretamente do cliente para não deixar de mostrar
       if (includeOFF) {
         try {
-          off = await this.searchOpenFoodFactsDirectly(term, Math.max(5, limit - local.length));
+          off = await this.searchOpenFoodFactsDirectly(term, Math.max(10, limit));
+          off.forEach(o => {
+             (o as any)._score = calculateScore(o, term);
+          });
+          off = off.sort((a: any, b: any) => (b._score || 0) - (a._score || 0));
+          
           // Filtra duplicatas
           const localNames = new Set(local.map((l: FoodItem) => l.name.toLowerCase()));
-          off = off.filter(f => !localNames.has(f.name.toLowerCase()));
+          off = off.filter(f => !localNames.has(f.name.toLowerCase())).slice(0, limit);
         } catch (offErr) {
           console.warn('[foodDatabase] Fallback OFF direto falhou:', offErr);
         }

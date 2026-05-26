@@ -103,13 +103,21 @@ export function useFoodSearch(options: UseFoodSearchOptions = {}) {
     const trySearch = async (term: string): Promise<FoodItem | null> => {
       const cleaned = term.replace(/[^a-zA-ZÀ-ÿ0-9 ]/g, '').trim();
       if (cleaned.length < 2) return null;
-      const { local } = await foodDatabaseService.searchFood(cleaned, {
+      const { local, off } = await foodDatabaseService.searchFood(cleaned, {
         limit: 1,
         context,
         userId: userData?.id,
-        includeOFF: false, // IA usa só local (mais rápido)
+        includeOFF: true, // Habilitado OFF fallback na IA
       });
-      return local.length > 0 ? local[0] : null;
+      if (local.length > 0) return local[0];
+      if (off.length > 0) {
+        try {
+          return await foodDatabaseService.cacheOFFFood(off[0], userData?.id);
+        } catch {
+          return foodDatabaseService.offToFoodItem(off[0]);
+        }
+      }
+      return null;
     };
 
     let found: FoodItem | null = null;

@@ -796,6 +796,6 @@
   .fm-landing .fm-h1 { font-size: clamp(32px, 9vw, 44px); }
   .fm-landing .fm-hero-actions .fm-btn-lg { width: 100%; }
   .fm-landing .fm-pitch-card-crn, .fm-landing .fm-pitch-card-name { transform: scale(0.85); }
-  .fm-landing .fm-pitch-card-crn { right: -20px; }
+  .fm-landing .fm-pitch-card-crn { right: -50px; }
   .fm-landing .fm-pitch-card-name { left: -16px; }
 }

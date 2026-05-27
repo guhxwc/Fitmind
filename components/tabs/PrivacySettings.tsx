@@ -132,22 +132,50 @@ export const PrivacySettings: React.FC = () => {
             const { data, error } = await supabase.functions.invoke('cancel-subscription');
             
             if (error || data?.error) {
-                console.log("Erro na função cancel-subscription. Redirecionando para o portal do Stripe...", error || data?.error);
+                // Tenta extrair a mensagem de erro específica amigável
+                let errorMessage = "Erro desconhecido";
+                if (error) {
+                    if (error.context && typeof error.context.clone === 'function') {
+                        try {
+                            const clonedRes = error.context.clone();
+                            const bodyText = await clonedRes.text();
+                            try {
+                                const parsed = JSON.parse(bodyText);
+                                errorMessage = parsed?.error || parsed?.message || bodyText;
+                            } catch {
+                                if (bodyText?.trim()) errorMessage = bodyText;
+                            }
+                        } catch (e) {
+                            console.error("Erro ao ler resposta de erro:", e);
+                        }
+                    }
+                    if (errorMessage === "Erro desconhecido") {
+                        errorMessage = error.message || String(error);
+                    }
+                } else if (data?.error) {
+                    errorMessage = data.error;
+                }
+
+                console.log(`Erro na função cancel-subscription (${errorMessage}). Redirecionando para o portal do Stripe...`);
                 
                 // Fallback: Redirecionar para o portal de pagamentos do Stripe
                 const { data: portalData, error: portalError } = await supabase.functions.invoke('create-portal-session', {
                     body: { returnUrl: window.location.origin + '/#/settings/privacy' }
                 });
 
-                if (portalError) throw new Error(portalError.message);
-                if (portalData?.error) throw new Error(portalData.error);
+                if (portalError) {
+                    throw new Error(errorMessage !== "Erro desconhecido" ? errorMessage : portalError.message);
+                }
+                if (portalData?.error) {
+                    throw new Error(errorMessage !== "Erro desconhecido" ? errorMessage : portalData.error);
+                }
                 
                 if (portalData?.url) {
                     window.location.href = portalData.url;
                     return;
                 }
                 
-                throw new Error(error?.message || data?.error || "Erro desconhecido");
+                throw new Error(errorMessage);
             }
 
             addToast("Assinatura cancelada com sucesso.", "success");

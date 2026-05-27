@@ -77,7 +77,7 @@ export const StepFinalPlan: React.FC<StepFinalPlanProps> = ({ onNext, onBack, da
               <ChevronLeftIcon className="w-5 h-5" />
           </button>
           <button 
-            onClick={onBack}
+            onClick={onNext}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 text-gray-400 hover:text-red-500 border border-gray-100 dark:border-gray-700 active:scale-95 transition-all"
           >
               <XMarkIcon className="w-5 h-5" />

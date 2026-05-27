@@ -72,7 +72,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     const savedData = localStorage.getItem('onboarding_userData');
     return savedData ? JSON.parse(savedData) : DEFAULT_USER_DATA;
   });
-  const [showSubscription, setShowSubscription] = useState(false);
   const { addToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -207,27 +206,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     // Clear saved step on completion
     localStorage.removeItem('onboarding_step');
     localStorage.removeItem('onboarding_userData');
-    // Optionally clear Supabase progress or mark as completed, but keeping it allows "returning" if needed.
-    // However, usually completion means moving to the main app.
-    // We might want to keep it in Supabase for analytics or recovery if signup fails.
     onComplete(userData);
   };
 
   const handleFinalStepNext = () => {
       handleComplete();
-      setShowSubscription(true);
   };
 
-  const handleSubscriptionClose = () => {
-      setShowSubscription(false);
-  };
-
-  const handleSubscriptionSuccess = (plan: 'annual' | 'monthly') => {
-      // O status PRO será atualizado pelo webhook.
-      // Aqui apenas fechamos a subscrição se necessário.
-      setShowSubscription(false);
-  };
-  
   // Total questions/interactive steps (excluding Analyzing and FinalPlan)
   const TOTAL_STEPS = 26;
 
@@ -320,13 +305,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   return (
     <div className="h-screen overflow-hidden bg-white dark:bg-black">
         {steps[step]}
-        {showSubscription && (
-            <SubscriptionPage 
-                onClose={handleSubscriptionClose} 
-                onSubscribe={handleSubscriptionSuccess}
-                customUserData={userData} 
-            />
-        )}
     </div>
   );
 };

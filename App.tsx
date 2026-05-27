@@ -339,7 +339,6 @@ const AppContent: React.FC = () => {
       }
       await fetchData();
       setProfileExists(true);
-      setUpsellDismissed(true);
       navigate('/');
     } catch (err) {
       console.error("Critical error during onboarding complete:", err);
@@ -432,10 +431,14 @@ const AppContent: React.FC = () => {
                     />
                   )
                 ) : (
-                  <OnboardingFlow 
-                    onComplete={handleOnboardingComplete} 
-                    initialData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
-                  />
+                    <SubscriptionPage 
+                      onClose={() => setUpsellDismissed(true)} 
+                      onSubscribe={() => {
+                        setUpsellDismissed(true);
+                        window.location.reload();
+                      }}
+                      customUserData={userData ? (({ id, ...rest }) => rest)(userData) : undefined}
+                    />
                 )
               )
             ) : (

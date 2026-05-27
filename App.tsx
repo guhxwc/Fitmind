@@ -74,6 +74,32 @@ const InviteRedirect: React.FC = () => {
   return <Navigate to="/" replace />;
 };
 
+const FreeUserFlow: React.FC<{ userData: any; onDismiss: () => void }> = ({ userData, onDismiss }) => {
+  const [step, setStep] = useState(0);
+
+  if (step === 0) {
+    return (
+      <StepFinalPlan
+        data={userData}
+        buttonLabel="Começar Jornada"
+        onNext={() => setStep(1)}
+        onBack={onDismiss}
+      />
+    );
+  }
+
+  return (
+    <SubscriptionPage
+      onClose={onDismiss}
+      onSubscribe={() => {
+        onDismiss();
+        window.location.reload();
+      }}
+      customUserData={userData}
+    />
+  );
+};
+
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const { userData, loading: contextLoading, fetchData, session: contextSession, isNutritionist } = useAppContext();
@@ -431,13 +457,9 @@ const AppContent: React.FC = () => {
                     />
                   )
                 ) : (
-                    <SubscriptionPage 
-                      onClose={() => setUpsellDismissed(true)} 
-                      onSubscribe={() => {
-                        setUpsellDismissed(true);
-                        window.location.reload();
-                      }}
-                      customUserData={userData ? (({ id, ...rest }) => rest)(userData) : undefined}
+                    <FreeUserFlow 
+                      userData={userData ? (({ id, ...rest }) => rest)(userData) : undefined} 
+                      onDismiss={() => setUpsellDismissed(true)} 
                     />
                 )
               )

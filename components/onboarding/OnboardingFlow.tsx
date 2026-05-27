@@ -209,10 +209,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     onComplete(userData);
   };
 
-  const handleFinalStepNext = () => {
-      handleComplete();
-  };
-
   // Total questions/interactive steps (excluding Analyzing and FinalPlan)
   const TOTAL_STEPS = 26;
 
@@ -283,15 +279,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     // ------------------------
 
     <StepComparison key="comp" onNext={nextStep} onBack={prevStep} step={26} total={TOTAL_STEPS} />,
-    <StepAnalyzing key="analyze" onComplete={nextStep} />,
-    <StepFinalPlan 
-        key="final" 
-        onNext={handleFinalStepNext} 
-        onBack={() => {
-            setStep(prev => prev - 2); // Skip StepAnalyzing
-        }} 
-        data={userData} 
-    />,
+    <StepAnalyzing key="analyze" onComplete={handleComplete} />,
   ];
 
   if (isLoading) {

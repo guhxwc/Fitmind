@@ -250,11 +250,11 @@ export const SummaryTab: React.FC = () => {
           setShowProModal(true);
           return;
       }
-      setQuickAddProtein(p => Math.round((p + 0.1) * 10) / 10);
+      setQuickAddProtein(p => Math.round((p + 1.0) * 10) / 10);
       updateStreak();
-      track(AnalyticsEvent.quickProteinAdded, { grams_added: 0.1, total_grams: quickAddProtein + 0.1 });
+      track(AnalyticsEvent.quickProteinAdded, { grams_added: 1.0, total_grams: quickAddProtein + 1.0 });
   };
-  const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, Math.round((p - 0.1) * 10) / 10));
+  const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, Math.round((p - 1.0) * 10) / 10));
   
   const openAddMeal = (type: string) => {
       if (!userData.isPro) {

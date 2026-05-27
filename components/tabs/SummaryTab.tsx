@@ -64,7 +64,7 @@ const DonutCard: React.FC<{
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{unit === 'L' ? value.toFixed(1) : value}</span>
+            <span className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{unit === 'L' ? value.toFixed(1) : parseFloat(value.toFixed(1))}</span>
             <span className="text-[10px] text-gray-400 font-semibold uppercase mt-0.5">de {goal}</span>
         </div>
       </div>
@@ -250,11 +250,11 @@ export const SummaryTab: React.FC = () => {
           setShowProModal(true);
           return;
       }
-      setQuickAddProtein(p => p + 0.1);
+      setQuickAddProtein(p => Math.round((p + 0.1) * 10) / 10);
       updateStreak();
       track(AnalyticsEvent.quickProteinAdded, { grams_added: 0.1, total_grams: quickAddProtein + 0.1 });
   };
-  const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, p - 0.1));
+  const handleRemoveProtein = () => setQuickAddProtein(p => Math.max(0, Math.round((p - 0.1) * 10) / 10));
   
   const openAddMeal = (type: string) => {
       if (!userData.isPro) {

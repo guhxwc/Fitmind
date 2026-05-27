@@ -29,7 +29,7 @@ export const LandingPage: React.FC = () => {
         }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
 
         const observeAll = () => {
-            ['.fm-hero-copy', '.fm-strip-inner', '.fm-section-head', '.fm-feature', '.fm-step', '.fm-pitch', '.fm-testimonial', '.fm-faq', '.sv-form']
+            ['.fm-hero-copy', '.fm-strip-inner', '.fm-section-head', '.fm-feature', '.fm-step', '.fm-pitch', '.fm-testimonial', '.fm-faq-wrapper', '.sv-form']
                 .forEach((sel) => {
                     document.querySelectorAll(sel).forEach((el, i) => {
                         (el as HTMLElement).style.setProperty('--anim-i', String(i));
@@ -350,7 +350,9 @@ export const LandingPage: React.FC = () => {
             </section>
 
             {/* FAQ */}
-            <FAQSection />
+            <div className="fm-faq-wrapper">
+                <FAQSection />
+            </div>
 
             {/* FOOTER */}
             <footer className="fm-footer">

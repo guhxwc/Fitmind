@@ -129,7 +129,7 @@
   transition: opacity .5s ease, transform .6s cubic-bezier(.2,.7,.2,1);
   transition-delay: calc(var(--anim-i, 0) * 60ms);
 }
-.fm-landing .fm-faq.in-view .fm-faq-item-anim { opacity: 1; transform: none; }
+.fm-landing .fm-faq-wrapper.in-view .fm-faq-item-anim { opacity: 1; transform: none; }
 
 .fm-landing .fm-pitch .fm-pitch-photo {
   transform: scale(1.08); opacity: 0;

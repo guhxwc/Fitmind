@@ -6,7 +6,7 @@ import { useToast } from './ToastProvider';
 import { track, AnalyticsEvent } from '../lib/analytics';
 
 const STRIPE_PRICE_IDS = {
-    monthly: 'price_1TW0XiQdX6ANfRVOK4D8qmHu',
+    monthly: 'price_1TbxF1QdX6ANfRVOLNsUxx3y',
     annual: 'price_1TW0XWQdX6ANfRVOO7wcWH65'
 };
 

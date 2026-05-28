@@ -223,6 +223,7 @@ serve(async (req) => {
       const subscription = event.data.object;
       const customerId = subscription.customer;
       const status = subscription.status;
+      const isCanceling = subscription.cancel_at_period_end;
 
       if (status !== 'active' && status !== 'trialing') {
         console.log(`❌ Assinatura inativa (${status}) para cliente ${customerId}. Removendo PRO...`);
@@ -240,17 +241,32 @@ serve(async (req) => {
             console.log(`✅ Status PRO removido para cliente ${customerId}.`);
         }
       } else if (status === 'active' || status === 'trialing') {
-        console.log(`✅ Assinatura ativa (${status}) para cliente ${customerId}. Mantendo PRO...`);
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ 
-            is_pro: true, 
-            subscription_status: status
-          })
-          .eq('stripe_customer_id', customerId);
-          
-        if (profileError) {
-            console.error("❌ Erro ao atualizar banco:", profileError.message);
+        if (isCanceling) {
+          console.log(`⚠️ Assinatura ativa (${status}), mas cancel_at_period_end=true. Removendo PRO pelo desejo do admin...`);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              is_pro: false, 
+              subscription_status: 'canceled'
+            })
+            .eq('stripe_customer_id', customerId);
+            
+          if (profileError) {
+              console.error("❌ Erro ao atualizar banco:", profileError.message);
+          }
+        } else {
+          console.log(`✅ Assinatura ativa (${status}) para cliente ${customerId}. Mantendo PRO...`);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              is_pro: true, 
+              subscription_status: status
+            })
+            .eq('stripe_customer_id', customerId);
+            
+          if (profileError) {
+              console.error("❌ Erro ao atualizar banco:", profileError.message);
+          }
         }
       }
     }

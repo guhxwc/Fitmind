@@ -115,30 +115,43 @@ serve(async (req) => {
     // ── Cancela imediatamente em vez de no fim do período ─────────────────────
     // O usuário solicitou que o cancelamento seja imediato ("cancelar mesmo").
     let canceledSubscription: Stripe.Subscription
+    let message = ''
 
     if (subscription.status === 'canceled') {
       canceledSubscription = subscription
+      message = 'Sua assinatura já estava cancelada e o período esgotado.'
       console.log(`[cancel-subscription] Assinatura ${subscription.id} já estava cancelada.`)
+    } else if (subscription.cancel_at_period_end) {
+      canceledSubscription = subscription
+      const endDate = new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')
+      message = `Sua assinatura já estava programada para cancelar. Você pode usar até ${endDate}.`
+      console.log(`[cancel-subscription] Assinatura ${subscription.id} já agendada para cancelar em ${endDate}.`)
     } else {
-      canceledSubscription = await stripe.subscriptions.cancel(subscription.id)
-      console.log(`[cancel-subscription] Assinatura ${subscription.id} cancelada imediatamente.`)
+      canceledSubscription = await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true
+      })
+      const endDate = new Date(canceledSubscription.current_period_end * 1000).toLocaleDateString('pt-BR')
+      message = `Assinatura cancelada com sucesso. Você pode continuar usando até acabar o período da assinatura (${endDate}).`
+      console.log(`[cancel-subscription] Assinatura ${subscription.id} agendada para cancelar no final do período (${endDate}).`)
     }
 
-    // ── Atualiza o banco com status de cancelamento imediato ──────────────────
+    const isNowCanceled = canceledSubscription.status === 'canceled'
+
+    // ── Atualiza o banco ──────────────────
     await supabaseAdmin
       .from('profiles')
       .update({
-        subscription_status: 'canceled',
-        is_pro: false,
+        subscription_status: isNowCanceled ? 'canceled' : 'canceled_at_period_end',
+        is_pro: isNowCanceled ? false : true,
       })
       .eq('id', user.id)
 
-    console.log(`[cancel-subscription] ✅ Sucesso: usuário ${user.id} cancelamento imediato concluído`)
+    console.log(`[cancel-subscription] ✅ Sucesso: usuário ${user.id} cancelamento concluído`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Assinatura cancelada com sucesso. Seu acesso PRO foi encerrado.`,
+        message,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

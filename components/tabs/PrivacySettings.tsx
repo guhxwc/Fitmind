@@ -131,7 +131,7 @@ export const PrivacySettings: React.FC = () => {
         try {
             const { data, error } = await supabase.functions.invoke('cancel-subscription');
             
-            if (error || data?.error) {
+            if (error || (data && data.error && !data.success)) {
                 // Tenta extrair a mensagem de erro específica amigável
                 let errorMessage = "Erro desconhecido";
                 if (error) {
@@ -178,7 +178,7 @@ export const PrivacySettings: React.FC = () => {
                 throw new Error(errorMessage);
             }
 
-            addToast("Assinatura cancelada com sucesso.", "success");
+            addToast(data?.message || "Assinatura cancelada com sucesso.", "success");
             setShowCancelConfirm(false);
             // Reload page or fetch data to reflect changes
             window.location.reload();

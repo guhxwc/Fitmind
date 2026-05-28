@@ -242,12 +242,12 @@ serve(async (req) => {
         }
       } else if (status === 'active' || status === 'trialing') {
         if (isCanceling) {
-          console.log(`⚠️ Assinatura ativa (${status}), mas cancel_at_period_end=true. Removendo PRO pelo desejo do admin...`);
+          console.log(`⚠️ Assinatura ativa (${status}), mas cancel_at_period_end=true. Mantendo PRO até o fim do período...`);
           const { error: profileError } = await supabase
             .from('profiles')
             .update({ 
-              is_pro: false, 
-              subscription_status: 'canceled'
+              is_pro: true, 
+              subscription_status: 'canceled_at_period_end'
             })
             .eq('stripe_customer_id', customerId);
             

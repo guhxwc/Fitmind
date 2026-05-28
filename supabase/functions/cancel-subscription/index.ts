@@ -112,43 +112,33 @@ serve(async (req) => {
       )
     }
 
-    // ── Bug #5 corrigido: cancela no fim do período (não imediatamente) ───────
-    // O usuário paga por um período — deve ter acesso até o fim.
-    // cancel_at_period_end = true: acesso continua até a data de renovação,
-    // depois o webhook customer.subscription.updated vai setar is_pro = false.
+    // ── Cancela imediatamente em vez de no fim do período ─────────────────────
+    // O usuário solicitou que o cancelamento seja imediato ("cancelar mesmo").
     let canceledSubscription: Stripe.Subscription
 
-    if (subscription.cancel_at_period_end) {
-      // Já estava agendado para cancelar — não faz nada no Stripe
+    if (subscription.status === 'canceled') {
       canceledSubscription = subscription
-      console.log(`[cancel-subscription] Assinatura ${subscription.id} já estava com cancel_at_period_end=true`)
+      console.log(`[cancel-subscription] Assinatura ${subscription.id} já estava cancelada.`)
     } else {
-      canceledSubscription = await stripe.subscriptions.update(subscription.id, {
-        cancel_at_period_end: true,
-      })
-      console.log(`[cancel-subscription] Assinatura ${subscription.id} agendada para cancelar em ${new Date(canceledSubscription.current_period_end * 1000).toISOString()}`)
+      canceledSubscription = await stripe.subscriptions.cancel(subscription.id)
+      console.log(`[cancel-subscription] Assinatura ${subscription.id} cancelada imediatamente.`)
     }
 
-    // ── Atualiza o banco com status de cancelamento agendado ──────────────────
-    // is_pro permanece true até o fim do período — o webhook fará is_pro = false
-    // quando a assinatura expirar de fato.
-    const periodEnd = new Date(canceledSubscription.current_period_end * 1000).toISOString()
-
+    // ── Atualiza o banco com status de cancelamento imediato ──────────────────
     await supabaseAdmin
       .from('profiles')
       .update({
-        subscription_status: 'cancel_at_period_end',
-        // Mantém is_pro = true até o fim do período pago
+        subscription_status: 'canceled',
+        is_pro: false,
       })
       .eq('id', user.id)
 
-    console.log(`[cancel-subscription] ✅ Sucesso: usuário ${user.id} cancelamento agendado para ${periodEnd}`)
+    console.log(`[cancel-subscription] ✅ Sucesso: usuário ${user.id} cancelamento imediato concluído`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Assinatura cancelada. Você mantém o acesso PRO até ${new Date(periodEnd).toLocaleDateString('pt-BR')}.`,
-        cancel_at: periodEnd,
+        message: `Assinatura cancelada com sucesso. Seu acesso PRO foi encerrado.`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

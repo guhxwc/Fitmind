@@ -296,14 +296,19 @@ const AppContent: React.FC = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, height')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) {
         console.error("Erro explícito do Supabase em fetchProfile:", error);
       }
-      setProfileExists(!!data);
+      
+      const { data: nutriData } = await supabase.rpc('is_nutritionist');
+
+      // Profile is only considered "complete" if it has height (set via onboarding) 
+      // or if the user is a nutritionist. Otherwise, they must complete onboarding.
+      setProfileExists(!!data && (!!data.height || !!nutriData));
     } catch (err) {
       console.error("❌ Erro ao buscar perfil:", err);
       // Evitar que o usuário fique em um carregamento infinito:

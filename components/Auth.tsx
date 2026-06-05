@@ -224,11 +224,22 @@ export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signu
       return;
     }
 
+    let userMetaData = {};
+    const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
+    if (pendingOnboardingStr) {
+      try {
+        userMetaData = { onboarding_data: JSON.parse(pendingOnboardingStr) };
+      } catch (e) {
+        console.error("Erro ao fazer parse dos dados de onboarding", e);
+      }
+    }
+
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin,
+        data: userMetaData
       }
     });
 
@@ -626,6 +637,7 @@ export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signu
                 className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-black"
               >
                 <Loader2 className="w-10 h-10 animate-spin text-gray-400 mb-4" />
+                {/* Git Trigger */}
                 <p className="text-gray-500 font-medium">Carregando...</p>
               </motion.div>
             )}

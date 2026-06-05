@@ -12,8 +12,8 @@ interface StepSocialProofProps {
 export const StepSocialProof: React.FC<StepSocialProofProps> = ({ onNext, onBack, step, totalSteps }) => {
   // URLs diretas para as imagens com timestamp para evitar cache
   const timestamp = new Date().getTime();
-  const beforeImageUrl = `https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_antes.png?t=${timestamp}`;
-  const afterImageUrl = `https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_depois.png?t=${timestamp}`;
+  const beforeImageUrl = `https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_antes.png`;
+  const afterImageUrl = `https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_depois.png`;
 
   return (
     <OnboardingScreen>

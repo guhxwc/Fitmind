@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UserData } from '../../types';
 import { DEFAULT_USER_DATA } from '../../constants';
 import { StepName } from './StepName';
@@ -57,6 +58,7 @@ interface OnboardingFlowProps {
 }
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, initialData, initialStep }) => {
+  const navigate = useNavigate();
   const { calculateGoals } = useAppContext();
   
   // Initialize step from props if available, else localStorage, else 0
@@ -224,7 +226,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   // The sequence of screens
   const steps = [
     // 0. Welcome
-    <StepWelcome key="welcome" onNext={nextStep} />,
+    <StepWelcome key="welcome" onNext={nextStep} onBack={() => navigate('/auth')} />,
 
     // 1. Status
     <StepGlpStatus key="glp" onNext={nextStep} onBack={prevStep} value={userData.glpStatus} onSelect={(status) => updateUserData({ glpStatus: status })} step={1} total={TOTAL_STEPS} />,

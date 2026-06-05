@@ -221,20 +221,32 @@ const AppContent: React.FC = () => {
           referral_code: localStorage.getItem('affiliate_ref') || undefined,
         });
         
-        // Sync pending onboarding data from localStorage if exists
+        // Sync pending onboarding data from localStorage or user_metadata if exists
         if (_event === 'SIGNED_IN') {
           track(AnalyticsEvent.loginCompleted, { provider: session.user.app_metadata?.provider });
           
           try {
-            const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
-            if (pendingOnboardingStr) {
-               const parsedData = JSON.parse(pendingOnboardingStr);
+             let parsedData = null;
+             
+             // First check user_metadata (this helps if user verified email in a different browser)
+             if (session.user.user_metadata?.onboarding_data) {
+                parsedData = session.user.user_metadata.onboarding_data;
+             } 
+             // Fallback to localStorage (for Google Login or same-browser signup)
+             else {
+               const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
+               if (pendingOnboardingStr) {
+                  parsedData = JSON.parse(pendingOnboardingStr);
+               }
+             }
+
+             if (parsedData) {
                // We will call handleOnboardingComplete directly, but we need to wait a tick 
-               // for session to be fully registered in state? No, we can pass session directly.
+               // for session to be fully registered in state
                setTimeout(() => {
                  handleOnboardingSync(session, parsedData);
                }, 500);
-            }
+             }
           } catch(err) {
              console.error("Error processing pending onboarding", err);
           }

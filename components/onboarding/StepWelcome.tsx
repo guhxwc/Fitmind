@@ -1,14 +1,33 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { OnboardingScreen, OnboardingFooter } from './OnboardingComponents';
 
 interface StepWelcomeProps {
   onNext: () => void;
+  onBack?: () => void;
 }
 
-export const StepWelcome: React.FC<StepWelcomeProps> = ({ onNext }) => {
+export const StepWelcome: React.FC<StepWelcomeProps> = ({ onNext, onBack }) => {
+  useEffect(() => {
+    // Preload social proof images internally to ensure they are available by the time the user reaches that step
+    const preloadImg1 = new Image();
+    preloadImg1.src = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_antes.png";
+    const preloadImg2 = new Image();
+    preloadImg2.src = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/user-photos/imagem_depois.png";
+  }, []);
+
   return (
     <OnboardingScreen>
+      {onBack && (
+        <div className="absolute top-4 left-6 z-20">
+            <button 
+                onClick={onBack} 
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-white shadow-sm active:scale-90 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+        </div>
+      )}
       <div className="flex-grow flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
         {/* Background Decorative Elements */}
         <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-3xl"></div>

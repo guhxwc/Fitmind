@@ -203,9 +203,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
   };
 
   const handleComplete = () => {
-    // Clear saved step on completion
-    localStorage.removeItem('onboarding_step');
-    localStorage.removeItem('onboarding_userData');
+    // For unauthenticated users, we set a flag so that once they authenticate
+    // they don't see the StepFinalPlan again immediately in FreeUserFlow
+    if (!userId) {
+       localStorage.setItem('skip_final_plan', 'true');
+    }
+    
+    // Only clear local storage if the user is logged in
+    // For unauthenticated users, we need these values to persist through the auth flow
+    if (userId) {
+      localStorage.removeItem('onboarding_step');
+      localStorage.removeItem('onboarding_userData');
+    }
     onComplete(userData);
   };
 
@@ -279,7 +288,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     // ------------------------
 
     <StepComparison key="comp" onNext={nextStep} onBack={prevStep} step={26} total={TOTAL_STEPS} />,
-    <StepAnalyzing key="analyze" onComplete={handleComplete} />,
+    <StepAnalyzing key="analyze" onComplete={nextStep} />,
+    <StepFinalPlan key="final" data={userData} buttonLabel="Continuar" onBack={prevStep} onNext={handleComplete} />
   ];
 
   if (isLoading) {

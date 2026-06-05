@@ -11,6 +11,19 @@ export const LandingPage: React.FC = () => {
 
     // ── Scroll animations ────────────────────────────────────────────────
     useEffect(() => {
+        // Preload Auth assets
+        const preloadImg1 = new Image();
+        preloadImg1.src = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Ampola.png";
+        const preloadImg2 = new Image();
+        preloadImg2.src = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.png";
+        
+        const prefetchVideo = async () => {
+            try {
+                await fetch("https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero.mp4", { mode: 'no-cors' });
+            } catch (e) {}
+        };
+        prefetchVideo();
+
         // Progress bar
         const bar = document.createElement('div');
         bar.className = 'fm-scroll-progress';

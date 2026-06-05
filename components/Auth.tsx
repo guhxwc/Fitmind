@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { useAppContext } from './AppContext';
@@ -22,17 +23,28 @@ const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
   const SERINGA_URL = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.png";
   const VIDEO_URL   = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero.mp4";
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  useEffect(() => {
+    if (videoRef.current && videoRef.current.readyState >= 3) {
+      onLoaded();
+    }
+    // Also set a fallback timeout just in case it hangs
+    const timer = setTimeout(onLoaded, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const floatVariantsLeft = {
     animate: {
       y: [0, -14, 0],
-      transition: { duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "loop" as const },
+      transition: { duration: 4, repeat: Infinity, ease: "easeInOut" as const, repeatType: "loop" as const },
     },
   };
 
   const floatVariantsRight = {
     animate: {
       y: [0, 14, 0],
-      transition: { duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "loop" as const, delay: 0.5 },
+      transition: { duration: 4, repeat: Infinity, ease: "easeInOut" as const, repeatType: "loop" as const, delay: 0.5 },
     },
   };
 
@@ -49,7 +61,7 @@ const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
       </motion.div>
 
       <div style={{ width: '70%', maxWidth: 245, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: 'transparent' }}>
-        <video src={VIDEO_URL} autoPlay loop muted playsInline onCanPlayThrough={onLoaded} onLoadedData={onLoaded}
+        <video ref={videoRef} src={VIDEO_URL} autoPlay loop muted playsInline onCanPlayThrough={onLoaded} onLoadedData={onLoaded}
           style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 28, transform: 'scale(1.01)' }} />
       </div>
 
@@ -77,8 +89,9 @@ const translateAuthError = (message: string) => {
   return 'Ocorreu um erro inesperado. Tente novamente.';
 };
 
-export const Auth: React.FC = () => {
+export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signup_options' | 'login_email' | 'signup_email' | 'verify_email' | 'enter_token' }> = ({ defaultView = 'welcome' }) => {
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [email, setEmail] = useState('');
@@ -88,8 +101,25 @@ export const Auth: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [resendCountdown, setResendCountdown] = useState(0);
-  const [view, setView] = useState<'landing' | 'login' | 'signup' | 'enter_token' | 'verify_email'>('landing');
+  
+  const [view, setView] = useState<'welcome' | 'login_options' | 'signup_options' | 'login_email' | 'signup_email' | 'verify_email' | 'enter_token'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'signup_options' || mode === 'login_options' || mode === 'welcome') {
+      return mode as any;
+    }
+    return defaultView;
+  });
+  
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (!mode) {
+      setView(defaultView);
+    }
+  }, [defaultView]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -311,7 +341,7 @@ export const Auth: React.FC = () => {
     return (
         <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto">
           <div className="pt-4">
-            <button onClick={() => { setView('landing'); setError(null); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+            <button onClick={() => { setView(isSignupView ? 'signup_options' : 'login_options'); setError(null); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
           </div>
@@ -398,14 +428,14 @@ export const Auth: React.FC = () => {
                 {isSignupView ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Já tem uma conta?{' '}
-                    <button onClick={() => { setView('login'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
+                    <button onClick={() => { setView('login_options'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
                       Entre agora
                     </button>
                   </p>
                 ) : (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Não tem uma conta?{' '}
-                    <button onClick={() => { setView('signup'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
+                    <button onClick={() => { setView('signup_options'); setError(null); }} className="font-semibold text-black dark:text-white hover:underline">
                       Cadastre-se agora
                     </button>
                   </p>
@@ -417,10 +447,60 @@ export const Auth: React.FC = () => {
   };
 
   switch (view) {
-    case 'login':
+    case 'login_email':
       return renderLoginOrSignupView(false);
-    case 'signup':
+    case 'signup_email':
       return renderLoginOrSignupView(true);
+    case 'login_options':
+      return (
+        <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto">
+          <div className="pt-4">
+            <button onClick={() => { setView('welcome'); setError(null); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+          </div>
+          <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center">Acesse sua conta</h1>
+            <div className="space-y-4">
+              <button onClick={handleGoogleLogin} disabled={loading}
+                className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                <GoogleIcon /> Entrar com Google
+              </button>
+              <button onClick={() => setView('login_email')} disabled={loading}
+                className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Entrar com e-mail
+              </button>
+            </div>
+            {error && <p className="text-red-500 text-sm text-center mt-6">{error}</p>}
+          </div>
+        </div>
+      );
+    case 'signup_options':
+      return (
+        <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto">
+          <div className="pt-4">
+            <button onClick={() => { navigate(-1); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+          </div>
+          <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center">Crie sua conta pra resgatar o seu plano personalizado</h1>
+            <div className="space-y-4">
+              <button onClick={handleGoogleLogin} disabled={loading}
+                className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                <GoogleIcon /> Cadastrar com Google
+              </button>
+              <button onClick={() => setView('signup_email')} disabled={loading}
+                className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Cadastrar com e-mail
+              </button>
+            </div>
+            {error && <p className="text-red-500 text-sm text-center mt-6">{error}</p>}
+          </div>
+        </div>
+      );
     case 'verify_email':
       return (
         <div className="h-screen flex flex-col justify-center p-8 bg-white dark:bg-black text-center animate-fade-in">
@@ -482,7 +562,7 @@ export const Auth: React.FC = () => {
               </div>
 
               <button 
-                onClick={() => { setView('signup'); setError(null); setMessage(null); }} 
+                onClick={() => { setView('signup_options'); setError(null); setMessage(null); }} 
                 className="w-full py-2 px-4 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-sm"
               >
                 Usar outro email
@@ -527,13 +607,13 @@ export const Auth: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center">
-              <button onClick={() => { setView('signup'); setError(null); }} className="font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+              <button onClick={() => { setView('signup_options'); setError(null); }} className="font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
                   Usar outro email
               </button>
           </div>
         </div>
       );
-    case 'landing':
+    case 'welcome':
     default:
       return (
         <>
@@ -559,22 +639,16 @@ export const Auth: React.FC = () => {
                 <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight">
                   Bem-vindo ao <span className="font-black">FitMind</span>
                 </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-2 text-base">O App #1 para acompanhar seu tratamento</p>
               </div>
               <div className="space-y-3">
-                <button onClick={handleGoogleLogin} disabled={loading}
-                  className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
-                  <GoogleIcon /> Continuar com Google
-                </button>
-                <button onClick={() => setView('login')} disabled={loading}
-                  className="w-full flex justify-center items-center py-3.5 px-4 rounded-2xl text-base font-semibold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60">
-                  Entrar com Email
+                <button onClick={() => navigate('/onboarding')} disabled={loading}
+                  className="w-full flex justify-center items-center py-4 px-4 rounded-2xl text-lg font-bold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60">
+                  Começar
                 </button>
               </div>
               <div className="mt-5 text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Não tem uma conta?{' '}
-                  <button onClick={() => setView('signup')} className="font-bold text-black dark:text-white hover:underline">Cadastre-se</button>
-                </p>
+                  <button onClick={() => setView('login_options')} className="text-base text-gray-500 dark:text-gray-400 font-medium hover:text-black dark:hover:text-white underline underline-offset-4">Já tenho uma conta</button>
               </div>
             </div>
           </div>

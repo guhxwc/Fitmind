@@ -74,8 +74,19 @@ const InviteRedirect: React.FC = () => {
   return <Navigate to="/" replace />;
 };
 
+const UnauthOnboardingRoute: React.FC = () => {
+  const navigate = useNavigate();
+  return <OnboardingFlow onComplete={() => navigate('/auth?mode=signup_options')} />;
+};
+
 const FreeUserFlow: React.FC<{ userData: any; onDismiss: () => void }> = ({ userData, onDismiss }) => {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => {
+    if (localStorage.getItem('skip_final_plan') === 'true') {
+      localStorage.removeItem('skip_final_plan');
+      return 1;
+    }
+    return 0;
+  });
 
   if (step === 0) {
     return (
@@ -209,9 +220,26 @@ const AppContent: React.FC = () => {
           provider: session.user.app_metadata?.provider,
           referral_code: localStorage.getItem('affiliate_ref') || undefined,
         });
+        
+        // Sync pending onboarding data from localStorage if exists
         if (_event === 'SIGNED_IN') {
           track(AnalyticsEvent.loginCompleted, { provider: session.user.app_metadata?.provider });
+          
+          try {
+            const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
+            if (pendingOnboardingStr) {
+               const parsedData = JSON.parse(pendingOnboardingStr);
+               // We will call handleOnboardingComplete directly, but we need to wait a tick 
+               // for session to be fully registered in state? No, we can pass session directly.
+               setTimeout(() => {
+                 handleOnboardingSync(session, parsedData);
+               }, 500);
+            }
+          } catch(err) {
+             console.error("Error processing pending onboarding", err);
+          }
         }
+        
         fetchProfile(session.user.id);
         fetchData();
       }
@@ -219,6 +247,56 @@ const AppContent: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleOnboardingSync = async (currentSession: Session, userData: Omit<UserData, 'id'>) => {
+    const profileData = {
+      id: currentSession.user.id,
+      name: userData.name || 'Usuário',
+      gender: userData.gender,
+      age: userData.age,
+      birth_date: (userData.birthDate && typeof userData.birthDate === 'string' && userData.birthDate.includes('-')) ? userData.birthDate : null,
+      height: userData.height,
+      weight: userData.weight,
+      target_weight: userData.targetWeight,
+      start_weight: userData.startWeight,
+      start_weight_date: userData.startWeightDate || new Date().toISOString(),
+      activity_level: userData.activityLevel,
+      glp_status: userData.glpStatus,
+      application_frequency: userData.applicationFrequency,
+      pace: userData.pace,
+      motivation: Array.isArray(userData.motivation) ? userData.motivation : (userData.motivation ? [userData.motivation] : []),
+      main_side_effect: userData.mainSideEffect || null,
+      medication: userData.medication || null,
+      notifications: userData.notifications || null,
+      goals: userData.goals || null,
+      streak: userData.streak || 0,
+      last_activity_date: userData.lastActivityDate || new Date().toISOString(),
+      journey_duration: userData.journeyDuration || null,
+      biggest_frustration: userData.biggestFrustration || null,
+      future_worry: userData.futureWorry || null,
+      one_thing_guaranteed: userData.oneThingGuaranteed || null,
+      dream_outcome: userData.dreamOutcome || null,
+      monthly_investment: userData.monthlyInvestment || null,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' });
+      if (error) {
+        console.error("Error saving pending profile:", error);
+      } else {
+        console.log("✅ Pending Profile saved successfully.");
+        localStorage.removeItem('onboarding_userData');
+        localStorage.removeItem('onboarding_step');
+        await fetchData();
+        setProfileExists(true);
+        navigate('/');
+      }
+    } catch (err) {
+      console.error("Critical error during pending onboarding complete:", err);
+    }
+  };
 
   // ─── REGISTRO DE INDICAÇÃO ─────────────────────────────────────────────────
   // Função separada para poder ser chamada em dois momentos:
@@ -394,6 +472,7 @@ const AppContent: React.FC = () => {
       <UpsellProvider>
         <Routes>
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+        <Route path="/onboarding" element={!session ? <UnauthOnboardingRoute /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
@@ -472,7 +551,10 @@ const AppContent: React.FC = () => {
               <OnboardingFlow onComplete={handleOnboardingComplete} />
             )
           ) : (
-            <LandingPage />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
           )
         } />
         

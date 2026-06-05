@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { useAppContext } from './AppContext';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { track, AnalyticsEvent } from '../lib/analytics';
 
 // A simple Google icon component
@@ -16,7 +17,7 @@ const GoogleIcon = () => (
 );
 
 
-const HeroSection = () => {
+const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
   const AMPOLA_URL  = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Ampola.png";
   const SERINGA_URL = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.png";
   const VIDEO_URL   = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero.mp4";
@@ -44,11 +45,11 @@ const HeroSection = () => {
         animate="animate"
       >
         <img src={SERINGA_URL} alt="Seringa GLP-1"
-          style={{ width: 240, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-120px' }} />
+          style={{ width: 440, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-140px' }} />
       </motion.div>
 
       <div style={{ width: '62%', maxWidth: 220, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: '#111' }}>
-        <video src={VIDEO_URL} autoPlay loop muted playsInline
+        <video src={VIDEO_URL} autoPlay loop muted playsInline onCanPlayThrough={onLoaded} onLoadedData={onLoaded}
           style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 28 }} />
       </div>
 
@@ -79,6 +80,7 @@ const translateAuthError = (message: string) => {
 export const Auth: React.FC = () => {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -534,34 +536,49 @@ export const Auth: React.FC = () => {
     case 'landing':
     default:
       return (
-        <div className="h-screen flex flex-col bg-white dark:bg-black overflow-hidden">
-          <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-4">
-            <HeroSection />
+        <>
+          <AnimatePresence>
+            {!isVideoLoaded && (
+              <motion.div
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-black"
+              >
+                <Loader2 className="w-10 h-10 animate-spin text-gray-400 mb-4" />
+                <p className="text-gray-500 font-medium">Carregando...</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div className="h-screen flex flex-col bg-white dark:bg-black overflow-hidden">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-4">
+              <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
+            </div>
+            <div className="px-6 pb-10 flex flex-col gap-0">
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight">
+                  Bem-vindo ao <span className="font-black">FitMind</span>
+                </h1>
+              </div>
+              <div className="space-y-3">
+                <button onClick={handleGoogleLogin} disabled={loading}
+                  className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                  <GoogleIcon /> Continuar com Google
+                </button>
+                <button onClick={() => setView('login')} disabled={loading}
+                  className="w-full flex justify-center items-center py-3.5 px-4 rounded-2xl text-base font-semibold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60">
+                  Entrar com Email
+                </button>
+              </div>
+              <div className="mt-5 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Não tem uma conta?{' '}
+                  <button onClick={() => setView('signup')} className="font-bold text-black dark:text-white hover:underline">Cadastre-se</button>
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="px-6 pb-10 flex flex-col gap-0">
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight">
-                Bem-vindo ao <span className="font-black">FitMind</span>
-              </h1>
-            </div>
-            <div className="space-y-3">
-              <button onClick={handleGoogleLogin} disabled={loading}
-                className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
-                <GoogleIcon /> Continuar com Google
-              </button>
-              <button onClick={() => setView('login')} disabled={loading}
-                className="w-full flex justify-center items-center py-3.5 px-4 rounded-2xl text-base font-semibold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60">
-                Entrar com Email
-              </button>
-            </div>
-            <div className="mt-5 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Não tem uma conta?{' '}
-                <button onClick={() => setView('signup')} className="font-bold text-black dark:text-white hover:underline">Cadastre-se</button>
-              </p>
-            </div>
-          </div>
-        </div>
+        </>
       );
   }
 };

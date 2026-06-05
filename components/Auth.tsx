@@ -132,6 +132,7 @@ export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signu
   }, [resendCountdown]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (view === 'enter_token') {
       inputRefs.current[0]?.focus();
     }
@@ -490,13 +491,13 @@ export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signu
     case 'signup_options':
       return (
         <div className="h-screen flex flex-col p-8 bg-white dark:bg-black overflow-y-auto">
-          <div className="pt-4">
-            <button onClick={() => { navigate(-1); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+          <div className="pt-4 mb-8">
+            <button onClick={() => { navigate(-1); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Crie sua conta pra resgatar o seu plano personalizado</h1>
           </div>
           <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center">Crie sua conta pra resgatar o seu plano personalizado</h1>
             <div className="space-y-4">
               <button onClick={handleGoogleLogin} disabled={loading}
                 className="w-full flex justify-center items-center gap-3 py-4 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">

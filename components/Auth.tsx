@@ -45,7 +45,7 @@ const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
         animate="animate"
       >
         <img src={SERINGA_URL} alt="Seringa GLP-1"
-          style={{ width: 440, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-140px' }} />
+          style={{ width: 900, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-140px' }} />
       </motion.div>
 
       <div style={{ width: '62%', maxWidth: 220, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: '#111' }}>
@@ -551,10 +551,10 @@ export const Auth: React.FC = () => {
             )}
           </AnimatePresence>
           <div className="min-h-[100dvh] flex flex-col bg-white dark:bg-black overflow-x-hidden overflow-y-auto">
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-4">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-10">
               <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
             </div>
-            <div className="px-6 pb-10 flex flex-col gap-0">
+            <div className="px-6 pb-12 flex flex-col gap-0 mt-8">
               <div className="text-center mb-6">
                 <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight">
                   Bem-vindo ao <span className="font-black">FitMind</span>

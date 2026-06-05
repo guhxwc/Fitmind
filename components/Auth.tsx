@@ -550,7 +550,7 @@ export const Auth: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="h-screen flex flex-col bg-white dark:bg-black overflow-hidden">
+          <div className="min-h-[100dvh] flex flex-col bg-white dark:bg-black overflow-x-hidden overflow-y-auto">
             <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-4">
               <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
             </div>

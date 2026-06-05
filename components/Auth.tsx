@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { useAppContext } from './AppContext';
-import { motion, AnimatePresence } from "framer-motion";
-import { Syringe, Dumbbell, TrendingUp, Apple } from "lucide-react";
+import { motion } from "framer-motion";
 import { track, AnalyticsEvent } from '../lib/analytics';
 
 // A simple Google icon component
@@ -17,161 +16,54 @@ const GoogleIcon = () => (
 );
 
 
-const AuthAnimation = () => {
-  const [step, setStep] = useState(0);
+const HeroSection = () => {
+  const AMPOLA_URL  = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Ampola.png";
+  const SERINGA_URL = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.png";
+  const VIDEO_URL   = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero.mp4";
 
-  // Roteiro de animação com os novos tempos (mais rápido nos ícones, normal no retorno)
-  const sequence = [
-    { duration: 2500 }, // 0: Intro (FitMind no centro - Velocidade normal)
-    {
-      icon: Syringe,
-      title: "Controle suas doses",
-      sub: "Nunca mais esqueça de tomar suas doses.",
-      duration: 2200, // Mais rápido
-    }, // 1: Seringa
-    {
-      icon: Dumbbell,
-      title: "Proteja seus músculos",
-      sub: "Perca gordura sem perder massa muscular.",
-      duration: 2200, // Mais rápido
-    }, // 2: Alter
-    {
-      icon: TrendingUp,
-      title: "Acompanhe seu progresso",
-      sub: "",
-      duration: 1800, // Bem rápido
-    }, // 3: Gráfico
-    {
-      icon: Apple,
-      title: "Otimize sua dieta",
-      sub: "",
-      duration: 1800, // Bem rápido
-    }, // 4: Maçã
-    { duration: 2800 }, // 5: Partículas e descida da Logo (Retorna à velocidade normal/suave)
-  ];
+  const floatVariantsLeft = {
+    animate: {
+      y: [0, -14, 0],
+      transition: { duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "loop" as const },
+    },
+  };
 
-  // Controlador de tempo do loop
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStep((prev) => (prev + 1) % sequence.length);
-    }, sequence[step].duration);
-
-    return () => clearTimeout(timer);
-  }, [step]);
-
-  const CurrentIcon = sequence[step]?.icon;
+  const floatVariantsRight = {
+    animate: {
+      y: [0, 14, 0],
+      transition: { duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "loop" as const, delay: 0.5 },
+    },
+  };
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-[400px] overflow-hidden font-sans text-black dark:text-white mb-4">
-      
-      {/* ====================================================
-        TEXTO "FitMind" (Logo Topo / Centro)
-        ==================================================== 
-      */}
+    <div className="relative w-full flex items-center justify-center" style={{ height: 340 }}>
       <motion.div
-        animate={{
-          y: step === 0 ? 0 : step === 5 ? 0 : -180,
-          scale: step === 0 ? 1.5 : step === 5 ? 0.5 : 0.8,
-          opacity: step === 5 ? 0 : 1,
-        }}
-        transition={{ 
-          duration: step === 0 || step === 5 ? 1.2 : 0.6, // Mais suave ao descer/aparecer, mais rápido ao subir
-          ease: "easeInOut" 
-        }}
-        className="absolute z-10 flex text-black dark:text-white text-5xl cursor-default"
+        className="absolute left-0 z-0 flex items-center justify-center"
+        style={{ width: 100, bottom: 0, top: 0 }}
+        variants={floatVariantsLeft}
+        animate="animate"
       >
-        <span className="font-black tracking-tighter">Fit</span>
-        <span className="font-light tracking-tight">Mind</span>
+        <img src={SERINGA_URL} alt="Seringa GLP-1"
+          style={{ width: 240, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-120px' }} />
       </motion.div>
 
-      {/* ====================================================
-        ÍCONES E TEXTOS CENTRAIS (Passos 1 a 4)
-        ==================================================== 
-      */}
-      <div className="relative flex flex-col items-center justify-center w-full max-w-lg mt-10 h-80">
-        <AnimatePresence mode="popLayout">
-          {step > 0 && step < 5 && CurrentIcon && (
-            <motion.div
-              key={`icon-${step}`}
-              initial={{ scale: 0.2, rotate: -90, opacity: 0, filter: "blur(8px)" }}
-              animate={{ scale: 1, rotate: 0, opacity: 1, filter: "blur(0px)" }}
-              exit={{
-                scale: 0.2,
-                rotate: 90,
-                opacity: 0,
-                filter: "blur(8px)",
-                position: "absolute",
-              }}
-              transition={{ type: "spring", stiffness: 250, damping: 25 }} // Mola um pouquinho mais rígida pra ser mais rápido
-              className="absolute top-0 flex justify-center"
-            >
-              <CurrentIcon size={120} strokeWidth={1} className="text-black dark:text-white" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence mode="popLayout">
-          {step > 0 && step < 5 && (
-            <motion.div
-              key={`text-${step}`}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0, position: "absolute" }}
-              transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }} // Textos entram mais rápido também
-              className="absolute top-40 text-center flex flex-col items-center px-6 w-full"
-            >
-              <h2 className="text-3xl md:text-3xl font-extrabold tracking-tight text-black dark:text-white mb-4">
-                {sequence[step].title}
-              </h2>
-              {sequence[step].sub && (
-                <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium max-w-sm leading-snug">
-                  {sequence[step].sub}
-                </p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div style={{ width: '62%', maxWidth: 220, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: '#111' }}>
+        <video src={VIDEO_URL} autoPlay loop muted playsInline
+          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 28 }} />
       </div>
 
-      {/* ====================================================
-        PARTÍCULAS DE LUZ (Passo 5 - Dissolução suave)
-        ==================================================== 
-      */}
-      <AnimatePresence>
-        {step === 5 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, rotate: [0, 180, 360] }}
-            exit={{ opacity: 0 }}
-            transition={{
-              rotate: { duration: 2.5, ease: "easeInOut" }, // Rotação mais suave
-              opacity: { duration: 0.4 }
-            }}
-            className="absolute z-40 w-40 h-40 flex items-center justify-center"
-          >
-            {[0, 90, 180, 270].map((angle, i) => (
-              <motion.div
-                key={i}
-                initial={{ x: 0, y: 0, scale: 0 }}
-                animate={{
-                  x: [0, Math.cos((angle * Math.PI) / 180) * 100, 0],
-                  y: [0, Math.sin((angle * Math.PI) / 180) * 100, 0],
-                  scale: [0, 1.5, 1, 0],
-                }}
-                transition={{ duration: 2.5, ease: "easeInOut" }} // Partículas acompanham o tempo relaxado
-                className="absolute w-4 h-4 bg-black dark:bg-white rounded-full"
-                style={{
-                  boxShadow: "0 0 20px 5px rgba(0, 0, 0, 0.4)",
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
+      <motion.div
+        className="absolute right-0 z-0 flex items-center justify-center"
+        style={{ width: 100, bottom: 0, top: 0 }}
+        variants={floatVariantsRight}
+        animate="animate"
+      >
+        <img src={AMPOLA_URL} alt="Ampola GLP-1"
+          style={{ width: 90, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', marginTop: '160px' }} />
+      </motion.div>
     </div>
   );
-}
+};
 
 const translateAuthError = (message: string) => {
   if (message.includes('Invalid login credentials')) return 'Email ou senha incorretos.';
@@ -642,35 +534,32 @@ export const Auth: React.FC = () => {
     case 'landing':
     default:
       return (
-        <div className="h-screen flex flex-col justify-center p-8 pb-32 bg-white dark:bg-black">
-          <AuthAnimation />
-
-          <div className="space-y-4">
-            <button
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm text-lg font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none disabled:bg-gray-200 dark:disabled:bg-gray-700"
-            >
-              <GoogleIcon />
-              Continuar com Google
-            </button>
-
-            <button
-                onClick={() => setView('login')}
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-lg font-semibold text-white bg-black dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none disabled:bg-gray-400 dark:disabled:bg-gray-600"
-            >
-                Entrar com Email
-            </button>
+        <div className="h-screen flex flex-col bg-white dark:bg-black overflow-hidden">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-4">
+            <HeroSection />
           </div>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-6 pb-10 flex flex-col gap-0">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight">
+                Bem-vindo ao <span className="font-black">FitMind</span>
+              </h1>
+            </div>
+            <div className="space-y-3">
+              <button onClick={handleGoogleLogin} disabled={loading}
+                className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-gray-200 dark:border-gray-700 rounded-2xl text-base font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition-all shadow-sm disabled:opacity-60">
+                <GoogleIcon /> Continuar com Google
+              </button>
+              <button onClick={() => setView('login')} disabled={loading}
+                className="w-full flex justify-center items-center py-3.5 px-4 rounded-2xl text-base font-semibold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60">
+                Entrar com Email
+              </button>
+            </div>
+            <div className="mt-5 text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Não tem uma conta?{' '}
-                <button onClick={() => setView('signup')} className="font-semibold text-black dark:text-white hover:underline">
-                    Cadastre-se
-                </button>
-            </p>
+                <button onClick={() => setView('signup')} className="font-bold text-black dark:text-white hover:underline">Cadastre-se</button>
+              </p>
+            </div>
           </div>
         </div>
       );

@@ -45,22 +45,22 @@ const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
         animate="animate"
       >
         <img src={SERINGA_URL} alt="Seringa GLP-1"
-          style={{ width: 900, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-140px' }} />
+          style={{ width: 200, maxWidth: 'none', height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', transform: 'rotate(45deg)', marginTop: '-240px' }} />
       </motion.div>
 
-      <div style={{ width: '62%', maxWidth: 220, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: '#111' }}>
+      <div style={{ width: '70%', maxWidth: 245, borderRadius: 28, overflow: 'hidden', boxShadow: '0 16px 48px rgba(0,0,0,0.22)', position: 'relative', zIndex: 5, background: 'transparent' }}>
         <video src={VIDEO_URL} autoPlay loop muted playsInline onCanPlayThrough={onLoaded} onLoadedData={onLoaded}
-          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 28 }} />
+          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 28, transform: 'scale(1.01)' }} />
       </div>
 
       <motion.div
-        className="absolute right-0 z-0 flex items-center justify-center"
+        className="absolute right-[-12px] z-0 flex items-center justify-center"
         style={{ width: 100, bottom: 0, top: 0 }}
         variants={floatVariantsRight}
         animate="animate"
       >
         <img src={AMPOLA_URL} alt="Ampola GLP-1"
-          style={{ width: 90, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', marginTop: '160px' }} />
+          style={{ width: 130, maxWidth: 'none', height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.18))', marginTop: '160px' }} />
       </motion.div>
     </div>
   );
@@ -551,7 +551,7 @@ export const Auth: React.FC = () => {
             )}
           </AnimatePresence>
           <div className="min-h-[100dvh] flex flex-col bg-white dark:bg-black overflow-x-hidden overflow-y-auto">
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-10">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-10">
               <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
             </div>
             <div className="px-6 pb-12 flex flex-col gap-0 mt-8">

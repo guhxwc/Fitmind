@@ -168,7 +168,7 @@ export const LandingPage: React.FC = () => {
                             Acompanhe seu tratamento com <span className="fm-h1-accent" style={{ color: accent }}>Ozempic, wegovy e Mounjaro</span>
                         </h1>
                         <p className="fm-lede">
-                            O primeiro sistema operacional completo para quem usa <strong>Ozempic, Mounjaro e Wegovy</strong>. Acompanhe peso, dieta, sintomas e treinos — validado clinicamente.
+                            O primeiro sistema operacional completo para quem usa <strong>Ozempic, Mounjaro, Wegovy ou outras</strong>. Acompanhe peso, dieta, sintomas e treinos — validado clinicamente.
                         </p>
                         <div className="fm-hero-actions">
                             <button className="fm-btn fm-btn-primary fm-btn-lg" onClick={goAuth}>
@@ -317,7 +317,7 @@ export const LandingPage: React.FC = () => {
                             <div className="fm-pitch-features">
                                 <PitchFeature accent={accent} title="Plano 100% personalizado" desc="Dieta, treino e acompanhamento criados sob medida pra você." />
                                 <PitchFeature accent={accent} title="Acompanhamento direto" desc="Mensagens diretas com Allan pelo WhatsApp." />
-                                <PitchFeature accent={accent} title="Validação clínica" desc="Protocolos saudáveis para Ozempic, Mounjaro e Wegovy." />
+                                <PitchFeature accent={accent} title="Validação clínica" desc="Protocolos saudáveis para Ozempic, Mounjaro, Wegovy ou outras." />
                             </div>
                             <div className="fm-pitch-cta">
                                 <button className="fm-btn fm-btn-primary fm-btn-lg" style={{ background: accent }} onClick={goConsult}>

@@ -165,7 +165,7 @@ export const LandingPage: React.FC = () => {
                             <span>O App nº 1 para usuários de <strong>canetinhas</strong></span>
                         </div>
                         <h1 className="fm-h1">
-                            Acompanhe seu tratamento com <span className="fm-h1-accent" style={{ color: accent }}>Ozempic, wegovy e Mounjaro</span>
+                            Seu resultado com <span className="fm-h1-accent" style={{ color: accent }}>Mounjaro</span> pode estar sendo <span className="fm-h1-accent" style={{ color: accent }}>limitado</span> por algo que quase <span className="fm-h1-accent" style={{ color: accent }}>ninguém</span> monitora.
                         </h1>
                         <p className="fm-lede">
                             O primeiro sistema operacional completo para quem usa <strong>Ozempic, Mounjaro, Wegovy ou outras</strong>. Acompanhe peso, dieta, sintomas e treinos — validado clinicamente.

@@ -12,7 +12,7 @@ export default async function handler(req: any, res: any) {
     const { model, contents, config } = req.body;
 
     // Map model request to a high-performance Groq model
-    let mappedModel = "llama-3.1-8b-instant";
+    let mappedModel = "openai/gpt-oss-20b";
     const m = (model || "").toLowerCase();
     if (m.includes("pro") || m.includes("70b") || m.includes("gemini-3.1-pro")) {
       mappedModel = "llama-3.3-70b-versatile";
@@ -132,8 +132,24 @@ export default async function handler(req: any, res: any) {
       messages.push({ role: "user", content: JSON.stringify(contents) });
     }
 
+    // Calculate total text size in prompt
+    let totalTextLength = 0;
+    for (const msg of messages) {
+      if (typeof msg.content === "string") {
+        totalTextLength += msg.content.length;
+      } else if (Array.isArray(msg.content)) {
+        for (const part of msg.content) {
+          if (part.text) {
+            totalTextLength += part.text.length;
+          }
+        }
+      }
+    }
+
     if (hasImage) {
-      mappedModel = "meta-llama/llama-4-scout-17b-16e-instruct";
+      mappedModel = "qwen/qwen3.8-27b";
+    } else if (mappedModel === "openai/gpt-oss-20b" && totalTextLength > 3000) {
+      mappedModel = "openai/gpt-oss-120b";
     }
 
     // Match JSON output requirements

@@ -73,6 +73,8 @@ export default async function handler(req: any, res: any) {
                 if (p.inlineData.mimeType.startsWith("audio/")) {
                    // Transcribe audio using Groq Whisper
                    const buffer = Buffer.from(p.inlineData.data, 'base64');
+                   const sizeInMB = buffer.length / (1024 * 1024);
+                   const whisperModel = sizeInMB > 10 ? "whisper-large-v3-turbo" : "whisper-large-v3";
                    const blob = new Blob([buffer], { type: p.inlineData.mimeType });
                    const formData = new FormData();
                    let ext = "webm";
@@ -82,7 +84,7 @@ export default async function handler(req: any, res: any) {
                    else if (p.inlineData.mimeType.includes("m4a")) ext = "m4a";
 
                    formData.append("file", blob, `audio.${ext}`);
-                   formData.append("model", "whisper-large-v3");
+                   formData.append("model", whisperModel);
 
                    const audioRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
                        method: "POST",

@@ -643,25 +643,27 @@ export const Auth: React.FC<{ defaultView?: 'welcome' | 'login_options' | 'signu
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="min-h-[100dvh] w-full flex flex-col bg-white dark:bg-black overflow-x-hidden overflow-y-auto md:h-screen md:min-h-0 md:flex-row md:items-center md:justify-center md:max-w-5xl md:mx-auto md:gap-16 md:px-12 md:overflow-hidden">
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-10 md:pt-0 md:pb-0 md:w-1/2 md:flex-none md:order-2 md:scale-110">
-              <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
-            </div>
-            <div className="px-6 pb-12 flex flex-col gap-0 mt-8 md:mt-0 md:pb-0 md:w-1/2 md:flex-none md:order-1 md:px-0 text-center items-center justify-center">
-              <div className="text-center mb-6 md:mb-8">
-                <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight md:text-5xl">
-                  Bem-vindo ao <span className="font-black text-blue-600 dark:text-blue-400">FitMind</span>
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-2 text-base md:text-lg">O App #1 para acompanhar seu tratamento</p>
+          <div className="min-h-[100dvh] w-full bg-white dark:bg-black overflow-x-hidden overflow-y-auto md:h-screen md:min-h-0 md:overflow-hidden md:flex md:items-center md:justify-center">
+            <div className="w-full flex flex-col md:flex-row md:items-center md:justify-center md:max-w-5xl md:mx-auto md:gap-16 md:px-12">
+              <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-10 md:pt-0 md:pb-0 md:w-1/2 md:flex-none md:order-2 md:scale-110">
+                <HeroSection onLoaded={() => setIsVideoLoaded(true)} />
               </div>
-              <div className="space-y-3 w-full max-w-[360px]">
-                <button onClick={() => navigate('/onboarding')} disabled={loading}
-                  className="w-full flex justify-center items-center py-4 px-4 rounded-2xl text-lg font-bold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60 md:py-5 md:text-xl">
-                  Começar
-                </button>
-              </div>
-              <div className="mt-5 text-center w-full max-w-[360px]">
-                  <button onClick={() => setView('login_options')} className="text-base text-gray-500 dark:text-gray-400 font-medium hover:text-black dark:hover:text-white underline underline-offset-4">Já tenho uma conta</button>
+              <div className="px-6 pb-12 flex flex-col gap-0 mt-8 md:mt-0 md:pb-0 md:w-1/2 md:flex-none md:order-1 md:px-0 text-center items-center justify-center">
+                <div className="text-center mb-6 md:mb-8">
+                  <h1 className="text-3xl font-black tracking-tight text-black dark:text-white leading-tight md:text-5xl">
+                    Bem-vindo ao <span className="font-black text-blue-600 dark:text-blue-400">FitMind</span>
+                  </h1>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 text-base md:text-lg">O App #1 para acompanhar seu tratamento</p>
+                </div>
+                <div className="space-y-3 w-full max-w-[360px]">
+                  <button onClick={() => navigate('/onboarding')} disabled={loading}
+                    className="w-full flex justify-center items-center py-4 px-4 rounded-2xl text-lg font-bold text-white bg-black dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-60 md:py-5 md:text-xl">
+                    Começar
+                  </button>
+                </div>
+                <div className="mt-5 text-center w-full max-w-[360px]">
+                    <button onClick={() => setView('login_options')} className="text-base text-gray-500 dark:text-gray-400 font-medium hover:text-black dark:hover:text-white underline underline-offset-4">Já tenho uma conta</button>
+                </div>
               </div>
             </div>
           </div>

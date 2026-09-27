@@ -7,6 +7,7 @@ import { SyringeIcon, CheckCircleIcon, EditIcon, TrashIcon, PersonStandingIcon, 
 import { StreakBadge } from '../core/StreakBadge';
 import { WEEKDAYS, MEDICATIONS } from '../../constants';
 import { useAppContext } from '../AppContext';
+import { getAllDosesForMedication, saveCustomDose, formatDoseInput, getCustomDoses } from '../../lib/doses';
 import { ProFeatureModal } from '../ProFeatureModal';
 import { SubscriptionPage } from '../SubscriptionPage';
 import { SideEffectModal } from './SideEffectModal';
@@ -54,8 +55,19 @@ const EditApplicationModal: React.FC<{
     });
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isCustomDose, setIsCustomDose] = useState(false);
+    const [customDoseInput, setCustomDoseInput] = useState('');
 
-    const availableDoses = MEDICATIONS.find(m => m.name === med)?.doses || [];
+    const availableDoses = getAllDosesForMedication(med);
+    const optionsWithCurrent = availableDoses.includes(dose) ? availableDoses : [dose, ...availableDoses];
+
+    const handleConfirmCustom = () => {
+        const formatted = formatDoseInput(customDoseInput);
+        if (!formatted) return;
+        saveCustomDose(med, formatted);
+        setDose(formatted);
+        setIsCustomDose(false);
+    };
 
     const handleSaveClick = async () => {
         setIsSaving(true);
@@ -80,14 +92,57 @@ const EditApplicationModal: React.FC<{
                     <div>
                         <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block text-center">Dose Administrada</label>
                         <div className="relative">
-                            {availableDoses.length > 0 ? (
-                                <select 
-                                    value={dose} 
-                                    onChange={(e) => setDose(e.target.value)}
-                                    className="w-full h-[50px] px-4 rounded-[14px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent block leading-normal text-center"
-                                >
-                                    {availableDoses.map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
+                            {isCustomDose ? (
+                                <div className="space-y-2">
+                                    <input 
+                                        type="text"
+                                        autoFocus
+                                        value={customDoseInput}
+                                        onChange={(e) => setCustomDoseInput(e.target.value)}
+                                        placeholder="Ex: 0,75 mg ou 3 mg"
+                                        className="w-full h-[50px] px-4 rounded-[14px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-emerald-500 border border-transparent block leading-normal text-center"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleConfirmCustom();
+                                            }
+                                        }}
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsCustomDose(false)}
+                                            className="flex-1 py-2 text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirmCustom}
+                                            disabled={!customDoseInput.trim()}
+                                            className="flex-1 py-2 text-xs font-bold text-white bg-emerald-600 rounded-lg disabled:opacity-40"
+                                        >
+                                            Confirmar
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : optionsWithCurrent.length > 0 ? (
+                                <div className="space-y-2">
+                                    <select 
+                                        value={dose} 
+                                        onChange={(e) => {
+                                            if (e.target.value === '__custom__') {
+                                                setIsCustomDose(true);
+                                            } else {
+                                                setDose(e.target.value);
+                                            }
+                                        }}
+                                        className="w-full h-[50px] px-4 rounded-[14px] bg-[#F4F5F7] dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 appearance-none border border-transparent block leading-normal text-center"
+                                    >
+                                        {optionsWithCurrent.map(d => <option key={d} value={d}>{d}</option>)}
+                                        <option value="__custom__">+ Outra dose (personalizada)...</option>
+                                    </select>
+                                </div>
                             ) : (
                                 <input 
                                     type="text"
@@ -162,7 +217,7 @@ const EditApplicationModal: React.FC<{
 };
 
 export const ApplicationTab: React.FC = () => {
-  const { userData, applicationHistory, setApplicationHistory, updateStreak, unlockPro, sideEffects, setSideEffects } = useAppContext();
+  const { userData, setUserData, applicationHistory, setApplicationHistory, updateStreak, unlockPro, sideEffects, setSideEffects } = useAppContext();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -178,6 +233,8 @@ export const ApplicationTab: React.FC = () => {
   const [selectedMed, setSelectedMed] = useState<MedicationName>(userData?.medication.name || 'Mounjaro');
   const [selectedDose, setSelectedDose] = useState<string>(userData?.medication.dose || '');
   const [selectedSite, setSelectedSite] = useState<string>('');
+  const [isCustomDoseOpen, setIsCustomDoseOpen] = useState(false);
+  const [customDoseText, setCustomDoseText] = useState('');
 
   if (!userData) return null;
 
@@ -255,7 +312,34 @@ export const ApplicationTab: React.FC = () => {
   };
   
   const nextApplicationDate = getNextApplicationDate(userData.medication.nextApplication);
-  const availableDoses = MEDICATIONS.find(m => m.name === selectedMed)?.doses || [];
+  const availableDoses = getAllDosesForMedication(selectedMed, userData?.medication?.customDoses);
+
+  const handleSaveCustomDose = () => {
+    const formatted = formatDoseInput(customDoseText);
+    if (!formatted) return;
+    saveCustomDose(selectedMed, formatted);
+    setSelectedDose(formatted);
+    setIsCustomDoseOpen(false);
+    setCustomDoseText('');
+
+    if (userData && selectedMed === userData.medication.name) {
+      const allCustom = getCustomDoses(selectedMed);
+      setUserData(prev => prev ? {
+        ...prev,
+        medication: {
+          ...prev.medication,
+          customDoses: allCustom
+        }
+      } : null);
+      supabase.from('profiles').update({
+        medication: {
+          ...userData.medication,
+          customDoses: allCustom
+        }
+      }).eq('id', userData.id);
+    }
+    addToast('Dose personalizada salva!', 'success');
+  };
 
   const today = new Date(); today.setHours(0,0,0,0);
   const target = new Date(nextApplicationDate); target.setHours(0,0,0,0);
@@ -337,18 +421,40 @@ export const ApplicationTab: React.FC = () => {
 
           {/* Section 2: Dose Selector */}
           <div>
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Dose</p>
+              <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Dose</p>
+                  {!isCustomDoseOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomDoseOpen(true)}
+                        className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        + Outra dose
+                      </button>
+                  )}
+              </div>
+
               {availableDoses.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
                       {availableDoses.map(d => (
                           <button 
                             key={d} 
-                            onClick={() => setSelectedDose(d)} 
-                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${selectedDose === d ? 'border-black dark:border-white text-black dark:text-white bg-transparent shadow-sm' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 text-gray-400'}`}
+                            onClick={() => {
+                              setSelectedDose(d);
+                              setIsCustomDoseOpen(false);
+                            }} 
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${selectedDose === d && !isCustomDoseOpen ? 'border-black dark:border-white text-black dark:text-white bg-transparent shadow-sm' : 'border-transparent bg-gray-50 dark:bg-gray-800/50 text-gray-400'}`}
                           >
                               {d}
                           </button>
                       ))}
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomDoseOpen(true)}
+                        className={`py-2 rounded-xl text-xs font-bold border border-dashed transition-all ${isCustomDoseOpen ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20' : 'border-gray-300 dark:border-gray-700 text-gray-500 hover:border-gray-400'}`}
+                      >
+                        + Outro
+                      </button>
                   </div>
               ) : (
                   <input 
@@ -358,6 +464,48 @@ export const ApplicationTab: React.FC = () => {
                     placeholder="Digite a dose (ex: 10 mg)"
                     className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white font-bold outline-none border border-transparent focus:border-blue-500"
                   />
+              )}
+
+              {isCustomDoseOpen && (
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800/70 rounded-2xl border border-emerald-500/40 animate-fade-in">
+                  <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">
+                    Dose personalizada
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Ex: 0,75 mg ou 3 mg"
+                      value={customDoseText}
+                      onChange={(e) => setCustomDoseText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveCustomDose();
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-gray-900 text-sm font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomDose}
+                      disabled={!customDoseText.trim()}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-sm"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDoseOpen(false)}
+                      className="px-2.5 py-2 text-gray-400 hover:text-gray-600 text-xs font-semibold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
+                    Será salva para você apenas clicar nas próximas aplicações.
+                  </p>
+                </div>
               )}
           </div>
 

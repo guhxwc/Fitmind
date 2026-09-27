@@ -5,7 +5,7 @@ import { generateContent } from "./geminiClientService";
 export const dietService = {
   async generateDietPlan(user: UserData, preferences: DietQuizAnswers): Promise<DietPlan> {
     try {
-      const model = "gemini-3.1-pro-preview";
+      const model = "openai/gpt-oss-120b";
 
       const prompt = `
         Crie um plano de dieta semanal (7 dias) simples e prático para um usuário com o seguinte perfil:
@@ -84,7 +84,23 @@ export const dietService = {
         }
       });
 
-      const planStructure = JSON.parse(response.text || '{}');
+      const parseJsonSafe = (raw: string) => {
+        if (!raw) return {};
+        let text = raw.trim();
+        if (text.startsWith("```json")) {
+          text = text.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+        } else if (text.startsWith("```")) {
+          text = text.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
+        }
+        const s = text.indexOf('{');
+        const e = text.lastIndexOf('}');
+        if (s !== -1 && e !== -1 && e > s) {
+          text = text.substring(s, e + 1);
+        }
+        return JSON.parse(text);
+      };
+
+      const planStructure = parseJsonSafe(response.text || '{}');
 
       if (!planStructure || !planStructure.days) {
         throw new Error("Failed to generate diet plan structure");
@@ -147,12 +163,28 @@ export const dietService = {
       `;
 
       const response = await generateContent({
-          model: "gemini-3.1-pro-preview",
+          model: "openai/gpt-oss-120b",
           contents: prompt,
           config: { responseMimeType: "application/json" }
       });
       
-      const data = JSON.parse(response.text || '{}');
+      const parseJsonSafe = (raw: string) => {
+        if (!raw) return {};
+        let text = raw.trim();
+        if (text.startsWith("```json")) {
+          text = text.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+        } else if (text.startsWith("```")) {
+          text = text.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
+        }
+        const s = text.indexOf('{');
+        const e = text.lastIndexOf('}');
+        if (s !== -1 && e !== -1 && e > s) {
+          text = text.substring(s, e + 1);
+        }
+        return JSON.parse(text);
+      };
+
+      const data = parseJsonSafe(response.text || '{}');
       const suggestions = data.suggestions || [];
       
       return suggestions.map((sug: any) => ({

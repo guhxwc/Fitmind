@@ -9,6 +9,106 @@ import { MEDICATIONS, WEEKDAYS } from '../../constants';
 import type { MedicationName, Weekday } from '../../types';
 import { TimePicker } from '../core/TimePicker';
 import Portal from '../core/Portal';
+import { getAllDosesForMedication, saveCustomDose, formatDoseInput, getCustomDoses } from '../../lib/doses';
+
+const DoseSelectModal: React.FC<{
+    medicationName: string;
+    options: string[];
+    selectedValue: string;
+    onClose: () => void;
+    onSelect: (val: string) => void;
+}> = ({ medicationName, options, selectedValue, onClose, onSelect }) => {
+    const [isCustom, setIsCustom] = useState(false);
+    const [customVal, setCustomVal] = useState('');
+
+    const handleSaveCustom = () => {
+        const formatted = formatDoseInput(customVal);
+        if (!formatted) return;
+        saveCustomDose(medicationName, formatted);
+        onSelect(formatted);
+        onClose();
+    };
+
+    return (
+        <Portal>
+            <div className="fixed inset-0 bg-black/60 z-[90] flex items-end justify-center backdrop-blur-sm" onClick={onClose}>
+                <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-md rounded-t-[32px] p-6 animate-slide-up max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Dosagem</h3>
+                        <button onClick={onClose} className="text-blue-500 font-semibold">Fechar</button>
+                    </div>
+
+                    {!isCustom ? (
+                        <div className="space-y-2 pb-8">
+                            {options.map(opt => (
+                                <button
+                                    key={opt}
+                                    onClick={() => { onSelect(opt); onClose(); }}
+                                    className={`w-full p-4 rounded-xl text-left font-semibold text-lg flex justify-between items-center ${
+                                        selectedValue === opt
+                                            ? 'bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400'
+                                            : 'text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800'
+                                    }`}
+                                >
+                                    <span>{opt}</span>
+                                    {selectedValue === opt && <span className="text-blue-500">✓</span>}
+                                </button>
+                            ))}
+
+                            <button
+                                onClick={() => setIsCustom(true)}
+                                className="w-full p-4 rounded-xl text-left font-semibold text-base text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-between border border-dashed border-emerald-300 dark:border-emerald-800 mt-3"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span>✨</span>
+                                    <span>Outra dose (personalizada)</span>
+                                </span>
+                                <span className="text-sm font-bold">+ Digitar</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 pb-8">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Digite a dose prescrita para você. Ela ficará salva nesta lista para as próximas aplicações.
+                            </p>
+                            <input
+                                type="text"
+                                autoFocus
+                                placeholder="Ex: 0,75 mg ou 3 mg"
+                                className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none border-2 border-transparent focus:border-emerald-500"
+                                value={customVal}
+                                onChange={e => setCustomVal(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSaveCustom();
+                                    }
+                                }}
+                            />
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCustom(false)}
+                                    className="flex-1 py-3.5 rounded-xl font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                                >
+                                    Voltar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveCustom}
+                                    disabled={!customVal.trim()}
+                                    className="flex-1 py-3.5 rounded-xl font-bold bg-emerald-600 text-white disabled:opacity-40"
+                                >
+                                    Salvar dose
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Portal>
+    );
+};
 
 const SelectModal: React.FC<{ 
     title: string; 
@@ -89,9 +189,34 @@ export const TreatmentSettings: React.FC = () => {
 
     if (!userData) return null;
 
-    const availableDoses = MEDICATIONS.find(m => m.name === userData.medication.name)?.doses || [];
+    const availableDoses = getAllDosesForMedication(userData.medication.name, userData.medication.customDoses);
     
     // Handlers
+    const handleUpdateDose = async (val: string) => {
+        saveCustomDose(userData.medication.name, val);
+        const customDoses = getCustomDoses(userData.medication.name);
+        const newMedication = { 
+            ...userData.medication, 
+            dose: val,
+            customDoses: customDoses.length > 0 ? customDoses : undefined
+        };
+        
+        // Optimistic Update
+        setUserData(prev => prev ? { ...prev, medication: newMedication } : null);
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ medication: newMedication })
+            .eq('id', userData.id);
+
+        if (error) {
+            addToast('Erro ao atualizar dose.', 'error');
+            fetchData();
+        } else {
+            addToast('Dose atualizada com sucesso!', 'success');
+        }
+    };
+
     const updateMedication = async (key: string, value: any) => {
         const newMedication = { ...userData.medication, [key]: value };
         
@@ -204,31 +329,13 @@ export const TreatmentSettings: React.FC = () => {
                 />
             )}
             {activeModal === 'dose' && (
-                availableDoses.length > 0 ? (
-                    <SelectModal 
-                        title="Dosagem"
-                        options={availableDoses}
-                        selectedValue={userData.medication.dose}
-                        onClose={() => setActiveModal(null)}
-                        onSelect={(val) => updateMedication('dose', val)}
-                    />
-                ) : (
-                    <Portal>
-                        <div className="fixed inset-0 bg-black/60 z-[90] flex items-center justify-center backdrop-blur-sm" onClick={() => setActiveModal(null)}>
-                            <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[32px] shadow-xl w-full max-w-sm animate-pop-in" onClick={e => e.stopPropagation()}>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Digite sua Dose</h3>
-                                <input 
-                                    type="text"
-                                    placeholder="Ex: 10 mg"
-                                    className="w-full p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold outline-none border-2 border-transparent focus:border-blue-500 mb-6"
-                                    value={userData.medication.dose}
-                                    onChange={(e) => updateMedication('dose', e.target.value)}
-                                />
-                                <button onClick={() => setActiveModal(null)} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold">Confirmar</button>
-                            </div>
-                        </div>
-                    </Portal>
-                )
+                <DoseSelectModal
+                    medicationName={userData.medication.name}
+                    options={availableDoses}
+                    selectedValue={userData.medication.dose}
+                    onClose={() => setActiveModal(null)}
+                    onSelect={handleUpdateDose}
+                />
             )}
             {activeModal === 'site' && (
                 <SelectModal 

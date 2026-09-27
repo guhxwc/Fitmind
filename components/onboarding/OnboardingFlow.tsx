@@ -30,6 +30,7 @@ import { supabase } from '../../supabaseClient';
 
 import { useAppContext } from '../AppContext';
 import { track, AnalyticsEvent } from '../../lib/analytics';
+import { getCustomDoses } from '../../lib/doses';
 
 // Nomes amigáveis dos steps para o funil no PostHog. Ordem = array `steps` abaixo.
 const ONBOARDING_STEP_NAMES = [
@@ -235,7 +236,24 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     <StepMedication key="med" onNext={nextStep} onBack={prevStep} value={userData.medication.name} onSelect={(name) => updateUserData({ medication: { ...userData.medication, name } })} totalSteps={TOTAL_STEPS} />,
     
     // 3. Dose
-    <StepDose key="dose" onNext={nextStep} onBack={prevStep} medicationName={userData.medication.name} value={userData.medication.dose} onSelect={(dose) => updateUserData({ medication: { ...userData.medication, dose } })} totalSteps={TOTAL_STEPS} />,
+    <StepDose 
+      key="dose" 
+      onNext={nextStep} 
+      onBack={prevStep} 
+      medicationName={userData.medication.name} 
+      value={userData.medication.dose} 
+      onSelect={(dose) => {
+        const customDoses = getCustomDoses(userData.medication.name);
+        updateUserData({ 
+          medication: { 
+            ...userData.medication, 
+            dose,
+            customDoses: customDoses.length > 0 ? customDoses : undefined
+          } 
+        });
+      }} 
+      totalSteps={TOTAL_STEPS} 
+    />,
     
     // 4. Craving Day
     <StepCravingDay key="craving" onNext={nextStep} onBack={prevStep} value={userData.medication.nextApplication} onSelect={(day) => updateUserData({ medication: { ...userData.medication, nextApplication: day } })} totalSteps={TOTAL_STEPS} />,

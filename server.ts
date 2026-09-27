@@ -18,8 +18,14 @@ async function startServer() {
     // Map model request to a high-performance Groq model
     let mappedModel = "openai/gpt-oss-20b";
     const m = (model || "").toLowerCase();
-    if (m.includes("pro") || m.includes("70b") || m.includes("gemini-3.1-pro")) {
-      mappedModel = "llama-3.3-70b-versatile";
+    if (m === "openai/gpt-oss-120b" || m.includes("120b") || m.includes("pro") || m.includes("gemini-3.1-pro")) {
+      mappedModel = "openai/gpt-oss-120b";
+    } else if (m === "openai/gpt-oss-20b" || m.includes("20b")) {
+      mappedModel = "openai/gpt-oss-20b";
+    } else if (m.includes("qwen") || m.includes("27b")) {
+      mappedModel = "qwen/qwen3.8-27b";
+    } else if (model && !model.toLowerCase().includes("gemini")) {
+      mappedModel = model;
     }
 
     const messages: any[] = [];

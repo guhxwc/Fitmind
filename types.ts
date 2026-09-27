@@ -52,6 +52,7 @@ export interface UserData {
     dose: string;
     nextApplication: Weekday;
     defaultSite?: string; 
+    customDoses?: string[];
   };
   
   // New comprehensive notification settings

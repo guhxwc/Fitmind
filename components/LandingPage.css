@@ -225,9 +225,10 @@
   font-size: clamp(40px, 5.5vw, 72px);
   font-weight: 800;
   letter-spacing: -0.035em;
-  line-height: 1.02;
+  line-height: 1.05;
   margin: 0 0 22px;
-  text-wrap: balance;
+  max-width: 820px;
+  text-wrap: pretty;
 }
 .fm-landing .fm-h1-accent { color: var(--fm-accent); }
 .fm-landing .fm-h2 {
@@ -243,7 +244,7 @@
   line-height: 1.55;
   color: var(--fm-fg-muted);
   margin: 0 0 36px;
-  max-width: 520px;
+  max-width: 600px;
   font-weight: 500;
 }
 .fm-landing .fm-eyebrow {
@@ -275,8 +276,8 @@
   max-width: 1400px; margin: 0 auto;
   padding: 0 40px;
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 60px;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 48px;
   align-items: center;
 }
 .fm-landing .fm-pill {
@@ -332,7 +333,7 @@
   display: flex; align-items: center; justify-content: center;
   min-height: 640px;
   width: 100%;
-  padding: 0 100px;
+  padding: 0 40px;
 }
 .fm-landing .fm-phone-glow { position: absolute; inset: -40px; filter: blur(60px); pointer-events: none; }
 .fm-landing .fm-floating-card {

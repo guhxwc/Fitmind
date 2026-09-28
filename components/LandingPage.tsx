@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 
-const LOGO_URL = 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/logo%20painel.png';
+const LOGO_WEBP = '/logo-fitmind.webp';
+const LOGO_PNG = '/logo-fitmind.png';
+const LOGO_URL = LOGO_WEBP;
 const ALLAN_PHOTO = 'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Allan/a363b4bf95e991cec48ec623905cfc44.png';
 
 export const LandingPage: React.FC = () => {
@@ -138,7 +140,18 @@ export const LandingPage: React.FC = () => {
             <nav className="fm-nav">
                 <div className="fm-nav-inner">
                     <a className="fm-logo" onClick={goAuth} style={{ cursor: 'pointer' }}>
-                        <img src={LOGO_URL} alt="FitMind" />
+                        <picture>
+                            <source srcSet={LOGO_WEBP} type="image/webp" />
+                            <img
+                                src={LOGO_PNG}
+                                alt="FitMind"
+                                width="109"
+                                height="40"
+                                fetchPriority="high"
+                                loading="eager"
+                                decoding="async"
+                            />
+                        </picture>
                     </a>
                     <div className="fm-nav-links">
                         <a href="#recursos">Recursos</a>
@@ -375,7 +388,17 @@ export const LandingPage: React.FC = () => {
                     <div className="fm-footer-inner">
                         <div className="fm-footer-brand">
                             <a className="fm-logo" onClick={goAuth} style={{ cursor: 'pointer' }}>
-                                <img src={LOGO_URL} alt="FitMind" />
+                                <picture>
+                                    <source srcSet={LOGO_WEBP} type="image/webp" />
+                                    <img
+                                        src={LOGO_PNG}
+                                        alt="FitMind"
+                                        width="109"
+                                        height="40"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                </picture>
                             </a>
                             <p>O sistema operacional para usuários de GLP-1.</p>
                         </div>

@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
-const FITMIND_LOGO_URL =
-  'https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/logo%20painel.png';
+const FITMIND_LOGO_URL = '/logo-fitmind.webp';
 
 const SUPPORT_EMAIL = 'suporte@fitmind.com.br';
 

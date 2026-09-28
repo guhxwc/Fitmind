@@ -99,7 +99,7 @@ export const NutriPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <aside className={`fixed md:relative inset-y-0 left-0 w-[280px] bg-white dark:bg-[#1C1C21] border-r border-[#E2E8F0] dark:border-[#2C2C35] flex flex-col z-[102] transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} shadow-[4px_0_24px_rgba(0,0,0,0.02)]`}>
                  <div className="p-8 pb-4 flex flex-col items-center">
                     <div className="w-full flex justify-between items-center mb-8 px-2">
-                        <img src="https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/Icon%20Fitmind/logo%20painel.png" alt="Fitmind Logo" className="h-16 md:h-20 w-auto object-contain" />
+                        <img src="/logo-fitmind.webp" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo-fitmind.png'; }} alt="Fitmind Logo" className="h-16 md:h-20 w-auto object-contain" />
                         <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 -mr-2 text-gray-400">
                             <XMarkIcon className="w-6 h-6" />
                         </button>

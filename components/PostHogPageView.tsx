@@ -20,6 +20,7 @@ export const PostHogPageView: React.FC = () => {
     // Avoid firing pageview twice for the same path (StrictMode double-render
     // and a few edge cases where search params change but the path doesn't).
     if (lastPathRef.current === fullPath) return;
+    const isInitialMount = lastPathRef.current === null;
     lastPathRef.current = fullPath;
 
     trackPageview(fullPath, {
@@ -27,6 +28,15 @@ export const PostHogPageView: React.FC = () => {
       // in the PostHog dashboard.
       section: classifySection(pathname),
     });
+
+    // Trigger TikTok pixel page view on SPA route changes (skip initial mount since index.html already called ttq.page())
+    if (!isInitialMount && typeof window !== 'undefined' && (window as any).ttq) {
+      try {
+        (window as any).ttq.page();
+      } catch (e) {
+        // silent
+      }
+    }
   }, [pathname, search]);
 
   return null;

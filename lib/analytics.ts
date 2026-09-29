@@ -188,6 +188,22 @@ function isReady(): boolean {
 // =====================================================================
 
 export function track(event: AnalyticsEventName | string, properties?: Record<string, any>): void {
+  // Bridge relevant conversion events to TikTok Pixel (ttq)
+  if (typeof window !== 'undefined' && (window as any).ttq) {
+    try {
+      const ttq = (window as any).ttq;
+      if (event === AnalyticsEvent.signupCompleted || event === AnalyticsEvent.onboardingCompleted) {
+        ttq.track('CompleteRegistration');
+      } else if (event === AnalyticsEvent.checkoutStarted) {
+        ttq.track('InitiateCheckout', properties);
+      } else if (event === AnalyticsEvent.paymentSuccessViewed || event === 'purchase_confirmed') {
+        ttq.track('CompletePayment', properties);
+      }
+    } catch (_) {
+      // silent
+    }
+  }
+
   if (!isReady()) return;
   try {
     posthog.capture(event, properties);

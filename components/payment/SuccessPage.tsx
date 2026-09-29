@@ -20,6 +20,14 @@ export const SuccessPage: React.FC = () => {
         type: isConsultation ? 'consultation' : 'pro',
         has_session_id: !!searchParams.get('session_id'),
       });
+      if (typeof window !== 'undefined' && (window as any).ttq) {
+        try {
+          (window as any).ttq.track('CompletePayment', {
+            content_type: 'product',
+            content_name: isConsultation ? 'Consultoria Nutricional' : 'Fitmind PRO',
+          });
+        } catch (_) {}
+      }
     }, []);
 
     useEffect(() => {

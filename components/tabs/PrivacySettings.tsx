@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isCancelScheduled, formatProValidUntil } from '../../lib/subscription';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { useToast } from '../ToastProvider';
@@ -33,8 +34,8 @@ const GroupContainer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const ActionItem: React.FC<{ 
     icon: React.ReactNode; 
     label: string; 
-    value?: string;
-    onClick?: () => void;
+    value?: string; 
+    onClick?: () => void; 
     isDestructive?: boolean;
     colorClass: string;
     isLast?: boolean;
@@ -101,6 +102,8 @@ const ProfileHeader: React.FC<{ userData: any, email: string }> = ({ userData, e
 
 export const PrivacySettings: React.FC = () => {
     const { userData, session } = useAppContext();
+    const cancelScheduled = isCancelScheduled(userData);
+    const validUntil = formatProValidUntil(userData?.proValidUntil);
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [isResetting, setIsResetting] = useState(false);
@@ -256,12 +259,21 @@ export const PrivacySettings: React.FC = () => {
                 {/* Conta */}
                 <GroupTitle title="Gerenciar Conta" />
                 <GroupContainer>
-                    <ActionItem 
-                        icon={<StarIcon className="w-5 h-5"/>}
-                        colorClass="bg-purple-500"
-                        label="Cancelar Assinatura"
-                        onClick={() => setShowCancelConfirm(true)}
-                    />
+                    {cancelScheduled ? (
+                        <ActionItem 
+                            icon={<StarIcon className="w-5 h-5"/>}
+                            colorClass="bg-amber-500"
+                            label="Cancelamento agendado"
+                            value={validUntil ? `PRO até ${validUntil}` : undefined}
+                        />
+                    ) : (
+                        <ActionItem 
+                            icon={<StarIcon className="w-5 h-5"/>}
+                            colorClass="bg-purple-500"
+                            label="Cancelar Assinatura"
+                            onClick={() => setShowCancelConfirm(true)}
+                        />
+                    )}
                     <ActionItem 
                         icon={<LogOutIcon className="w-5 h-5"/>}
                         colorClass="bg-gray-500"

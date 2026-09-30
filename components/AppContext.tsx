@@ -229,6 +229,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           lastActivityDate: profile.last_activity_date || null,
           isPro: profile.is_pro || false, // CRÍTICO: Mapeamento is_pro -> isPro
           subscriptionStatus: profile.subscription_status || 'free',
+          proValidUntil: [profile.current_period_end, profile.subscription_end_date, profile.pro_expires_at]
+              .filter(Boolean)
+              .sort()
+              .pop() || null,
           journeyDuration: profile.journey_duration,
           biggestFrustration: profile.biggest_frustration,
           futureWorry: profile.future_worry,

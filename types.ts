@@ -1,4 +1,3 @@
-
 export type MedicationName = 'Mounjaro' | 'Ozempic' | 'Wegovy' | 'Saxenda' | 'Outra';
 export type Gender = 'Masculino' | 'Feminino' | 'Outro' | 'Prefiro não dizer';
 export type ActivityLevel = 'Sedentário' | 'Levemente ativo' | 'Moderadamente ativo' | 'Ativo' | 'Muito ativo';
@@ -8,7 +7,7 @@ export type FastingPace = 'lento' | 'normal' | 'rápido';
 export type SideEffectName = 'Náusea' | 'Dor de cabeça' | 'Fadiga' | 'Apetite reduzido' | 'Tontura' | 'Constipação' | 'Diarreia' | 'Nenhum';
 export type SideEffectIntensity = 'Leve' | 'Moderado' | 'Severo';
 
-export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled';
+export type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'cancel_at_period_end' | 'expired';
 
 export interface NotificationSchedule {
     enabled: boolean;
@@ -79,6 +78,8 @@ export interface UserData {
   lastActivityDate: string | null;
   isPro?: boolean;
   subscriptionStatus?: SubscriptionStatus;
+  /** Até quando o PRO vale (fim do período pago). ISO ou null. */
+  proValidUntil?: string | null;
   proStartDate?: string;
 }
 

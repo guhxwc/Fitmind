@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isCancelScheduled, formatProValidUntil } from '../../lib/subscription';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
@@ -55,6 +56,8 @@ const ListItem: React.FC<{
 
 export const AccountSettings: React.FC = () => {
     const { userData, session, fetchData, calculateGoals } = useAppContext();
+    const cancelScheduled = isCancelScheduled(userData);
+    const validUntil = formatProValidUntil(userData?.proValidUntil);
     const navigate = useNavigate();
     const { addToast } = useToast();
 
@@ -395,17 +398,42 @@ export const AccountSettings: React.FC = () => {
                     />
                 </ListGroup>
 
+                {cancelScheduled && (
+                    <div className="mb-3 mx-1 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/15 px-4 py-3.5" role="status">
+                        <p className="text-[15px] font-semibold text-amber-900 dark:text-amber-200">Cancelamento agendado</p>
+                        <p className="text-[14px] leading-snug text-amber-800/90 dark:text-amber-200/80 mt-1">
+                            {validUntil
+                                ? <>Você continua com o PRO até <b>{validUntil}</b>. Depois disso, sua conta volta para o plano gratuito e nada mais será cobrado.</>
+                                : <>Você continua com o PRO até o fim do período já pago. Depois disso, sua conta volta para o plano gratuito e nada mais será cobrado.</>}
+                        </p>
+                    </div>
+                )}
+
                 <ListGroup title="Assinatura">
                     <ListItem 
                         icon={<SettingsIcon className="w-5 h-5" />}
                         label="Plano Atual" 
-                        value={userData.isPro ? "PRO" : "Gratuito"} 
+                        value={
+                            !userData.isPro
+                                ? "Gratuito"
+                                : cancelScheduled
+                                    ? (validUntil ? `PRO até ${validUntil}` : "PRO (cancelamento agendado)")
+                                    : "PRO"
+                        } 
                     />
-                    <ListItem 
-                        icon={<CreditCard className="w-5 h-5" />}
-                        label="Cancelar Assinatura" 
-                        onClick={() => setShowCancelConfirm(true)} 
-                    />
+                    {cancelScheduled ? (
+                        <ListItem 
+                            icon={<CreditCard className="w-5 h-5" />}
+                            label="Assinatura" 
+                            value="Cancelamento agendado"
+                        />
+                    ) : (
+                        <ListItem 
+                            icon={<CreditCard className="w-5 h-5" />}
+                            label="Cancelar Assinatura" 
+                            onClick={() => setShowCancelConfirm(true)} 
+                        />
+                    )}
                     <ListItem
                         icon={<UserX className="w-5 h-5" />}
                         label="Cancelar Consultoria"

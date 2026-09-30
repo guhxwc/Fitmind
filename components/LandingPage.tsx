@@ -147,7 +147,7 @@ export const LandingPage: React.FC = () => {
                                 alt="FitMind"
                                 width="109"
                                 height="40"
-                                fetchPriority="high"
+                                {...{ fetchpriority: 'high' }}
                                 loading="eager"
                                 decoding="async"
                             />

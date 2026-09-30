@@ -30,6 +30,9 @@ import { NutriRoleSelection } from './components/nutri/NutriRoleSelection';
 import { PostHogPageView } from './components/PostHogPageView';
 import { identifyUser, resetAnalytics, setUserProperties, track, AnalyticsEvent } from './lib/analytics';
 import { LandingPage } from './components/LandingPage';
+import { EbookLandingPage } from './components/ebook/EbookLandingPage';
+import { EbookUpsellPage } from './components/ebook/EbookUpsellPage';
+import { EbookThankYouPage } from './components/ebook/EbookThankYouPage';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -127,7 +130,9 @@ const AppContent: React.FC = () => {
     }
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const { addToast } = useToast();
+  const isEbookRoute = location.pathname.startsWith('/ebook');
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -468,7 +473,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  if (contextLoading) {
+  if (contextLoading && !isEbookRoute) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
@@ -480,9 +485,12 @@ const AppContent: React.FC = () => {
     <>
       <ScrollToTop />
       <PostHogPageView />
-      <NotificationSystem />
+      {!isEbookRoute && <NotificationSystem />}
       <UpsellProvider>
         <Routes>
+        <Route path="/ebook" element={<EbookLandingPage />} />
+        <Route path="/ebook/oferta" element={<EbookUpsellPage />} />
+        <Route path="/ebook/obrigado" element={<EbookThankYouPage />} />
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
         <Route path="/onboarding" element={!session ? <UnauthOnboardingRoute /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

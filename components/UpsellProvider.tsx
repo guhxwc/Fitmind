@@ -96,7 +96,7 @@ export const UpsellProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <UpsellContext.Provider value={{ triggerUpsell, activeTrigger, setActiveTrigger }}>
       {children}
-      {activeTrigger && (
+      {activeTrigger && !location.pathname.startsWith('/ebook') && (
         <ConsultationUpsellModal
           trigger={activeTrigger}
           onClose={() => setActiveTrigger(null)}

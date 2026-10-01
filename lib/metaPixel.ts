@@ -15,7 +15,7 @@
  *     sozinho. NÃO disparar PageView manual aqui, senão duplica.
  */
 
-export const META_PIXEL_ID = '1814654896218292';
+export const META_PIXEL_ID = '4440563289541452';
 export const META_CURRENCY = 'BRL';
 
 /** Eventos padrão da Meta usados no Fitmind. */

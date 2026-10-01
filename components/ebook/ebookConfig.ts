@@ -1,6 +1,6 @@
 import { track as phTrack } from '../../lib/analytics';
 import { supabase } from '../../supabaseClient';
-import { metaTrack } from '../../lib/metaPixel';
+import { metaTrack, getMetaBrowserIds } from '../../lib/metaPixel';
 
 export const EBOOK_CONFIG = {
   // Stripe (o checkout é criado pela Edge Function create-ebook-checkout)
@@ -34,11 +34,16 @@ export async function startEbookCheckout(opts: { quizProfile?: string | null } =
     affiliateRef = localStorage.getItem('affiliate_ref') || sessionStorage.getItem('affiliate_ref');
   } catch { /* storage indisponível */ }
 
+  // Cookies da Meta (_fbp/_fbc) para o Purchase enviado pelo servidor casar com o anúncio.
+  const { fbp, fbc } = getMetaBrowserIds();
   const { data, error } = await supabase.functions.invoke('create-ebook-checkout', {
     body: {
       utm: EBOOK_CONFIG.PASSAR_UTMS ? collectUtms() : {},
       quiz_profile: opts.quizProfile ?? null,
       affiliate_ref: affiliateRef,
+      meta_fbp: fbp ?? null,
+      meta_fbc: fbc ?? null,
+      meta_source_url: typeof window !== 'undefined' ? window.location.origin + '/ebook' : null,
     },
   });
 

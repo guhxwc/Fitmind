@@ -9,7 +9,7 @@
  * servidor manda o MESMO `event_id` (o id da sessão do Stripe). A Meta conta uma vez.
  *
  * Secrets necessários (Supabase → Edge Functions → Secrets):
- *   META_PIXEL_ID            ex.: 4440563289541452
+ *   META_PIXEL_ID            ex.: 1814654896218292
  *   META_CAPI_ACCESS_TOKEN   token gerado em Events Manager → Configurações → Conversions API
  * Opcionais:
  *   META_TEST_EVENT_CODE     código da aba "Testar eventos" (remova em produção)

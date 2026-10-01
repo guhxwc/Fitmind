@@ -16,6 +16,7 @@
  */
 
 import posthog from 'posthog-js';
+import { metaTrack, metaIdentify, META_CURRENCY } from './metaPixel';
 
 const POSTHOG_KEY =
   (import.meta as any).env?.VITE_POSTHOG_KEY ||
@@ -187,7 +188,51 @@ function isReady(): boolean {
 // CORE API
 // =====================================================================
 
+/**
+ * Ponte PostHog → Meta Pixel. Só os eventos do funil viram evento da Meta.
+ * `properties` NÃO é repassado inteiro: os dados do app incluem medicação, idade,
+ * gênero etc. (dados de saúde), que não podem ir para a Meta. O `metaTrack` ainda
+ * filtra por whitelist, mas aqui já montamos só o que interessa.
+ *
+ * Purchase NÃO sai daqui: é disparado na SuccessPage, depois da confirmação do
+ * pagamento, com valor e eventID (deduplicação com a Conversions API).
+ */
+function bridgeToMeta(event: string, properties?: Record<string, any>): void {
+  try {
+    switch (event) {
+      case AnalyticsEvent.signupCompleted:
+        metaTrack('CompleteRegistration', { content_name: 'Fitmind', status: true });
+        break;
+      case AnalyticsEvent.onboardingCompleted:
+        metaTrack('Lead', { content_name: 'Onboarding concluído' });
+        break;
+      case AnalyticsEvent.subscriptionPageViewed:
+        metaTrack('ViewContent', {
+          content_name: 'Fitmind PRO',
+          content_category: 'assinatura',
+          content_type: 'product',
+        });
+        break;
+      case AnalyticsEvent.checkoutStarted:
+        metaTrack('InitiateCheckout', {
+          value: properties?.value,
+          currency: properties?.value !== undefined ? properties?.currency || META_CURRENCY : undefined,
+          content_name: properties?.content_name,
+          content_type: 'product',
+          num_items: 1,
+        });
+        break;
+      default:
+        break;
+    }
+  } catch {
+    /* silent */
+  }
+}
+
 export function track(event: AnalyticsEventName | string, properties?: Record<string, any>): void {
+  bridgeToMeta(event, properties);
+
   // Bridge relevant conversion events to TikTok Pixel (ttq)
   if (typeof window !== 'undefined' && (window as any).ttq) {
     try {
@@ -216,6 +261,10 @@ export function identifyUser(
   distinctId: string,
   properties?: Record<string, any>,
 ): void {
+  // Meta Advanced Matching (email com hash feito pelo próprio fbevents.js).
+  if (distinctId || properties?.email) {
+    metaIdentify({ id: distinctId, email: properties?.email });
+  }
   if (!isReady()) return;
   if (!distinctId) return;
   try {

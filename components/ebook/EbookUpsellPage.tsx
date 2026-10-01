@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ebook.css';
 import { EBOOK_CONFIG, trackEvent, getEbookOrderStatus } from './ebookConfig';
 import { useEbookFontsAndMeta } from './useEbookFontsAndMeta';
+import { metaTrack } from '../../lib/metaPixel';
 
 type PlanType = 'mensal' | 'trimestral' | 'semestral';
 
@@ -40,10 +41,7 @@ export const EbookUpsellPage: React.FC = () => {
       const v = value ?? EBOOK_CONFIG.PRICE_VALUE;
       const c = currency ?? EBOOK_CONFIG.CURRENCY;
       trackEvent('ebook_purchase', { value: v, currency: c, session_id: sessionId });
-      try {
-        const fbq = (window as any).fbq;
-        if (fbq) fbq('track', 'Purchase', { value: v, currency: c, content_name: 'Ebook Prato Cheio de Proteína' }, { eventID: sessionId });
-      } catch { /* ignore */ }
+      metaTrack('Purchase', { value: v, currency: c, content_name: 'Ebook Prato Cheio de Proteína', content_type: 'product', num_items: 1 }, sessionId);
     };
 
     const poll = async () => {
@@ -210,7 +208,7 @@ export const EbookUpsellPage: React.FC = () => {
                               <linearGradient id="streakGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor="#FFB300" />
                                 <stop offset="35%" stopColor="#FF6B00" />
-                              <stop offset="100%" stopColor="#E61A00" />
+                                <stop offset="100%" stopColor="#E61A00" />
                               </linearGradient>
                             </defs>
                             <path d="M12 2C12 2 5 8.5 5 14.5C5 18.64 8.13 22 12 22C15.87 22 19 18.64 19 14.5C19 8.5 12 2 12 2Z" fill="url(#streakGrad)" />

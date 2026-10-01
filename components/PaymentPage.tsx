@@ -4,6 +4,7 @@ import { useAppContext } from './AppContext';
 import { supabase } from '../supabaseClient';
 import { useToast } from './ToastProvider';
 import { track, AnalyticsEvent } from '../lib/analytics';
+import { PRO_PRICES, saveCheckoutContext, getMetaBrowserIds } from '../lib/metaPixel';
 
 const STRIPE_PRICE_IDS = {
     monthly: 'price_1TW0XiQdX6ANfRVOK4D8qmHu',
@@ -34,14 +35,28 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ plan: selectedPlan, on
 
         // PATCHED
         const affiliateCode = localStorage.getItem('affiliate_ref') || undefined;
-        track(AnalyticsEvent.checkoutStarted, { plan: selectedPlan, has_affiliate: !!affiliateCode });
+        const value = selectedPlan === 'annual' ? PRO_PRICES.annual : PRO_PRICES.monthly;
+        const contentName = selectedPlan === 'annual' ? 'Fitmind PRO Anual' : 'Fitmind PRO Mensal';
+        // Guarda valor/plano para a /success disparar o Purchase com o valor certo.
+        saveCheckoutContext({ kind: 'pro', plan: selectedPlan, value, contentName });
+        track(AnalyticsEvent.checkoutStarted, {
+            plan: selectedPlan,
+            has_affiliate: !!affiliateCode,
+            value,
+            currency: 'BRL',
+            content_name: contentName,
+        });
+        const { fbp, fbc } = getMetaBrowserIds();
         const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
             body: {
                 priceId: priceId,
                 email: session.user.email,
                 userId: session.user.id,
                 returnUrl: returnUrl,
-                affiliateCode: affiliateCode
+                affiliateCode: affiliateCode,
+                metaFbp: fbp,
+                metaFbc: fbc,
+                metaSourceUrl: window.location.origin + '/assinaturas'
             }
         });
 

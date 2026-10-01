@@ -1,7 +1,7 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
+import { sendMetaCapiEvent } from "../_shared/metaCapi.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -218,6 +218,30 @@ serve(async (req) => {
         }
       }
       
+      // 4. Meta Conversions API — Purchase server-side (deduplica com o Pixel via event_id = session.id)
+      try {
+        const paid = session.payment_status === 'paid' || session.status === 'complete';
+        const value = typeof amountTotal === 'number' ? amountTotal / 100 : 0;
+        if (paid && value > 0) {
+          await sendMetaCapiEvent({
+            eventName: 'Purchase',
+            eventId: session.id,
+            eventSourceUrl: session.metadata?.meta_source_url,
+            email: session.customer_details?.email || session.customer_email,
+            externalId: userId,
+            fbp: session.metadata?.meta_fbp,
+            fbc: session.metadata?.meta_fbc,
+            clientUserAgent: session.metadata?.meta_ua,
+            clientIp: session.metadata?.meta_ip,
+            value,
+            currency: session.currency || 'brl',
+            contentName: isConsultation ? 'Consultoria Nutricional' : 'Fitmind PRO',
+          });
+        }
+      } catch (capiErr) {
+        console.error('[meta-capi] falha não-bloqueante:', capiErr);
+      }
+
       console.log(`🚀 Sucesso: Usuário ${userId} agora é PRO.`);
     } else if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
       const subscription = event.data.object;
@@ -284,3 +308,4 @@ serve(async (req) => {
     });
   }
 })
+

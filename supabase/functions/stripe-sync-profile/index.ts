@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
@@ -160,7 +159,17 @@ serve(async (req) => {
           } catch (e) {}
       }
 
-      return new Response(JSON.stringify({ success: true, isPro: true }), {
+      const isConsultation = _sessionObj?.metadata?.is_consultation === 'true';
+      // amount_total vem em centavos. Usado pelo Meta Pixel (Purchase) para enviar o valor real pago.
+      const amountTotal = typeof _sessionObj?.amount_total === 'number' ? _sessionObj.amount_total / 100 : null;
+
+      return new Response(JSON.stringify({
+        success: true,
+        isPro: true,
+        isConsultation,
+        amountTotal,
+        currency: _sessionObj?.currency ? String(_sessionObj.currency).toUpperCase() : null,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });

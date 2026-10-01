@@ -4,6 +4,7 @@ import { useAppContext } from '../AppContext';
 import { supabase } from '../../supabaseClient';
 import { CheckCircleIcon, ChevronRightIcon, SparklesIcon } from '../core/Icons';
 import { track, AnalyticsEvent, setUserProperties } from '../../lib/analytics';
+import { metaTrackOnce, readCheckoutContext, PRO_PRICES, META_CURRENCY } from '../../lib/metaPixel';
 
 export const SuccessPage: React.FC = () => {
     const navigate = useNavigate();
@@ -14,6 +15,25 @@ export const SuccessPage: React.FC = () => {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const isConsultation = searchParams.get('type') === 'consultation';
     const [error, setError] = useState<string | null>(null);
+
+    // Purchase da Meta: só depois do pagamento CONFIRMADO (não ao abrir a página).
+    // eventID = session_id do Stripe → o servidor (CAPI) manda o mesmo id e a Meta
+    // deduplica. A trava por session_id evita contar de novo se a página recarregar.
+    const firePurchase = (serverAmount?: number | null, serverCurrency?: string | null) => {
+        const sessionId = searchParams.get('session_id');
+        const ctx = readCheckoutContext();
+        const fallbackValue = ctx?.value ?? (isConsultation ? 0 : PRO_PRICES.annual);
+        const value = serverAmount && serverAmount > 0 ? serverAmount : fallbackValue;
+        if (!value || value <= 0) return; // sem valor confiável, melhor não poluir o ROAS
+        const currency = (serverCurrency || ctx?.currency || META_CURRENCY).toUpperCase();
+        const contentName = ctx?.contentName || (isConsultation ? 'Consultoria Nutricional' : 'Fitmind PRO');
+        metaTrackOnce(
+            sessionId || `nosession_${session?.user?.id || 'anon'}`,
+            'Purchase',
+            { value, currency, content_name: contentName, content_type: 'product', num_items: 1 },
+            sessionId || undefined,
+        );
+    };
 
     useEffect(() => {
       track(AnalyticsEvent.paymentSuccessViewed, {
@@ -63,6 +83,7 @@ export const SuccessPage: React.FC = () => {
                         setIsPolling(false);
                         setStatusMsg('Consultoria ativada com sucesso!');
                         track('purchase_confirmed', { type: 'consultation' });
+                        firePurchase(syncData?.amountTotal, syncData?.currency);
                         setUserProperties({ subscription_status: 'active', has_consultation: true });
                         await fetchData(); // atualiza consultationStatus no contexto → BottomNav aparece
                         setTimeout(() => finish(), 1500);
@@ -72,6 +93,7 @@ export const SuccessPage: React.FC = () => {
                         setIsConfirmed(true);
                         setIsPolling(false);
                         setStatusMsg('Assinatura PRO ativada com sucesso!');
+                        firePurchase(syncData?.amountTotal, syncData?.currency);
                         setTimeout(() => finish(), 2000);
                         return;
                     }
@@ -93,6 +115,7 @@ export const SuccessPage: React.FC = () => {
                 setIsConfirmed(true);
                 setIsPolling(false);
                 setStatusMsg('Status PRO confirmado!');
+                if (sessionId) firePurchase(); // webhook chegou antes do sync; mesmo eventID, sem duplicar
                 setTimeout(() => finish(), 2000);
                 return;
             }

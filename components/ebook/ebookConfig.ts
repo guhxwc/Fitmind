@@ -1,5 +1,6 @@
 import { track as phTrack } from '../../lib/analytics';
 import { supabase } from '../../supabaseClient';
+import { metaTrack } from '../../lib/metaPixel';
 
 export const EBOOK_CONFIG = {
   // Stripe (o checkout é criado pela Edge Function create-ebook-checkout)
@@ -87,9 +88,18 @@ export function trackEvent(name: string, props?: Record<string, any>): void {
     // Ignore analytics errors
   }
 
+  // Meta Pixel — só nome/valor do produto; as respostas do quiz NÃO vão para a Meta.
   try {
-    if (typeof window !== 'undefined' && (window as any).fbq && name === 'checkout_click') {
-      (window as any).fbq('track', 'InitiateCheckout', { value: EBOOK_CONFIG.PRICE_VALUE, currency: EBOOK_CONFIG.CURRENCY });
+    if (name === 'quiz_complete') {
+      metaTrack('Lead', { content_name: 'Ebook Prato Cheio de Proteína', content_category: 'ebook' });
+    } else if (name === 'checkout_click') {
+      metaTrack('InitiateCheckout', {
+        value: EBOOK_CONFIG.PRICE_VALUE,
+        currency: EBOOK_CONFIG.CURRENCY,
+        content_name: 'Ebook Prato Cheio de Proteína',
+        content_type: 'product',
+        num_items: 1,
+      });
     }
   } catch (e) {
     // Ignore fbq errors

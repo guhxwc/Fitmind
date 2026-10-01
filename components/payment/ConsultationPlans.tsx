@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { ChevronLeft, Check, Sparkles, ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAppContext } from '../AppContext';
+import { track, AnalyticsEvent } from '../../lib/analytics';
+import { CONSULTATION_PRICES, saveCheckoutContext, getMetaBrowserIds } from '../../lib/metaPixel';
 
 interface ConsultationPlansProps {
   onPlanSelected: (planId: string) => void;
@@ -95,14 +97,29 @@ export const ConsultationPlans: React.FC<ConsultationPlansProps> = ({ onPlanSele
 
     try {
         const returnUrl = `${window.location.origin}/success?type=consultation`;
+        const value = CONSULTATION_PRICES[plan.id] ?? 0;
+        const contentName = `Consultoria Nutricional ${plan.title}`;
+        saveCheckoutContext({ kind: 'consultation', plan: plan.id, value, contentName });
+        track(AnalyticsEvent.checkoutStarted, {
+            plan: plan.id,
+            type: 'consultation',
+            value,
+            currency: 'BRL',
+            content_name: contentName,
+        });
+        const { fbp, fbc } = getMetaBrowserIds();
         const { data, error } = await supabase.functions.invoke('create-checkout-session', {
             body: { 
                 priceId: plan.priceId,
                 productId: plan.productId,
                 planType: plan.id,
                 userId: session?.user?.id,
+                email: session?.user?.email,
                 is_consultation: true,
-                returnUrl: returnUrl
+                returnUrl: returnUrl,
+                metaFbp: fbp,
+                metaFbc: fbc,
+                metaSourceUrl: window.location.origin + '/consultoria'
             }
         });
 

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "https://esm.sh/stripe@13.6.0?target=deno"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
@@ -29,7 +28,7 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    const { priceId, email, userId, returnUrl, affiliateCode, is_consultation } = await req.json();
+    const { priceId, email, userId, returnUrl, affiliateCode, is_consultation, metaFbp, metaFbc, metaSourceUrl } = await req.json();
     
     if (!priceId || !userId) throw new Error("Parâmetros obrigatórios ausentes (priceId ou userId).");
 
@@ -60,6 +59,19 @@ serve(async (req) => {
     if (is_consultation) {
         metadata = { ...metadata, is_consultation: 'true' };
     }
+
+    // Identificadores do Meta Pixel (cookies _fbp/_fbc) para a Conversions API casar o clique do anúncio.
+    if (metaFbp) metadata = { ...metadata, meta_fbp: String(metaFbp).slice(0, 200) };
+    if (metaFbc) metadata = { ...metadata, meta_fbc: String(metaFbc).slice(0, 400) };
+    if (metaSourceUrl) metadata = { ...metadata, meta_source_url: String(metaSourceUrl).slice(0, 400) };
+
+    // A Conversions API EXIGE client_user_agent em eventos de website. O webhook do Stripe não tem o
+    // navegador do cliente, então capturamos aqui (a requisição vem do navegador) e levamos na metadata.
+    const clientUa = req.headers.get('user-agent');
+    if (clientUa) metadata = { ...metadata, meta_ua: clientUa.slice(0, 450) };
+    const fwd = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '';
+    const clientIp = fwd.split(',')[0].trim();
+    if (clientIp) metadata = { ...metadata, meta_ip: clientIp.slice(0, 60) };
 
     if (finalAffiliateCode) {
       // Sempre adiciona o código aos metadados para rastreamento, mesmo que não seja um afiliado "oficial"

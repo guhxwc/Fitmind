@@ -7,9 +7,12 @@ import { ToastProvider } from './components/ToastProvider';
 import { AppContextProvider } from './components/AppContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initAnalytics, posthogClient, track, AnalyticsEvent } from './lib/analytics';
+import { captureFbclid } from './lib/metaPixel';
 
 // Initialize PostHog as early as possible so the very first events are not lost.
 initAnalytics();
+// Guarda o fbclid do anúncio antes do router limpar a URL (usado para montar o _fbc).
+captureFbclid();
 
 
 // ─── CAPTURA SÍNCRONA DO ?ref= ────────────────────────────────────────────────

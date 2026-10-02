@@ -91,20 +91,27 @@ export const EbookLandingPage: React.FC = () => {
     'Separando as receitas certas para você…'
   ];
 
-  // Sticky CTA IntersectionObserver
+  // Sticky CTA scroll detection (garante aparição fixa ao rolar em qualquer tela)
   useEffect(() => {
-    const heroEl = heroRef.current;
-    if (!heroEl) return;
+    const handleScroll = () => {
+      const root = document.getElementById('root');
+      const scrollTop = root ? root.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
+      const heroEl = heroRef.current;
+      const heroHeight = heroEl ? heroEl.offsetHeight : 450;
+      // Ao rolar além de metade do hero (ou 280px), ativa o botão fixo
+      setShowSticky(scrollTop > Math.min(heroHeight * 0.5, 280));
+    };
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowSticky(!entry.isIntersecting);
-      },
-      { threshold: 0 }
-    );
+    handleScroll();
 
-    observer.observe(heroEl);
-    return () => observer.disconnect();
+    // No app, quem rola é o #root; o listener com capture no document captura a rolagem de forma garantida
+    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Loading animation transition

@@ -734,7 +734,19 @@
 }
 
 @media (min-width: 901px) {
-  .fm-ebook .sticky { display: none; }
+  .fm-ebook .sticky {
+    left: 50%;
+    right: auto;
+    width: min(540px, calc(100% - 32px));
+    transform: translate(-50%, 110%);
+    border-radius: 16px 16px 0 0;
+    border: 1px solid var(--line);
+    border-bottom: none;
+    box-shadow: 0 -8px 30px -10px rgba(26,69,114,.3);
+  }
+  .fm-ebook .sticky.show {
+    transform: translate(-50%, 0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

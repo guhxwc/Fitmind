@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ebook.css';
 import { EBOOK_CONFIG, trackEvent, getEbookOrderStatus } from './ebookConfig';
+import { useEbookTracking } from './ebookTracking';
 import { useEbookFontsAndMeta } from './useEbookFontsAndMeta';
 import { metaTrack } from '../../lib/metaPixel';
 
@@ -15,6 +16,8 @@ const PLAN_LABELS: Record<PlanType, string> = {
 export const EbookUpsellPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('trimestral');
 
+  useEbookTracking('upsell');
+
   useEbookFontsAndMeta({
     title: 'Seu ebook está a caminho | FitMind',
     noindex: true
@@ -23,7 +26,7 @@ export const EbookUpsellPage: React.FC = () => {
   const [orderInfo, setOrderInfo] = useState<{ status?: string; email?: string | null }>({});
 
   useEffect(() => {
-    trackEvent('upsell_view');
+    trackEvent('upsell_view', { session_id: new URLSearchParams(window.location.search).get('session_id') });
   }, []);
 
   // Confirma a compra: mostra o e-mail (mascarado), dispara o Purchase uma única vez

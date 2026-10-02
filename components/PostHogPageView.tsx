@@ -54,6 +54,7 @@ function classifySection(path: string): string {
   if (path.startsWith('/settings')) return 'settings';
   if (path.startsWith('/referrals')) return 'referrals';
   if (path.startsWith('/painel-nutri')) return 'nutri-panel';
+  if (path.startsWith('/ebook')) return 'ebook';
   if (path.startsWith('/success')) return 'payment-success';
   if (path.startsWith('/reset-password')) return 'reset-password';
   if (path.startsWith('/terms') || path.startsWith('/privacy')) return 'legal';

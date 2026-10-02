@@ -1,5 +1,6 @@
 import { track as phTrack } from '../../lib/analytics';
 import { supabase } from '../../supabaseClient';
+import { ebookTrack, markCheckoutStarted } from './ebookTracking';
 import { metaTrack, getMetaBrowserIds } from '../../lib/metaPixel';
 
 export const EBOOK_CONFIG = {
@@ -36,6 +37,7 @@ export async function startEbookCheckout(opts: { quizProfile?: string | null } =
 
   // Cookies da Meta (_fbp/_fbc) para o Purchase enviado pelo servidor casar com o anúncio.
   const { fbp, fbc } = getMetaBrowserIds();
+  const t0 = Date.now();
   const { data, error } = await supabase.functions.invoke('create-ebook-checkout', {
     body: {
       utm: EBOOK_CONFIG.PASSAR_UTMS ? collectUtms() : {},
@@ -48,8 +50,15 @@ export async function startEbookCheckout(opts: { quizProfile?: string | null } =
   });
 
   if (error || !data?.success || !data?.url) {
+    ebookTrack('ebook_checkout_session_error', {
+      duration_ms: Date.now() - t0,
+      message: String(error?.message || data?.error || 'sem url').slice(0, 200),
+      http_status: (error as any)?.context?.status ?? null,
+    });
     throw new Error(data?.error || 'Não foi possível abrir o pagamento. Tente novamente.');
   }
+  ebookTrack('ebook_checkout_session_created', { session_id: data.id ?? null, duration_ms: Date.now() - t0 });
+  markCheckoutStarted(data.id ?? null);
   window.location.href = data.url;
 }
 

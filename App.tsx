@@ -213,7 +213,9 @@ const AppContent: React.FC = () => {
       if (_event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setProfileExists(null);
-        resetAnalytics(); // Limpa distinct_id — crítico em computadores compartilhados
+        // Só limpa o distinct_id em logout de verdade. Visitante anônimo chega aqui com "sem sessão" a cada
+        // carregamento de página e NÃO pode ser resetado (senão perde a identidade, os atributos e a sessão).
+        if (_event === 'SIGNED_OUT') resetAnalytics(); // crítico em computadores compartilhados
         try {
           sessionStorage.removeItem('nutri_role_choice');
         } catch { /* ignore */ }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ebook.css';
 import { startEbookCheckout, trackEvent } from './ebookConfig';
+import { useEbookTracking, ebookState, ebookTrack } from './ebookTracking';
+import { EbookCancelPoll } from './EbookCancelPoll';
 import { useEbookFontsAndMeta } from './useEbookFontsAndMeta';
 
 interface QuestionOption {
@@ -70,6 +72,8 @@ const QUESTIONS: Question[] = [
 ];
 
 export const EbookLandingPage: React.FC = () => {
+  useEbookTracking('landing');
+
   useEbookFontsAndMeta({
     title: 'Prato Cheio de Proteína | 38 receitas para quem usa caneta GLP-1'
   });
@@ -139,12 +143,31 @@ export const EbookLandingPage: React.FC = () => {
     }
   }, [step]);
 
+  // Rastreio do quiz: cada pergunta vista e o resultado
+  useEffect(() => {
+    if (step >= 0 && step <= 4) {
+      ebookState.quizStarted = true;
+      ebookState.quizStep = step;
+      ebookState.questionShownAt = Date.now();
+      ebookTrack('quiz_step_view', { step: step + 1, question_id: QUESTIONS[step]?.id });
+    } else if (step === 6) {
+      ebookState.quizCompleted = true;
+    }
+  }, [step]);
+
   const handleStartQuiz = () => {
     trackEvent('quiz_start');
+    ebookState.quizStarted = true;
     setStep(0);
   };
 
   const handleSelectOption = (questionId: string, val: any) => {
+    ebookTrack('quiz_answer', {
+      step: step + 1,
+      question_id: questionId,
+      answer: String(val),
+      seconds_on_question: ebookState.questionShownAt ? Math.round((Date.now() - ebookState.questionShownAt) / 100) / 10 : null,
+    });
     setAnswers((prev) => ({ ...prev, [questionId]: val }));
     setTimeout(() => {
       setStep((curr) => {
@@ -158,6 +181,7 @@ export const EbookLandingPage: React.FC = () => {
   };
 
   const handleBack = () => {
+    ebookTrack('quiz_back', { from_step: step + 1 });
     setStep((curr) => Math.max(0, curr - 1));
   };
 
@@ -184,6 +208,8 @@ export const EbookLandingPage: React.FC = () => {
     const s = computeScore();
     const level = step === 6 ? (s >= 4 ? 'alto' : s >= 2 ? 'moderado' : 'baixo') : null;
     trackEvent('checkout_click', { origem: origin, perfil: level });
+    ebookState.clickedBuy = true;
+    ebookState.checkoutPhase = 'creating';
     setCheckoutCanceled(false);
     setCheckoutState('loading');
     try {
@@ -192,13 +218,14 @@ export const EbookLandingPage: React.FC = () => {
     } catch (err: any) {
       setCheckoutError(err?.message || 'Não foi possível abrir o pagamento. Tente novamente.');
       setCheckoutState('error');
+      ebookState.checkoutPhase = 'error';
       trackEvent('checkout_error', { origem: origin });
     }
   };
 
   // Se o usuário voltar do Stripe pelo botão "voltar" do navegador, destrava os botões
   useEffect(() => {
-    const onShow = () => setCheckoutState('idle');
+    const onShow = () => { setCheckoutState('idle'); ebookState.checkoutPhase = 'idle'; };
     window.addEventListener('pageshow', onShow);
     return () => window.removeEventListener('pageshow', onShow);
   }, []);
@@ -808,6 +835,8 @@ export const EbookLandingPage: React.FC = () => {
           <button className="x" aria-label="Fechar aviso" onClick={() => setCheckoutCanceled(false)}>×</button>
         </div>
       )}
+
+      {checkoutCanceled && <EbookCancelPoll />}
 
       {/* STICKY MOBILE */}
       <div className={`sticky ${showSticky ? 'show' : ''}`} id="sticky">

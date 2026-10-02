@@ -19,9 +19,9 @@ const GoogleIcon = () => (
 
 
 const HeroSection = ({ onLoaded }: { onLoaded: () => void }) => {
-  const AMPOLA_URL  = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Ampola.png";
-  const SERINGA_URL = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.png";
-  const VIDEO_URL   = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero.mp4";
+  const AMPOLA_URL  = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Ampola.webp";
+  const SERINGA_URL = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Seringa.webp";
+  const VIDEO_URL   = "https://jkjkbawikpqgxvmstzsb.supabase.co/storage/v1/object/public/fitmind-assets/Hero-leve.mp4";
 
   const videoRef = useRef<HTMLVideoElement>(null);
   

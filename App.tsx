@@ -533,7 +533,7 @@ const AppContent: React.FC = () => {
               ) : (userData?.isPro || upsellDismissed || localStorage.getItem('trigger_pro_tour') === 'true') ? (
                 <MainApp />
               ) : (
-                ['canceled', 'past_due', 'unpaid'].includes(userData?.subscriptionStatus || '') ? (
+                ['canceled', 'past_due', 'unpaid', 'expired'].includes(userData?.subscriptionStatus || '') ? (
                   !localStorage.getItem('trial_results_dismissed') ? (
                     <TrialResultsScreen onClose={() => {
                       localStorage.setItem('trial_results_dismissed', 'true');

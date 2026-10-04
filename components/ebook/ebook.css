@@ -818,6 +818,8 @@
     height: auto;
     pointer-events: none;
     filter: drop-shadow(0 calc(16 * var(--u)) calc(22 * var(--u)) rgba(10, 27, 71, .18));
+    animation: fmEbookMockupFloat 6.5s ease-in-out infinite alternate;
+    will-change: transform;
   }
   /* o prato de frango fica NA FRENTE das páginas: mesma imagem de fundo, recortada só no prato */
   .fm-ebook .mhero-plate {
@@ -859,9 +861,18 @@
     text-transform: uppercase;
     text-align: center;
     white-space: nowrap;
+    animation: fmEbookBadgeFloat 4.8s ease-in-out infinite alternate;
+    will-change: transform;
   }
   .fm-ebook .mhero-badge b { font-weight: 800; }
-  .fm-ebook .mhero-badge svg { width: calc(40 * var(--u)); height: calc(40 * var(--u)); flex: none; stroke-width: 1.7; transform: rotate(180deg); }
+  .fm-ebook .mhero-badge svg {
+    width: calc(40 * var(--u));
+    height: calc(40 * var(--u));
+    flex: none;
+    stroke-width: 1.7;
+    transform: rotate(180deg);
+    animation: fmEbookSyringeTilt 4s ease-in-out infinite alternate;
+  }
 
   .fm-ebook .mhero-title {
     max-width: calc(760 * var(--u));
@@ -891,6 +902,8 @@
     background: rgba(255, 255, 255, .93);
     border-radius: calc(40 * var(--u));
     box-shadow: 0 calc(12 * var(--u)) calc(40 * var(--u)) rgba(13, 40, 90, .09);
+    animation: fmEbookFeaturesFloat 5.4s ease-in-out infinite alternate;
+    will-change: transform, box-shadow;
   }
   .fm-ebook .mhero-features li {
     position: relative;
@@ -946,11 +959,25 @@
     box-shadow: 0 calc(14 * var(--u)) calc(30 * var(--u)) rgba(5, 140, 94, .32);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    animation: fmEbookCtaBreathe 3.4s ease-in-out infinite alternate;
     transition: transform .15s ease, box-shadow .15s ease;
+    will-change: transform, box-shadow;
   }
-  .fm-ebook .mhero-cta:active { transform: translateY(1px) scale(.995); box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(5, 140, 94, .3); }
+  .fm-ebook .mhero-cta:active {
+    animation-play-state: paused;
+    transform: translateY(1px) scale(.995);
+    box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(5, 140, 94, .3);
+  }
   .fm-ebook .mhero-cta:focus-visible { outline: 3px solid #9FD0F3; outline-offset: 3px; }
-  .fm-ebook .mhero-cta svg { width: calc(42 * var(--u)); height: calc(42 * var(--u)); min-width: 16px; min-height: 16px; stroke-width: 2.6; flex: none; }
+  .fm-ebook .mhero-cta svg {
+    width: calc(42 * var(--u));
+    height: calc(42 * var(--u));
+    min-width: 16px;
+    min-height: 16px;
+    stroke-width: 2.6;
+    flex: none;
+    animation: fmEbookArrowDrift 2.2s ease-in-out infinite alternate;
+  }
 
   .fm-ebook .mhero-trust {
     list-style: none;
@@ -987,6 +1014,95 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ANIMAÇÕES SUAVES DA HERO (flutuação e respiração suaves em 60fps)
+   ═══════════════════════════════════════════════════════════════════════ */
+@keyframes fmEbookMockupFloat {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(calc(-14 * var(--u))) rotate(-0.6deg);
+  }
+}
+
+@keyframes fmEbookFeaturesFloat {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 calc(12 * var(--u)) calc(36 * var(--u)) rgba(13, 40, 90, .09);
+  }
+  100% {
+    transform: translateY(calc(-7 * var(--u)));
+    box-shadow: 0 calc(18 * var(--u)) calc(44 * var(--u)) rgba(13, 40, 90, .14);
+  }
+}
+
+@keyframes fmEbookBadgeFloat {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(calc(-4 * var(--u)));
+  }
+}
+
+@keyframes fmEbookSyringeTilt {
+  0% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(188deg);
+  }
+}
+
+@keyframes fmEbookCtaBreathe {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 calc(14 * var(--u)) calc(30 * var(--u)) rgba(5, 140, 94, .32);
+  }
+  100% {
+    transform: translateY(calc(-3 * var(--u))) scale(1.018);
+    box-shadow: 0 calc(20 * var(--u)) calc(38 * var(--u)) rgba(5, 140, 94, .42);
+  }
+}
+
+@keyframes fmEbookArrowDrift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(6 * var(--u)));
+  }
+}
+
+@keyframes fmDesktopQuizFloat {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 30px 60px -30px rgba(26,69,114,.45);
+  }
+  100% {
+    transform: translateY(-8px);
+    box-shadow: 0 36px 68px -28px rgba(26,69,114,.5);
+  }
+}
+
+@media (min-width: 901px) {
+  .fm-ebook .quiz {
+    animation: fmDesktopQuizFloat 6.5s ease-in-out infinite alternate;
+    will-change: transform, box-shadow;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fm-ebook .mhero-cta { transition: none; }
+  .fm-ebook .mhero-mockup,
+  .fm-ebook .mhero-features,
+  .fm-ebook .mhero-badge,
+  .fm-ebook .mhero-badge svg,
+  .fm-ebook .mhero-cta,
+  .fm-ebook .mhero-cta svg,
+  .fm-ebook .quiz {
+    animation: none !important;
+    transform: none !important;
+  }
 }

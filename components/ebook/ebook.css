@@ -817,8 +817,8 @@
     max-width: none;
     height: auto;
     pointer-events: none;
-    filter: drop-shadow(0 calc(16 * var(--u)) calc(22 * var(--u)) rgba(10, 27, 71, .18));
-    animation: fmEbookMockupFloat 6.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 calc(18 * var(--u)) calc(26 * var(--u)) rgba(10, 27, 71, .2));
+    animation: fmEbookMockupFloat 4.6s ease-in-out infinite alternate;
     will-change: transform;
   }
   /* o prato de frango fica NA FRENTE das páginas: mesma imagem de fundo, recortada só no prato */
@@ -861,7 +861,7 @@
     text-transform: uppercase;
     text-align: center;
     white-space: nowrap;
-    animation: fmEbookBadgeFloat 4.8s ease-in-out infinite alternate;
+    animation: fmEbookBadgeFloat 3.6s ease-in-out infinite alternate;
     will-change: transform;
   }
   .fm-ebook .mhero-badge b { font-weight: 800; }
@@ -871,7 +871,7 @@
     flex: none;
     stroke-width: 1.7;
     transform: rotate(180deg);
-    animation: fmEbookSyringeTilt 4s ease-in-out infinite alternate;
+    animation: fmEbookSyringeTilt 2.8s ease-in-out infinite alternate;
   }
 
   .fm-ebook .mhero-title {
@@ -881,7 +881,11 @@
     letter-spacing: -0.035em;
     color: #0A1A47;
   }
-  .fm-ebook .mhero-title span { color: #1A8CEB; }
+  .fm-ebook .mhero-title span {
+    color: #1A8CEB;
+    display: inline-block;
+    animation: fmEbookTitleGlow 3.4s ease-in-out infinite alternate;
+  }
   .fm-ebook .mhero-sub {
     max-width: calc(690 * var(--u));
     margin: calc(20 * var(--u)) 0 0 calc(125 * var(--u));
@@ -899,10 +903,10 @@
     width: calc(826 * var(--u));
     margin: 0 auto;
     padding: calc(28 * var(--u)) calc(8 * var(--u)) calc(24 * var(--u));
-    background: rgba(255, 255, 255, .93);
+    background: rgba(255, 255, 255, .95);
     border-radius: calc(40 * var(--u));
-    box-shadow: 0 calc(12 * var(--u)) calc(40 * var(--u)) rgba(13, 40, 90, .09);
-    animation: fmEbookFeaturesFloat 5.4s ease-in-out infinite alternate;
+    box-shadow: 0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(13, 40, 90, .1);
+    animation: fmEbookFeaturesFloat 4.2s ease-in-out infinite alternate;
     will-change: transform, box-shadow;
   }
   .fm-ebook .mhero-features li {
@@ -925,6 +929,10 @@
     background: #DCE6F2;
   }
   .fm-ebook .mhero-features svg { width: calc(50 * var(--u)); height: calc(50 * var(--u)); color: #1E66C8; stroke-width: 1.5; }
+  .fm-ebook .mhero-features li:nth-child(1) svg { animation: fmIconFloat1 3.0s ease-in-out infinite alternate; }
+  .fm-ebook .mhero-features li:nth-child(2) svg { animation: fmIconFloat2 2.6s ease-in-out infinite alternate 0.3s; }
+  .fm-ebook .mhero-features li:nth-child(3) svg { animation: fmIconFloat1 2.8s ease-in-out infinite alternate 0.6s; }
+  .fm-ebook .mhero-features li:nth-child(4) svg { animation: fmIconFloat2 3.2s ease-in-out infinite alternate 0.9s; }
 
   .fm-ebook .mhero-price-from {
     margin: calc(10 * var(--u)) 0 0;
@@ -939,8 +947,13 @@
     font: 800 calc(92 * var(--u))/1.02 'Montserrat', system-ui, sans-serif;
     letter-spacing: -0.03em;
     color: #0A62B8;
+    display: block;
+    animation: fmEbookPricePulse 2.4s ease-in-out infinite alternate;
+    will-change: transform;
   }
   .fm-ebook .mhero-cta {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -959,9 +972,21 @@
     box-shadow: 0 calc(14 * var(--u)) calc(30 * var(--u)) rgba(5, 140, 94, .32);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    animation: fmEbookCtaBreathe 3.4s ease-in-out infinite alternate;
+    animation: fmEbookCtaBreathe 2.8s ease-in-out infinite alternate;
     transition: transform .15s ease, box-shadow .15s ease;
     will-change: transform, box-shadow;
+  }
+  .fm-ebook .mhero-cta::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -80%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+    transform: rotate(25deg);
+    animation: fmEbookCtaShine 3.4s ease-in-out infinite;
+    pointer-events: none;
   }
   .fm-ebook .mhero-cta:active {
     animation-play-state: paused;
@@ -976,7 +1001,7 @@
     min-height: 16px;
     stroke-width: 2.6;
     flex: none;
-    animation: fmEbookArrowDrift 2.2s ease-in-out infinite alternate;
+    animation: fmEbookArrowDrift 1.8s ease-in-out infinite alternate;
   }
 
   .fm-ebook .mhero-trust {
@@ -1015,14 +1040,17 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ANIMAÇÕES SUAVES DA HERO (flutuação e respiração suaves em 60fps)
+   ANIMAÇÕES VIBRANTES E SUAVES DA HERO (dinâmicas, fluídas a 60fps)
    ═══════════════════════════════════════════════════════════════════════ */
 @keyframes fmEbookMockupFloat {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(calc(-16 * var(--u))) translateX(calc(6 * var(--u))) rotate(-0.8deg) scale(1.015);
   }
   100% {
-    transform: translateY(calc(-14 * var(--u))) rotate(-0.6deg);
+    transform: translateY(calc(-28 * var(--u))) translateX(calc(10 * var(--u))) rotate(-1.5deg) scale(1.025);
   }
 }
 
@@ -1032,26 +1060,69 @@
     box-shadow: 0 calc(12 * var(--u)) calc(36 * var(--u)) rgba(13, 40, 90, .09);
   }
   100% {
-    transform: translateY(calc(-7 * var(--u)));
-    box-shadow: 0 calc(18 * var(--u)) calc(44 * var(--u)) rgba(13, 40, 90, .14);
+    transform: translateY(calc(-14 * var(--u)));
+    box-shadow: 0 calc(22 * var(--u)) calc(48 * var(--u)) rgba(13, 40, 90, .16);
+  }
+}
+
+@keyframes fmIconFloat1 {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(calc(-6 * var(--u))) scale(1.12);
+    color: #12519F;
+  }
+}
+
+@keyframes fmIconFloat2 {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  100% {
+    transform: translateY(calc(-5 * var(--u))) scale(1.1) rotate(6deg);
+    color: #12519F;
   }
 }
 
 @keyframes fmEbookBadgeFloat {
   0% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
   100% {
-    transform: translateY(calc(-4 * var(--u)));
+    transform: translateY(calc(-8 * var(--u))) scale(1.02);
   }
 }
 
 @keyframes fmEbookSyringeTilt {
   0% {
-    transform: rotate(180deg);
+    transform: rotate(172deg) scale(0.96);
   }
   100% {
-    transform: rotate(188deg);
+    transform: rotate(196deg) scale(1.08);
+  }
+}
+
+@keyframes fmEbookTitleGlow {
+  0% {
+    transform: translateY(0);
+    color: #1A8CEB;
+    text-shadow: 0 0 0 rgba(26, 140, 235, 0);
+  }
+  100% {
+    transform: translateY(calc(-2 * var(--u)));
+    color: #0E7CE3;
+    text-shadow: 0 calc(4 * var(--u)) calc(18 * var(--u)) rgba(26, 140, 235, 0.28);
+  }
+}
+
+@keyframes fmEbookPricePulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.055) translateY(calc(-2 * var(--u)));
+    color: #0656A8;
   }
 }
 
@@ -1061,8 +1132,17 @@
     box-shadow: 0 calc(14 * var(--u)) calc(30 * var(--u)) rgba(5, 140, 94, .32);
   }
   100% {
-    transform: translateY(calc(-3 * var(--u))) scale(1.018);
-    box-shadow: 0 calc(20 * var(--u)) calc(38 * var(--u)) rgba(5, 140, 94, .42);
+    transform: translateY(calc(-6 * var(--u))) scale(1.032);
+    box-shadow: 0 calc(22 * var(--u)) calc(44 * var(--u)) rgba(5, 140, 94, .48);
+  }
+}
+
+@keyframes fmEbookCtaShine {
+  0%, 35% {
+    left: -80%;
+  }
+  70%, 100% {
+    left: 170%;
   }
 }
 
@@ -1071,7 +1151,7 @@
     transform: translateX(0);
   }
   100% {
-    transform: translateX(calc(6 * var(--u)));
+    transform: translateX(calc(10 * var(--u)));
   }
 }
 
@@ -1081,14 +1161,14 @@
     box-shadow: 0 30px 60px -30px rgba(26,69,114,.45);
   }
   100% {
-    transform: translateY(-8px);
-    box-shadow: 0 36px 68px -28px rgba(26,69,114,.5);
+    transform: translateY(-14px);
+    box-shadow: 0 42px 76px -24px rgba(26,69,114,.55);
   }
 }
 
 @media (min-width: 901px) {
   .fm-ebook .quiz {
-    animation: fmDesktopQuizFloat 6.5s ease-in-out infinite alternate;
+    animation: fmDesktopQuizFloat 5.2s ease-in-out infinite alternate;
     will-change: transform, box-shadow;
   }
 }
@@ -1097,9 +1177,13 @@
   .fm-ebook .mhero-cta { transition: none; }
   .fm-ebook .mhero-mockup,
   .fm-ebook .mhero-features,
+  .fm-ebook .mhero-features li svg,
   .fm-ebook .mhero-badge,
   .fm-ebook .mhero-badge svg,
+  .fm-ebook .mhero-title span,
+  .fm-ebook .mhero-price,
   .fm-ebook .mhero-cta,
+  .fm-ebook .mhero-cta::after,
   .fm-ebook .mhero-cta svg,
   .fm-ebook .quiz {
     animation: none !important;

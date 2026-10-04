@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Syringe, ClipboardList, CalendarDays, BicepsFlexed, ChefHat, ArrowRight, Lock, Zap, TabletSmartphone } from 'lucide-react';
 import './ebook.css';
 import { startEbookCheckout, trackEvent } from './ebookConfig';
 import { useEbookTracking, ebookState, ebookTrack } from './ebookTracking';
 import { EbookCancelPoll } from './EbookCancelPoll';
 import { useEbookFontsAndMeta } from './useEbookFontsAndMeta';
+
+// Topo do celular (até 899px), réplica do criativo. Imagens servidas pela pasta public/ (Vercel),
+// fora do Storage do Supabase para não gastar egress. Para trocar o local das imagens, mude só aqui.
+const MHERO = {
+  bg: '/ebook/hero-bg.webp',
+  mockup: '/ebook/hero-mockup.webp',
+  badgeBrand: 'Mounjaro',
+};
 
 interface QuestionOption {
   t: string;
@@ -84,6 +93,7 @@ export const EbookLandingPage: React.FC = () => {
   const [meterPercent, setMeterPercent] = useState<number>(0);
   const [showSticky, setShowSticky] = useState<boolean>(false);
   const heroRef = useRef<HTMLElement | null>(null);
+  const mctaRef = useRef<HTMLButtonElement | null>(null);
 
   const loadingMessages = [
     'Analisando suas respostas…',
@@ -96,6 +106,12 @@ export const EbookLandingPage: React.FC = () => {
     const handleScroll = () => {
       const root = document.getElementById('root');
       const scrollTop = root ? root.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
+      // Celular: o botão fixo só aparece depois que o botão verde do topo sai da tela
+      const mcta = mctaRef.current;
+      if (mcta && mcta.offsetParent !== null) {
+        setShowSticky(mcta.getBoundingClientRect().bottom < 0);
+        return;
+      }
       const heroEl = heroRef.current;
       const heroHeight = heroEl ? heroEl.offsetHeight : 450;
       // Ao rolar além de metade do hero (ou 280px), ativa o botão fixo
@@ -301,6 +317,65 @@ export const EbookLandingPage: React.FC = () => {
           <span>Guia prático para quem usa caneta GLP-1</span>
         </div>
       </header>
+
+      {/* HERO DO CELULAR (até 899px). No computador continua o hero abaixo. */}
+      <section className="mhero" aria-label="Ebook de receitas proteicas" style={{ ['--mh-bg' as any]: `url(${MHERO.bg})` }}>
+        <div className="mhero-canvas">
+          <div className="mhero-bg" aria-hidden="true" />
+          <img
+            className="mhero-mockup"
+            src={MHERO.mockup}
+            alt="Ebook de receitas aberto num tablet, com páginas de café da manhã e almoço"
+            width={1200}
+            height={800}
+            decoding="async"
+          />
+          <div className="mhero-bg mhero-plate" aria-hidden="true" />
+          <div className="mhero-fog" aria-hidden="true" />
+
+          <div className="mhero-head">
+            <p className="mhero-badge">
+              <Syringe aria-hidden="true" />
+              <span>E-book de receitas para quem usa <b>{MHERO.badgeBrand}</b></span>
+            </p>
+            <h1 className="mhero-title">
+              Pouco apetite e <span>sem ideias</span> do que comer?
+            </h1>
+            <p className="mhero-sub">
+              38 receitas práticas e proteicas para facilitar sua alimentação, mesmo nos dias de pouco apetite.
+            </p>
+          </div>
+
+          <div className="mhero-visual" aria-hidden="true" />
+
+          <div className="mhero-bottom">
+            <ul className="mhero-features">
+              <li><ClipboardList aria-hidden="true" /><span>38 receitas<br />simples</span></li>
+              <li><CalendarDays aria-hidden="true" /><span>Cardápio<br />de 7 dias</span></li>
+              <li><BicepsFlexed aria-hidden="true" /><span>Ricas em<br />proteínas</span></li>
+              <li><ChefHat aria-hidden="true" /><span>Dicas para<br />dias de enjoo</span></li>
+            </ul>
+            <p className="mhero-price-from">De <s>R$ 34,90</s> por apenas</p>
+            <p className="mhero-price">R$ 9,99</p>
+            <button
+              ref={mctaRef}
+              type="button"
+              className="mhero-cta"
+              data-checkout
+              onClick={(e) => handleCheckoutClick(e, 'hero_mobile')}
+            >
+              <span>Quero acessar as receitas</span>
+              <ArrowRight aria-hidden="true" />
+            </button>
+            <ul className="mhero-trust">
+              <li><Lock aria-hidden="true" />Compra segura</li>
+              <li><Zap aria-hidden="true" />Acesso imediato</li>
+              <li><TabletSmartphone aria-hidden="true" />E-book digital</li>
+            </ul>
+          </div>
+        </div>
+        <div className="mhero-fade" aria-hidden="true" />
+      </section>
 
       {/* HERO + QUIZ */}
       <section className="hero" ref={heroRef}>

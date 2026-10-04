@@ -52,6 +52,7 @@ const secs = () => Math.round((Date.now() - ebookState.startedAt) / 100) / 10;
 // ── Seções observadas (na ordem em que aparecem na página) ───────────────
 const SECTIONS: Record<Page, Array<[string, string]>> = {
   landing: [
+    ['mhero', '.fm-ebook .mhero'],
     ['hero', '.fm-ebook .hero'],
     ['pain', '.fm-ebook .pain'],
     ['inside', '.fm-ebook .inside'],

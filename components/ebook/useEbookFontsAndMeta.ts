@@ -20,7 +20,7 @@ export function useEbookFontsAndMeta({ title, noindex = false }: EbookFontsAndMe
       fontLink = document.createElement('link');
       fontLink.id = FONT_LINK_ID;
       fontLink.rel = 'stylesheet';
-      fontLink.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap';
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=Montserrat:wght@500;800&display=swap';
       document.head.appendChild(fontLink);
       didAddFont = true;
     }

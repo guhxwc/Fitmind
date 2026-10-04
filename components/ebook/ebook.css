@@ -768,3 +768,225 @@
 .fm-ebook .checkout-canceled button{background:#4CA0DF;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .fm-ebook .checkout-canceled button.x{background:transparent;font-size:20px;padding:0 4px;line-height:1}
 @media (prefers-reduced-motion:reduce){.fm-ebook .checkout-box .ring{animation:none}}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HERO DO CELULAR (até 899px): réplica do criativo "Pouco apetite e sem ideias".
+   Tudo é medido numa régua de 941 px (largura do criativo): --u = 1 px do criativo.
+   No computador (900px+) ele some e fica o hero antigo.
+   ═══════════════════════════════════════════════════════════════════════ */
+.fm-ebook .mhero { display: none; }
+
+@media (max-width: 899px) {
+  .fm-ebook .top { display: none; }
+  .fm-ebook .hero { padding: 4px 0 56px; }
+  .fm-ebook .hero-grid > div:first-child { display: none; }
+
+  .fm-ebook .mhero {
+    --u: calc(min(100vw, 600px) / 941);
+    display: block;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    /* laterais em telas maiores que 600px: mesmo céu azul e mármore claro do fundo */
+    background: linear-gradient(180deg, #E8F3FD 0, #D5E9F9 calc(760 * var(--u)), #EAF2F9 calc(860 * var(--u)), #F4F9FE calc(1300 * var(--u)), #F4F9FE 100%);
+  }
+  .fm-ebook .mhero-canvas {
+    position: relative;
+    width: calc(941 * var(--u));
+    margin: 0 auto;
+    padding-bottom: calc(42 * var(--u));
+  }
+  /* fundo com comida: 104% do criativo, deslocado para cima (medido na referência) */
+  .fm-ebook .mhero-bg {
+    position: absolute;
+    left: calc(-18 * var(--u));
+    top: calc(-284 * var(--u));
+    width: calc(979 * var(--u));
+    height: calc(1739 * var(--u));
+    background: var(--mh-bg) no-repeat 0 0 / 100% 100%;
+    pointer-events: none;
+  }
+  /* tablet + páginas (passa um pouco da borda direita, como no criativo) */
+  .fm-ebook .mhero-mockup {
+    position: absolute;
+    z-index: 1;
+    left: calc(68 * var(--u));
+    top: calc(484 * var(--u));
+    width: calc(998 * var(--u));
+    max-width: none;
+    height: auto;
+    pointer-events: none;
+    filter: drop-shadow(0 calc(16 * var(--u)) calc(22 * var(--u)) rgba(10, 27, 71, .18));
+  }
+  /* o prato de frango fica NA FRENTE das páginas: mesma imagem de fundo, recortada só no prato */
+  .fm-ebook .mhero-plate {
+    z-index: 2;
+    -webkit-mask-image: radial-gradient(ellipse calc(228 * var(--u)) calc(182 * var(--u)) at calc(871 * var(--u)) calc(1378 * var(--u)), #000 88%, transparent 100%);
+            mask-image: radial-gradient(ellipse calc(228 * var(--u)) calc(182 * var(--u)) at calc(871 * var(--u)) calc(1378 * var(--u)), #000 88%, transparent 100%);
+  }
+  /* névoa clara atrás do preço e do botão */
+  .fm-ebook .mhero-fog {
+    position: absolute;
+    z-index: 2;
+    left: calc(-60 * var(--u));
+    right: calc(-60 * var(--u));
+    top: calc(1180 * var(--u));
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(244, 249, 254, 0) 0%, rgba(244, 249, 254, .82) 30%, #F4F9FE 52%, #F4F9FE 100%);
+    pointer-events: none;
+  }
+
+  .fm-ebook .mhero-head {
+    position: relative;
+    z-index: 3;
+    height: calc(470 * var(--u));
+    padding-top: calc(20 * var(--u));
+  }
+  .fm-ebook .mhero-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(16 * var(--u));
+    width: calc(711 * var(--u));
+    min-height: calc(57 * var(--u));
+    margin: 0 auto;
+    padding: calc(8 * var(--u)) calc(26 * var(--u));
+    border-radius: 999px;
+    background: rgba(207, 230, 248, .9);
+    color: #0B1B47;
+    font: 500 max(calc(21.5 * var(--u)), 8.6px)/1.15 'Montserrat', 'Manrope', system-ui, sans-serif;
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .fm-ebook .mhero-badge b { font-weight: 800; }
+  .fm-ebook .mhero-badge svg { width: calc(40 * var(--u)); height: calc(40 * var(--u)); flex: none; stroke-width: 1.7; transform: rotate(180deg); }
+
+  .fm-ebook .mhero-title {
+    max-width: calc(760 * var(--u));
+    margin: calc(24 * var(--u)) 0 0 calc(125 * var(--u));
+    font: 800 calc(86 * var(--u))/0.92 'Montserrat', 'Bricolage Grotesque', system-ui, sans-serif;
+    letter-spacing: -0.035em;
+    color: #0A1A47;
+  }
+  .fm-ebook .mhero-title span { color: #1A8CEB; }
+  .fm-ebook .mhero-sub {
+    max-width: calc(690 * var(--u));
+    margin: calc(20 * var(--u)) 0 0 calc(125 * var(--u));
+    font: 500 calc(34.5 * var(--u))/1.2 'Montserrat', 'Manrope', system-ui, sans-serif;
+    color: #3A4A68;
+  }
+
+  .fm-ebook .mhero-visual { height: calc(695 * var(--u)); }
+
+  .fm-ebook .mhero-bottom { position: relative; z-index: 3; }
+  .fm-ebook .mhero-features {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: calc(826 * var(--u));
+    margin: 0 auto;
+    padding: calc(28 * var(--u)) calc(8 * var(--u)) calc(24 * var(--u));
+    background: rgba(255, 255, 255, .93);
+    border-radius: calc(40 * var(--u));
+    box-shadow: 0 calc(12 * var(--u)) calc(40 * var(--u)) rgba(13, 40, 90, .09);
+  }
+  .fm-ebook .mhero-features li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(16 * var(--u));
+    text-align: center;
+    font: 500 max(calc(24.5 * var(--u)), 10px)/1.2 'Manrope', system-ui, sans-serif;
+    color: #10203F;
+  }
+  .fm-ebook .mhero-features li + li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8%;
+    bottom: 8%;
+    width: 1px;
+    background: #DCE6F2;
+  }
+  .fm-ebook .mhero-features svg { width: calc(50 * var(--u)); height: calc(50 * var(--u)); color: #1E66C8; stroke-width: 1.5; }
+
+  .fm-ebook .mhero-price-from {
+    margin: calc(10 * var(--u)) 0 0;
+    text-align: center;
+    font: 500 max(calc(32 * var(--u)), 12px)/1.25 'Montserrat', 'Manrope', system-ui, sans-serif;
+    color: #3E4C66;
+  }
+  .fm-ebook .mhero-price-from s { color: #8B96A8; text-decoration-thickness: 2px; }
+  .fm-ebook .mhero-price {
+    margin: 0;
+    text-align: center;
+    font: 800 calc(92 * var(--u))/1.02 'Montserrat', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+    color: #0A62B8;
+  }
+  .fm-ebook .mhero-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(22 * var(--u));
+    width: calc(826 * var(--u));
+    height: calc(103 * var(--u));
+    min-height: 44px;
+    margin: calc(16 * var(--u)) auto 0;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0BA16F 0%, #058C5E 100%);
+    color: #fff;
+    font: 800 max(calc(34 * var(--u)), 13px)/1 'Montserrat', system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+    box-shadow: 0 calc(14 * var(--u)) calc(30 * var(--u)) rgba(5, 140, 94, .32);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .fm-ebook .mhero-cta:active { transform: translateY(1px) scale(.995); box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(5, 140, 94, .3); }
+  .fm-ebook .mhero-cta:focus-visible { outline: 3px solid #9FD0F3; outline-offset: 3px; }
+  .fm-ebook .mhero-cta svg { width: calc(42 * var(--u)); height: calc(42 * var(--u)); min-width: 16px; min-height: 16px; stroke-width: 2.6; flex: none; }
+
+  .fm-ebook .mhero-trust {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(14 * var(--u)) calc(52 * var(--u));
+    margin: calc(22 * var(--u)) 0 0;
+    padding: 0;
+    font: 500 max(calc(23 * var(--u)), 10.5px)/1.2 'Manrope', system-ui, sans-serif;
+    color: #1F3358;
+  }
+  .fm-ebook .mhero-trust li { display: flex; align-items: center; gap: calc(12 * var(--u)); }
+  .fm-ebook .mhero-trust svg { width: calc(32 * var(--u)); height: calc(32 * var(--u)); min-width: 13px; min-height: 13px; stroke-width: 1.8; }
+
+  /* degradê que liga o topo ao resto da página */
+  .fm-ebook .mhero-fade {
+    height: calc(150 * var(--u));
+    margin-top: calc(-2 * var(--u));
+    background: linear-gradient(180deg, #F4F9FE 0%, var(--bg, #F1F4FB) 100%);
+  }
+}
+
+/* celulares muito estreitos: o selo pode quebrar em 2 linhas */
+@media (max-width: 339px) {
+  .fm-ebook .mhero-badge { white-space: normal; }
+}
+
+/* telas entre 600 e 899px: as bordas do fundo se dissolvem nas laterais */
+@media (min-width: 601px) and (max-width: 899px) {
+  .fm-ebook .mhero-bg:not(.mhero-plate) {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-ebook .mhero-cta { transition: none; }
+}

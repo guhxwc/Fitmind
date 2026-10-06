@@ -1,7 +1,7 @@
 import { track as phTrack } from '../../lib/analytics';
 import { supabase } from '../../supabaseClient';
 import { ebookTrack, markCheckoutStarted } from './ebookTracking';
-import { metaTrack, getMetaBrowserIds } from '../../lib/metaPixel';
+import { metaTrack, getMetaBrowserIds, getMetaVisitorId } from '../../lib/metaPixel';
 
 export const EBOOK_CONFIG = {
   // Stripe (o checkout é criado pela Edge Function create-ebook-checkout)
@@ -45,6 +45,7 @@ export async function startEbookCheckout(opts: { quizProfile?: string | null } =
       affiliate_ref: affiliateRef,
       meta_fbp: fbp ?? null,
       meta_fbc: fbc ?? null,
+      meta_external_id: getMetaVisitorId(),
       meta_source_url: typeof window !== 'undefined' ? window.location.origin + '/ebook' : null,
     },
   });

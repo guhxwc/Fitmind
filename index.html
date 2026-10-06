@@ -81,7 +81,17 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1814654896218292');
+    // external_id: id fixo deste navegador (aleatório, não é dado pessoal). O mesmo id vai para a
+    // Conversions API no checkout do ebook, e a Meta junta o evento do navegador com a compra do servidor.
+    var fmVid = null;
+    try {
+      fmVid = localStorage.getItem('fm_vid');
+      if (!fmVid) {
+        fmVid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+        localStorage.setItem('fm_vid', fmVid);
+      }
+    } catch (e) {}
+    fbq('init', '1814654896218292', fmVid ? { external_id: fmVid } : {});
     fbq('track', 'PageView');
     </script>
     <!-- End Meta Pixel Code -->

@@ -15,8 +15,28 @@
  *     sozinho. NÃO disparar PageView manual aqui, senão duplica.
  */
 
-export const META_PIXEL_ID = '4440563289541452';
+export const META_PIXEL_ID = '1814654896218292'; // único pixel do FitMind (o mesmo do index.html)
 export const META_CURRENCY = 'BRL';
+
+/**
+ * external_id do visitante: id fixo deste navegador, criado no index.html (localStorage 'fm_vid').
+ * Vai no init do pixel e no checkout do ebook, para a compra enviada pelo servidor (Conversions API)
+ * casar com os eventos do navegador. Não é dado pessoal: é um id aleatório.
+ */
+export function getMetaVisitorId(): string | null {
+  try {
+    let vid = localStorage.getItem('fm_vid');
+    if (!vid) {
+      vid = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
+        ? (crypto as any).randomUUID()
+        : 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+      localStorage.setItem('fm_vid', vid as string);
+    }
+    return vid;
+  } catch {
+    return null;
+  }
+}
 
 /** Eventos padrão da Meta usados no Fitmind. */
 export type MetaStandardEvent =

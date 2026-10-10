@@ -33,6 +33,7 @@ import { LandingPage } from './components/LandingPage';
 import { EbookLandingPage } from './components/ebook/EbookLandingPage';
 import { EbookUpsellPage } from './components/ebook/EbookUpsellPage';
 import { EbookThankYouPage } from './components/ebook/EbookThankYouPage';
+import { QuizUpsellPage } from './components/ebook/quiz/QuizUpsellPage';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -215,7 +216,15 @@ const AppContent: React.FC = () => {
         setProfileExists(null);
         // Só limpa o distinct_id em logout de verdade. Visitante anônimo chega aqui com "sem sessão" a cada
         // carregamento de página e NÃO pode ser resetado (senão perde a identidade, os atributos e a sessão).
-        if (_event === 'SIGNED_OUT') resetAnalytics(); // crítico em computadores compartilhados
+        if (_event === 'SIGNED_OUT') {
+          resetAnalytics(); // crítico em computadores compartilhados
+          // Rascunho de onboarding pertence a quem estava criando conta; não pode vazar para outra conta.
+          try {
+            localStorage.removeItem('onboarding_userData');
+            localStorage.removeItem('onboarding_step');
+            localStorage.removeItem('skip_final_plan');
+          } catch { /* ignore */ }
+        }
         try {
           sessionStorage.removeItem('nutri_role_choice');
         } catch { /* ignore */ }
@@ -232,31 +241,11 @@ const AppContent: React.FC = () => {
         if (_event === 'SIGNED_IN') {
           track(AnalyticsEvent.loginCompleted, { provider: session.user.app_metadata?.provider });
           
-          try {
-             let parsedData = null;
-             
-             // First check user_metadata (this helps if user verified email in a different browser)
-             if (session.user.user_metadata?.onboarding_data) {
-                parsedData = session.user.user_metadata.onboarding_data;
-             } 
-             // Fallback to localStorage (for Google Login or same-browser signup)
-             else {
-               const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
-               if (pendingOnboardingStr) {
-                  parsedData = JSON.parse(pendingOnboardingStr);
-               }
-             }
-
-             if (parsedData) {
-               // We will call handleOnboardingComplete directly, but we need to wait a tick 
-               // for session to be fully registered in state
-               setTimeout(() => {
-                 handleOnboardingSync(session, parsedData);
-               }, 500);
-             }
-          } catch(err) {
-             console.error("Error processing pending onboarding", err);
-          }
+          // Só aplica rascunho de onboarding em conta que ainda NÃO concluiu o onboarding.
+          // A checagem acontece dentro de applyPendingOnboarding (nunca sobrescreve conta existente).
+          setTimeout(() => {
+            applyPendingOnboarding(session);
+          }, 500);
         }
         
         fetchProfile(session.user.id);
@@ -267,7 +256,47 @@ const AppContent: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleOnboardingSync = async (currentSession: Session, userData: Omit<UserData, 'id'>) => {
+  // Decide se o rascunho de onboarding (user_metadata ou localStorage) pode ser aplicado ao usuário logado.
+  // Regra: só em conta SEM onboarding concluído (profiles.height nulo). Conta existente nunca é sobrescrita.
+  const applyPendingOnboarding = async (currentSession: Session) => {
+    const clearDraft = () => {
+      try {
+        localStorage.removeItem('onboarding_userData');
+        localStorage.removeItem('onboarding_step');
+      } catch { /* ignore */ }
+    };
+    try {
+      let parsedData: any = null;
+      const metaData = currentSession.user.user_metadata?.onboarding_data;
+      if (metaData) {
+        parsedData = metaData;
+      } else {
+        const pendingOnboardingStr = localStorage.getItem('onboarding_userData');
+        if (pendingOnboardingStr) parsedData = JSON.parse(pendingOnboardingStr);
+      }
+      if (!parsedData) return;
+
+      const { data: existing, error } = await supabase
+        .from('profiles')
+        .select('id, height')
+        .eq('id', currentSession.user.id)
+        .maybeSingle();
+      if (error) {
+        console.error('Erro ao checar perfil antes de aplicar onboarding pendente:', error);
+        return; // na dúvida, não grava nada
+      }
+      if (existing && existing.height) {
+        // Conta já tem onboarding concluído: descarta o rascunho, não toca nos dados.
+        clearDraft();
+        return;
+      }
+      await handleOnboardingSync(currentSession, parsedData, !!existing);
+    } catch (err) {
+      console.error('Error processing pending onboarding', err);
+    }
+  };
+
+  const handleOnboardingSync = async (currentSession: Session, userData: Omit<UserData, 'id'>, rowExists = false) => {
     const profileData = {
       id: currentSession.user.id,
       name: userData.name || 'Usuário',
@@ -299,9 +328,11 @@ const AppContent: React.FC = () => {
     };
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(profileData, { onConflict: 'id' });
+      // Update condicional (só se height ainda é nulo) evita sobrescrever conta que concluiu onboarding em paralelo.
+      const { id: _pid, ...profileFields } = profileData;
+      const { error } = rowExists
+        ? await supabase.from('profiles').update(profileFields).eq('id', profileData.id).is('height', null)
+        : await supabase.from('profiles').insert(profileData);
       if (error) {
         console.error("Error saving pending profile:", error);
       } else {
@@ -493,6 +524,8 @@ const AppContent: React.FC = () => {
         <Route path="/ebook" element={<EbookLandingPage />} />
         <Route path="/ebook/oferta" element={<EbookUpsellPage />} />
         <Route path="/ebook/obrigado" element={<EbookThankYouPage />} />
+        <Route path="/ebook/quiz-teste" element={<QuizUpsellPage mode="test" />} />
+        <Route path="/ebook/quiz-live" element={<QuizUpsellPage mode="livetest" />} />
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
         <Route path="/onboarding" element={!session ? <UnauthOnboardingRoute /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

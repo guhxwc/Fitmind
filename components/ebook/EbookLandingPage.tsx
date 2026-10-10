@@ -330,7 +330,6 @@ export const EbookLandingPage: React.FC = () => {
             height={800}
             decoding="async"
           />
-          <div className="mhero-bg mhero-plate" aria-hidden="true" />
           <div className="mhero-fog" aria-hidden="true" />
 
           <div className="mhero-head">

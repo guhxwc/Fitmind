@@ -355,7 +355,7 @@ export const EbookLandingPage: React.FC = () => {
               <li><BicepsFlexed aria-hidden="true" /><span>Ricas em<br />proteínas</span></li>
               <li><ChefHat aria-hidden="true" /><span>Dicas para<br />dias de enjoo</span></li>
             </ul>
-            <p className="mhero-price-from">De <s>R$ 34,90</s> por apenas</p>
+            <p className="mhero-price-from">De <s>R$ 54,90</s> por apenas</p>
             <p className="mhero-price">R$ 9,99</p>
             <button
               ref={mctaRef}
@@ -387,7 +387,7 @@ export const EbookLandingPage: React.FC = () => {
               <strong>Prato Cheio de Proteína</strong> traz 38 receitas simples, cardápio de 7 dias e
               um plano para os dias de enjoo.{' '}
               <span className="hero-price-tag">
-                De <s className="price-old">R$ 34</s> por apenas <strong>R$ 9,99.</strong>
+                De <s className="price-old">R$ 54,90</s> por apenas <strong>R$ 9,99.</strong>
               </span>
             </p>
             <div className="hero-ctas">
@@ -792,7 +792,7 @@ export const EbookLandingPage: React.FC = () => {
                 <div className="me">
                   <span>38 receitas + cardápios + dicas</span>
                   <span>
-                    <s className="price-old">R$ 34</s> R$ 9,99
+                    <s className="price-old">R$ 54,90</s> R$ 9,99
                   </span>
                 </div>
               </div>
@@ -801,9 +801,9 @@ export const EbookLandingPage: React.FC = () => {
               </p>
             </div>
             <div className="price-box">
-              <div className="discount-pill">70% DE DESCONTO</div>
+              <div className="discount-pill">82% DE DESCONTO</div>
               <p className="was">
-                De <s className="price-old">R$ 34,00</s> por apenas
+                De <s className="price-old">R$ 54,90</s> por apenas
               </p>
               <div className="price">
                 <small>R$</small>
@@ -870,7 +870,7 @@ export const EbookLandingPage: React.FC = () => {
         <div className="wrap">
           <h2>Mais proteína no prato. Sem precisar comer mais.</h2>
           <p>
-            38 receitas, cardápio de 7 dias, cardápio para os dias de enjoo e as 12 dicas que mais fazem diferença. De <s className="price-old">R$ 34</s> por apenas <strong>R$ 9,99</strong>, com 7 dias de garantia.
+            38 receitas, cardápio de 7 dias, cardápio para os dias de enjoo e as 12 dicas que mais fazem diferença. De <s className="price-old">R$ 54,90</s> por apenas <strong>R$ 9,99</strong>, com 7 dias de garantia.
           </p>
           <a
             href="#"
@@ -924,7 +924,7 @@ export const EbookLandingPage: React.FC = () => {
       <div className={`sticky ${showSticky ? 'show' : ''}`} id="sticky">
         <div className="t">
           <div className="sticky-price-row">
-            <s className="price-old">R$ 34</s>
+            <s className="price-old">R$ 54,90</s>
             <b>R$ 9,99</b>
           </div>
           <span>38 receitas + cardápios</span>

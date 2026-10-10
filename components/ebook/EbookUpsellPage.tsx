@@ -4,6 +4,8 @@ import { EBOOK_CONFIG, trackEvent, getEbookOrderStatus } from './ebookConfig';
 import { useEbookTracking } from './ebookTracking';
 import { useEbookFontsAndMeta } from './useEbookFontsAndMeta';
 import { metaTrack } from '../../lib/metaPixel';
+import { QuizUpsellPage } from './quiz/QuizUpsellPage';
+import { useQuizGate } from './quiz/useQuizGate';
 
 type PlanType = 'mensal' | 'trimestral' | 'semestral';
 
@@ -105,6 +107,11 @@ export const EbookUpsellPage: React.FC = () => {
     e.preventDefault();
     goToSite('upsell_decline');
   };
+
+  // Quiz de upsell (chave quiz_upsell_enabled). Os efeitos acima (Purchase do ebook, tracking) continuam rodando.
+  const quizGate = useQuizGate();
+  if (quizGate === 'quiz') return <QuizUpsellPage mode="live" />;
+  if (quizGate === 'loading') return <div style={{ minHeight: '100vh', background: '#F4F7FC' }} aria-busy="true" />;
 
   return (
     <div className="fm-ebook">

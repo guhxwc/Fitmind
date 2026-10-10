@@ -338,10 +338,10 @@ export const EbookLandingPage: React.FC = () => {
               <span>E-book de receitas para quem usa <b>{MHERO.badgeBrand}</b></span>
             </p>
             <h1 className="mhero-title">
-              Pouco apetite e <span>sem ideias</span> do que comer?
+              Dieta comum <span>não foi feita</span> pra quem usa Mounjaro
             </h1>
             <p className="mhero-sub">
-              38 receitas práticas e proteicas para facilitar sua alimentação, mesmo nos dias de pouco apetite.
+              Menos fome, porções menores, outra rotina. 38 receitas proteicas e um cardápio de 7 dias para o seu prato acompanhar.
             </p>
           </div>
 
@@ -363,7 +363,7 @@ export const EbookLandingPage: React.FC = () => {
               data-checkout
               onClick={(e) => handleCheckoutClick(e, 'hero_mobile')}
             >
-              <span>Quero acessar as receitas</span>
+              <span>Quero o guia certo</span>
               <ArrowRight aria-hidden="true" />
             </button>
             <ul className="mhero-trust">

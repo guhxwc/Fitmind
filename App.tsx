@@ -525,7 +525,6 @@ const AppContent: React.FC = () => {
         <Route path="/ebook/oferta" element={<EbookUpsellPage />} />
         <Route path="/ebook/obrigado" element={<EbookThankYouPage />} />
         <Route path="/ebook/quiz-teste" element={<QuizUpsellPage mode="test" />} />
-        <Route path="/ebook/quiz-live" element={<QuizUpsellPage mode="livetest" />} />
         <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
         <Route path="/onboarding" element={!session ? <UnauthOnboardingRoute /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

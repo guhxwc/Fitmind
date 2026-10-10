@@ -3,7 +3,7 @@
 //  - "test":     nada sai do navegador (sem Supabase, sem PostHog, sem Meta). Rota /ebook/quiz-teste.
 //  - "livetest": backend de verdade, mas com sessão de teste (e-mail fixo no servidor, sem pedido de ebook,
 //                sem eventos para a Meta). Rota /ebook/quiz-live. Cobra o produto de teste do Stripe.
-//  - "live":     comprador real do ebook (session_id do pedido). Será ligado em /ebook/oferta depois da aprovação.
+//  - "live":     comprador real do ebook (session_id do pedido). Usado em /ebook/oferta (useQuizGate).
 import { supabase } from '../../../supabaseClient';
 import { track as phTrack } from '../../../lib/analytics';
 import { metaTrack } from '../../../lib/metaPixel';
@@ -48,11 +48,19 @@ export function createQuizApi(mode: QuizMode) {
         if (mode === 'livetest') {
           const d = await call({ action: 'start', test: true });
           token = resumeToken || d?.token;
+          if (resumeToken) {
+            const st = await call({ action: 'status', token });
+            return { enabled: !!d?.enabled, eligible: !!d?.eligible, token, emailMasked: st?.email_masked ?? d?.email_masked ?? null, answers: st?.answers ?? {} };
+          }
           return { enabled: !!d?.enabled, eligible: !!d?.eligible, token, emailMasked: d?.email_masked ?? null, answers: d?.answers ?? {} };
         }
         if (!sessionId && !resumeToken) return { enabled: true, eligible: false };
         if (resumeToken) token = resumeToken;
-        if (!sessionId) return { enabled: true, eligible: true, token };
+        if (!sessionId) {
+          // volta do Stripe: recupera respostas e e-mail pelo token
+          const st = await call({ action: 'status', token });
+          return { enabled: true, eligible: true, token, emailMasked: st?.email_masked ?? null, answers: st?.answers ?? {} };
+        }
         const d = await call({ action: 'start', session_id: sessionId });
         token = d?.token ?? token;
         return { enabled: !!d?.enabled, eligible: !!d?.eligible, token, emailMasked: d?.email_masked ?? null, answers: d?.answers ?? {} };

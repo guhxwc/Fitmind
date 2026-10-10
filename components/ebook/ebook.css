@@ -869,9 +869,9 @@
   }
 
   .fm-ebook .mhero-title {
-    max-width: calc(760 * var(--u));
+    max-width: calc(820 * var(--u));
     margin: calc(24 * var(--u)) 0 0 calc(125 * var(--u));
-    font: 800 calc(86 * var(--u))/0.92 'Montserrat', 'Bricolage Grotesque', system-ui, sans-serif;
+    font: 800 calc(74 * var(--u))/0.92 'Montserrat', 'Bricolage Grotesque', system-ui, sans-serif;
     letter-spacing: -0.035em;
     color: #0A1A47;
   }
@@ -881,9 +881,9 @@
     animation: fmEbookTitleGlow 3.4s ease-in-out infinite alternate;
   }
   .fm-ebook .mhero-sub {
-    max-width: calc(690 * var(--u));
-    margin: calc(20 * var(--u)) 0 0 calc(125 * var(--u));
-    font: 500 calc(34.5 * var(--u))/1.2 'Montserrat', 'Manrope', system-ui, sans-serif;
+    max-width: calc(760 * var(--u));
+    margin: calc(16 * var(--u)) 0 0 calc(125 * var(--u));
+    font: 500 calc(31 * var(--u))/1.2 'Montserrat', 'Manrope', system-ui, sans-serif;
     color: #3A4A68;
   }
 

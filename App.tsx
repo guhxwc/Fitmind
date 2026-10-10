@@ -1,35 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
-import { MainApp } from './components/MainApp';
-import { Auth } from './components/Auth';
+// Telas do app carregadas sob demanda: quem abre a landing do ebook não baixa o código do app inteiro.
+// Se um arquivo antigo sumir logo depois de um deploy, recarrega a página uma vez em vez de quebrar.
+const lazyPage = <T extends React.ComponentType<any>>(load: () => Promise<T>) =>
+  lazy(async () => {
+    try {
+      return { default: await load() };
+    } catch (err) {
+      try {
+        const k = 'fm_chunk_reload_at';
+        const last = Number(sessionStorage.getItem(k) || 0);
+        if (Date.now() - last > 10000) {
+          sessionStorage.setItem(k, String(Date.now()));
+          window.location.reload();
+        }
+      } catch { /* sem sessionStorage */ }
+      throw err;
+    }
+  });
+const OnboardingFlow = lazyPage(() => import('./components/onboarding/OnboardingFlow').then(m => m.OnboardingFlow));
+const MainApp = lazyPage(() => import('./components/MainApp').then(m => m.MainApp));
+const Auth = lazyPage(() => import('./components/Auth').then(m => m.Auth));
 import { useAppContext } from './components/AppContext';
 import type { UserData } from './types';
 import { SupabaseSetupMessage } from './components/SupabaseSetupMessage';
 import { DEFAULT_USER_DATA } from './constants';
-import { InitialSettings } from './components/tabs/InitialSettings';
-import { TermsPage } from './components/legal/TermsPage';
-import { PrivacyPage } from './components/legal/PrivacyPage';
-import { SuccessPage } from './components/payment/SuccessPage';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
-import { ReferralDashboard } from './components/ReferralDashboard';
+const InitialSettings = lazyPage(() => import('./components/tabs/InitialSettings').then(m => m.InitialSettings));
+const TermsPage = lazyPage(() => import('./components/legal/TermsPage').then(m => m.TermsPage));
+const PrivacyPage = lazyPage(() => import('./components/legal/PrivacyPage').then(m => m.PrivacyPage));
+const SuccessPage = lazyPage(() => import('./components/payment/SuccessPage').then(m => m.SuccessPage));
+const ResetPasswordPage = lazyPage(() => import('./components/ResetPasswordPage').then(m => m.ResetPasswordPage));
+const ReferralDashboard = lazyPage(() => import('./components/ReferralDashboard').then(m => m.ReferralDashboard));
 import { useToast } from './components/ToastProvider';
-import { NotificationSystem } from './components/NotificationSystem';
-import { TrialResultsScreen } from './components/TrialResultsScreen';
-import { StepFinalPlan } from './components/onboarding/StepFinalPlan';
+const NotificationSystem = lazyPage(() => import('./components/NotificationSystem').then(m => m.NotificationSystem));
+const TrialResultsScreen = lazyPage(() => import('./components/TrialResultsScreen').then(m => m.TrialResultsScreen));
+const StepFinalPlan = lazyPage(() => import('./components/onboarding/StepFinalPlan').then(m => m.StepFinalPlan));
 import { UpsellProvider } from './components/UpsellProvider';
 
-import { ConsultationRoute } from './components/payment/ConsultationRoute';
-import { ConsultationDashboard } from './components/consultation/ConsultationDashboard';
-import { AnamnesisForm } from './components/consultation/AnamnesisForm';
-import { SubscriptionPage } from './components/SubscriptionPage';
-import { NutriPanel } from './components/nutri/NutriPanel'; // <-- Added NutriPanel import
-import { NutriRoleSelection } from './components/nutri/NutriRoleSelection';
+const ConsultationRoute = lazyPage(() => import('./components/payment/ConsultationRoute').then(m => m.ConsultationRoute));
+const ConsultationDashboard = lazyPage(() => import('./components/consultation/ConsultationDashboard').then(m => m.ConsultationDashboard));
+const AnamnesisForm = lazyPage(() => import('./components/consultation/AnamnesisForm').then(m => m.AnamnesisForm));
+const SubscriptionPage = lazyPage(() => import('./components/SubscriptionPage').then(m => m.SubscriptionPage));
+const NutriPanel = lazyPage(() => import('./components/nutri/NutriPanel').then(m => m.NutriPanel));
+const NutriRoleSelection = lazyPage(() => import('./components/nutri/NutriRoleSelection').then(m => m.NutriRoleSelection));
 import { PostHogPageView } from './components/PostHogPageView';
 import { identifyUser, resetAnalytics, setUserProperties, track, AnalyticsEvent } from './lib/analytics';
-import { LandingPage } from './components/LandingPage';
+const LandingPage = lazyPage(() => import('./components/LandingPage').then(m => m.LandingPage));
 import { EbookLandingPage } from './components/ebook/EbookLandingPage';
 import { EbookUpsellPage } from './components/ebook/EbookUpsellPage';
 import { EbookThankYouPage } from './components/ebook/EbookThankYouPage';
@@ -134,6 +152,23 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const { addToast } = useToast();
   const isEbookRoute = location.pathname.startsWith('/ebook');
+
+  // A landing do ebook abre sem o Tailwind e sem a fonte Inter (ver index.html).
+  // Se a pessoa sair do /ebook para o app sem recarregar a página, carrega os dois aqui.
+  useEffect(() => {
+    if (isEbookRoute) return;
+    const w = window as any;
+    if (w.tailwind || document.getElementById('fm-tailwind')) return;
+    const s = document.createElement('script');
+    s.id = 'fm-tailwind';
+    s.src = 'https://cdn.tailwindcss.com';
+    s.onload = () => { if (w.__fmTwConfig) w.tailwind.config = w.__fmTwConfig; };
+    document.head.appendChild(s);
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap';
+    document.head.appendChild(l);
+  }, [isEbookRoute]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -518,8 +553,13 @@ const AppContent: React.FC = () => {
     <>
       <ScrollToTop />
       <PostHogPageView />
-      {!isEbookRoute && <NotificationSystem />}
+      {!isEbookRoute && <Suspense fallback={null}><NotificationSystem /></Suspense>}
       <UpsellProvider>
+        <Suspense fallback={
+          <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
+            <div className="w-10 h-10 border-4 border-gray-200 border-t-black dark:border-gray-800 dark:border-t-white rounded-full animate-spin"></div>
+          </div>
+        }>
         <Routes>
         <Route path="/ebook" element={<EbookLandingPage />} />
         <Route path="/ebook/oferta" element={<EbookUpsellPage />} />
@@ -614,6 +654,7 @@ const AppContent: React.FC = () => {
         
         <Route path="/settings/initial-setup" element={session ? <InitialSettings /> : <Navigate to="/auth" />} />
       </Routes>
+        </Suspense>
       </UpsellProvider>
     </>
   );

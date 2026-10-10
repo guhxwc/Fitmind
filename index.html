@@ -98,13 +98,25 @@
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff">
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
-      tailwind.config = {
+      // A landing do ebook (/ebook...) não usa Tailwind nem a fonte Inter: pula os dois lá para abrir mais rápido.
+      // Nas outras páginas, carrega exatamente como antes.
+      window.__fmEbook = location.pathname.indexOf('/ebook') === 0;
+      if (!window.__fmEbook) {
+        document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+        document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">');
+      } else {
+        document.write('<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=Montserrat:wght@500;800&display=swap" onload="this.rel=\'stylesheet\'">');
+        if (location.pathname === '/ebook' || location.pathname === '/ebook/') {
+          document.write('<link rel="preload" as="image" href="/ebook/hero-mockup.webp" media="(max-width: 899px)" fetchpriority="high">');
+          document.write('<link rel="preload" as="image" href="/ebook/hero-bg.webp" media="(max-width: 899px)">');
+        }
+      }
+    </script>
+    <script>
+      window.__fmTwConfig = {
         darkMode: 'class',
         theme: {
           extend: {
@@ -138,7 +150,8 @@
             }
           }
         }
-      }
+      };
+      if (window.tailwind) tailwind.config = window.__fmTwConfig;
       
       if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark')

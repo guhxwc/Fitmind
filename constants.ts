@@ -34,7 +34,7 @@ export const DEFAULT_USER_DATA: Omit<UserData, 'id'> = {
   
   medication: {
     name: 'Ozempic',
-    dose: '0,5 mg',
+    dose: '',
     nextApplication: 'Domingo',
     defaultSite: 'Abdômen',
   },

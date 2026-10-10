@@ -16,30 +16,9 @@ interface StepDoseProps {
 export const StepDose: React.FC<StepDoseProps> = ({ onNext, onBack, onSelect, medicationName, value, totalSteps }) => {
   const standardDoses = MEDICATIONS.find(m => m.name === medicationName)?.doses || [];
   
-  const isCustomValue = Boolean(value && !standardDoses.includes(value));
-  const [isOtherSelected, setIsOtherSelected] = useState<boolean>(() => {
-    if (standardDoses.length === 0) return true;
-    return isCustomValue;
-  });
-  const [customInputValue, setCustomInputValue] = useState<string>(() => {
-    if (isCustomValue) return value;
-    return '';
-  });
-
-  // Sincroniza se a medicação mudar ou se o valor externo mudar
-  useEffect(() => {
-    if (standardDoses.length === 0) {
-      setIsOtherSelected(true);
-      if (value) setCustomInputValue(value);
-      return;
-    }
-    if (value && !standardDoses.includes(value)) {
-      setIsOtherSelected(true);
-      setCustomInputValue(value);
-    } else if (value && standardDoses.includes(value)) {
-      setIsOtherSelected(false);
-    }
-  }, [medicationName, value]);
+  // A caixinha de escrever só abre quando o usuário clica no botão "Outra"
+  const [isOtherSelected, setIsOtherSelected] = useState<boolean>(false);
+  const [customInputValue, setCustomInputValue] = useState<string>('');
 
   const handleSelectStandardDose = (dose: string) => {
     setIsOtherSelected(false);
@@ -110,12 +89,12 @@ export const StepDose: React.FC<StepDoseProps> = ({ onNext, onBack, onSelect, me
           </OptionButton>
         ))}
 
-        {/* Botão Outra com design idêntico e espaçamento padrão */}
+        {/* Botão Outra com design idêntico: só abre o campo ao clicar */}
         <OptionButton
           onClick={handleSelectOther}
           isSelected={isOtherSelected}
         >
-          Outra
+          {standardDoses.length === 0 ? 'Digitar minha dose' : 'Outra'}
         </OptionButton>
 
         {isOtherSelected && (
@@ -126,7 +105,6 @@ export const StepDose: React.FC<StepDoseProps> = ({ onNext, onBack, onSelect, me
             <div className="flex gap-2">
               <input
                 type="text"
-                autoFocus
                 placeholder="Ex: 0,75 mg ou 3 mg"
                 className="flex-1 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-base"
                 value={customInputValue}

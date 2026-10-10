@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UserData } from '../../types';
-import { DEFAULT_USER_DATA } from '../../constants';
+import { DEFAULT_USER_DATA, MEDICATIONS } from '../../constants';
 import { StepName } from './StepName';
 import { StepGender } from './StepGender';
 import { StepAge } from './StepAge';
@@ -233,7 +233,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, init
     <StepGlpStatus key="glp" onNext={nextStep} onBack={prevStep} value={userData.glpStatus} onSelect={(status) => updateUserData({ glpStatus: status })} step={1} total={TOTAL_STEPS} />,
     
     // 2. Medication
-    <StepMedication key="med" onNext={nextStep} onBack={prevStep} value={userData.medication.name} onSelect={(name) => updateUserData({ medication: { ...userData.medication, name } })} totalSteps={TOTAL_STEPS} />,
+    <StepMedication 
+      key="med" 
+      onNext={nextStep} 
+      onBack={prevStep} 
+      value={userData.medication.name} 
+      onSelect={(name) => {
+        const medDoses = MEDICATIONS.find(m => m.name === name)?.doses || [];
+        const keepDose = medDoses.includes(userData.medication.dose) ? userData.medication.dose : '';
+        updateUserData({ medication: { ...userData.medication, name, dose: keepDose } });
+      }} 
+      totalSteps={TOTAL_STEPS} 
+    />,
     
     // 3. Dose
     <StepDose 

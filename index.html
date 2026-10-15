@@ -91,7 +91,11 @@
         localStorage.setItem('fm_vid', fmVid);
       }
     } catch (e) {}
+    // Pixel 1 (principal): recebe os eventos do navegador e também os da Conversions API (servidor).
     fbq('init', '1814654896218292', fmVid ? { external_id: fmVid } : {});
+    // Pixel 2 (só navegador): a Conversions API NÃO envia para ele (o servidor usa só META_PIXEL_ID do pixel 1).
+    fbq('init', '4440563289541452', fmVid ? { external_id: fmVid } : {});
+    // Um único track dispara nos dois pixels.
     fbq('track', 'PageView');
     </script>
     <!-- End Meta Pixel Code -->
@@ -327,6 +331,8 @@
   <body class="antialiased selection:bg-blue-500 selection:text-white">
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1814654896218292&ev=PageView&noscript=1"
+    /><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=4440563289541452&ev=PageView&noscript=1"
     /></noscript>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>

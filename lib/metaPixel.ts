@@ -15,7 +15,8 @@
  *     sozinho. NÃO disparar PageView manual aqui, senão duplica.
  */
 
-export const META_PIXEL_ID = '1814654896218292'; // único pixel do FitMind (o mesmo do index.html)
+export const META_PIXEL_ID = '1814654896218292'; // pixel 1 (principal, navegador + Conversions API; o mesmo do index.html)
+export const META_PIXEL_ID_2 = '4440563289541452'; // pixel 2 (somente navegador, sem Conversions API; o mesmo do index.html)
 export const META_CURRENCY = 'BRL';
 
 /**
@@ -144,6 +145,7 @@ export function metaIdentify(user: { email?: string | null; id?: string | null }
     if (user.id) matching.external_id = user.id;
     if (Object.keys(matching).length === 0) return;
     fbq('init', META_PIXEL_ID, matching);
+    fbq('init', META_PIXEL_ID_2, matching);
   } catch {
     /* ignore */
   }

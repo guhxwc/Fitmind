@@ -1,4 +1,9 @@
 /* FitMind Ebook Isolated Styles - All prefixed with .fm-ebook */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
 .fm-ebook {
   --ink: #161717;
   --navy: #1A4572;
@@ -16,6 +21,8 @@
 
   min-height: 100vh;
   width: 100%;
+  margin: 0;
+  padding: 0;
   background: var(--paper) !important;
   color: var(--ink) !important;
   font-family: var(--body) !important;
@@ -787,6 +794,8 @@
     display: block;
     position: relative;
     overflow: hidden;
+    width: 100%;
+    margin: 0;
     padding: 0;
     /* laterais em telas maiores que 600px: mesmo céu azul e mármore claro do fundo */
     background: linear-gradient(180deg, #E8F3FD 0, #D5E9F9 calc(760 * var(--u)), #EAF2F9 calc(860 * var(--u)), #F4F9FE calc(1300 * var(--u)), #F4F9FE 100%);

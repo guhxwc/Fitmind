@@ -164,7 +164,13 @@
       }
     </script>
     <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      
       html, body {
+        margin: 0;
+        padding: 0;
         height: 100%;
         width: 100%;
         overflow: hidden; /* Prevent scrolling of root */
@@ -172,6 +178,8 @@
       }
       
       body {
+        margin: 0;
+        padding: 0;
         font-family: 'Inter', sans-serif;
         -webkit-tap-highlight-color: transparent;
         background-color: #F2F2F7;
@@ -179,9 +187,12 @@
       }
       
       #root {
+        margin: 0;
+        padding: 0;
         height: 100%;
         width: 100%;
         overflow-y: auto; /* Internal scrolling handled here */
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
       }
 
